@@ -150,7 +150,7 @@ export default function QuickOverview({ userId }) {
   return (
     <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 hover:shadow-md transition-all duration-300">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-700">Today's Overview</h2>
+        <h2 className="text-lg font-semibold text-gray-700">Today&apos;s Overview</h2>
         <ClockIcon className="w-5 h-5 text-blue-500" />
       </div>
       

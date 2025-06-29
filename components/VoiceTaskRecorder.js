@@ -477,7 +477,7 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       {/* Instructions */}
       {!isRecording && !isTranscribing && !isProcessing && extractedTasks.length === 0 && !permissionDenied && (
         <p className="text-xs text-gray-500 mt-3 text-center">
-          Tap to record, then speak your tasks. Try phrases like "Add task to buy groceries" or "Remind me to call mom".
+          Tap to record, then speak your tasks. Try phrases like &quot;Add task to buy groceries&quot; or &quot;Remind me to call mom&quot;.
         </p>
       )}
     </div>
