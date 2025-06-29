@@ -9,7 +9,7 @@ export default function BottomNav() {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', emoji: '🏠' },
     { href: '/browse', label: 'Browse', emoji: '🗂️' },
-    { href: '/add', label: 'Add Task', emoji: '➕' },
+    { href: '/loose-ends', label: 'Loose Ends', emoji: '🧵' }, // Updated here
   ];
 
   return (
