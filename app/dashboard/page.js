@@ -362,7 +362,7 @@ export default function Dashboard() {
       <h2 className="text-2xl font-bold mb-4">{getGreeting()}</h2>
 
       {/* Quick daily overview */}
-      {user?.uid && <QuickOverview userId={user.uid} />}
+      {/* {user?.uid && <QuickOverview userId={user.uid} />} */}
 
       {/* Add preferences edit button */}
       <button
@@ -375,17 +375,17 @@ export default function Dashboard() {
       {user?.uid && <StreakBanner userId={user.uid} />}
 
       {/* Dashboard statistics */}
-      {user?.uid && (
+      {/* {user?.uid && (
         <DashboardStats userId={user.uid} streakCount={streakCount} />
-      )}
+      )} */}
 
       {/* Voice notes -> tasks */}
-      {user?.uid && (
+      {/* {user?.uid && (
         <VoiceTaskRecorder
           userId={user.uid}
           onTasksAdded={handleVoiceTasksAdded}
         />
-      )}
+      )} */}
 
       <button
         onClick={() => document.getElementById('manualTaskForm').classList.toggle('hidden')}
