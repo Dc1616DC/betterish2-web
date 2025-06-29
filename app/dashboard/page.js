@@ -16,8 +16,9 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { generateDailyTasks } from '@/lib/taskEngine';
+import { generateSmartDailyTasks, getTimeBasedTasks } from '@/constants/tasks';
 import StreakBanner from '@/components/StreakBanner';
+import UserPreferences from '@/components/UserPreferences';
 import { ArrowPathIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export default function Dashboard() {
@@ -27,19 +28,30 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDetail, setNewTaskDetail] = useState('');
+  const [userPreferences, setUserPreferences] = useState(null);
+  const [showPreferences, setShowPreferences] = useState(false);
 
   useEffect(() => {
     if (!user) return;
 
-    const checkAndUpdateStreak = async () => {
+    const loadUserData = async () => {
+      // Load user preferences
       const userRef = doc(db, 'users', user.uid);
-      const docSnap = await getDoc(userRef);
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        
+        // Check if user has set up preferences
+        if (data.preferences && data.preferences.hasSetup) {
+          setUserPreferences(data.preferences);
+        } else {
+          setShowPreferences(true);
+        }
+        
+        // Update streak
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const lastCheckIn = data.lastCheckIn?.toDate();
 
         if (!lastCheckIn || lastCheckIn < today) {
@@ -49,10 +61,12 @@ export default function Dashboard() {
           });
         }
       } else {
+        // New user
         await setDoc(userRef, {
           streakCount: 1,
           lastCheckIn: Timestamp.now(),
         });
+        setShowPreferences(true);
       }
     };
 
@@ -71,19 +85,22 @@ export default function Dashboard() {
       const snapshot = await getDocs(q);
       let existing = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-      if (existing.length < 3) {
+      if (existing.length < 3 && userPreferences) {
         const needed = 3 - existing.length;
-        const suggestions = generateDailyTasks('1-3y').slice(0, needed);
+        // Use smart task generation with preferences
+        const suggestions = generateSmartDailyTasks(userPreferences).slice(0, needed);
+        
         const suggestionDocs = await Promise.all(
-          suggestions.map((task) =>
-            addDoc(collection(db, 'tasks'), {
+          suggestions.map((task) => {
+            return addDoc(collection(db, 'tasks'), {
               ...task,
               userId: user.uid,
               createdAt: Timestamp.now(),
               source: 'auto',
-            })
-          )
+            });
+          })
         );
+        
         const newTasksWithIds = suggestions.map((task, index) => ({
           ...task,
           id: suggestionDocs[index].id,
@@ -142,14 +159,65 @@ export default function Dashboard() {
     };
 
     const initDashboard = async () => {
-      await checkAndUpdateStreak();
-      await loadTasks();
-      await loadPastPromises();
+      await loadUserData();
+      if (!showPreferences) {
+        await loadTasks();
+        await loadPastPromises();
+      }
       setLoading(false);
     };
 
     initDashboard();
-  }, [user]);
+  }, [user, userPreferences, showPreferences]);
+
+  const handlePreferencesComplete = async (prefs) => {
+    setUserPreferences(prefs);
+    setShowPreferences(false);
+    
+    // Reload tasks with new preferences
+    const loadTasksWithPrefs = async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startOfDay = Timestamp.fromDate(today);
+
+      const q = query(
+        collection(db, 'tasks'),
+        where('userId', '==', user.uid),
+        where('createdAt', '>=', startOfDay),
+        orderBy('createdAt', 'asc')
+      );
+
+      const snapshot = await getDocs(q);
+      let existing = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+      if (existing.length < 3) {
+        const needed = 3 - existing.length;
+        const suggestions = generateSmartDailyTasks(prefs).slice(0, needed);
+        
+        const suggestionDocs = await Promise.all(
+          suggestions.map((task) => {
+            return addDoc(collection(db, 'tasks'), {
+              ...task,
+              userId: user.uid,
+              createdAt: Timestamp.now(),
+              source: 'auto',
+            });
+          })
+        );
+        
+        const newTasksWithIds = suggestions.map((task, index) => ({
+          ...task,
+          id: suggestionDocs[index].id,
+        }));
+        existing = [...existing, ...newTasksWithIds];
+      }
+
+      setTasks(existing);
+    };
+    
+    await loadTasksWithPrefs();
+    await loadPastPromises();
+  };
 
   const markTaskDone = async (taskId) => {
     const taskRef = doc(db, 'tasks', taskId);
@@ -159,21 +227,29 @@ export default function Dashboard() {
   };
 
   const swapTask = async (taskId, currentTask) => {
-    const replacement = generateDailyTasks('1-3y').find(
-      (t) => t.title !== currentTask.title
+    // Use smart generation for replacement
+    const allSuggestions = generateSmartDailyTasks(userPreferences);
+    const replacement = allSuggestions.find(
+      (t) => t.title !== currentTask.title && t.category === currentTask.category
     );
+    
     if (!replacement) return;
 
     const taskRef = doc(db, 'tasks', taskId);
     await updateDoc(taskRef, {
       title: replacement.title,
       detail: replacement.detail,
-      createdAt: Timestamp.now(),
+      category: replacement.category,
+      simplicity: replacement.simplicity,
     });
 
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === taskId ? { ...t, title: replacement.title, detail: replacement.detail } : t
+        t.id === taskId ? { 
+          ...t, 
+          ...replacement,
+          id: taskId
+        } : t
       )
     );
   };
@@ -212,6 +288,7 @@ export default function Dashboard() {
       userId: user.uid,
       createdAt: Timestamp.now(),
       source: 'manual',
+      category: 'household', // Default category, you can make this selectable
     };
 
     const docRef = await addDoc(collection(db, 'tasks'), newTask);
@@ -220,14 +297,37 @@ export default function Dashboard() {
     setNewTaskDetail('');
   };
 
+  // Show preferences screen if needed
+  if (showPreferences && user) {
+    return <UserPreferences userId={user.uid} onComplete={handlePreferencesComplete} />;
+  }
+
   const dateStr = new Date().toLocaleDateString(undefined, {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
+  // Add personalized greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    const name = user?.displayName?.split(' ')[0] || 'there';
+    
+    if (hour < 12) return `Morning, ${name} 👋`;
+    if (hour < 17) return `Afternoon, ${name} 👋`;
+    return `Evening, ${name} 👋`;
+  };
+
   return (
     <main className="max-w-md mx-auto p-4">
       <h1 className="text-xl text-gray-600 mb-1">{dateStr}</h1>
-      <h2 className="text-2xl font-bold mb-4">Hey there 👋</h2>
+      <h2 className="text-2xl font-bold mb-4">{getGreeting()}</h2>
+
+      {/* Add preferences edit button */}
+      <button
+        onClick={() => setShowPreferences(true)}
+        className="text-sm text-gray-500 mb-4 hover:text-gray-700"
+      >
+        Update preferences
+      </button>
 
       {user?.uid && <StreakBanner userId={user.uid} />}
 
@@ -264,9 +364,9 @@ export default function Dashboard() {
       ) : (
         <>
           <ul className="space-y-3">
-            {tasks.map((task, index) => (
+            {tasks.map((task) => (
               <li
-                key={`${task.title}-${index}`}
+                key={task.id}
                 onClick={() => !task.completedAt && markTaskDone(task.id)}
                 className={`p-4 rounded-xl border flex items-center justify-between transition-all cursor-pointer shadow-sm ${
                   task.completedAt
@@ -296,9 +396,9 @@ export default function Dashboard() {
             <div className="mt-8">
               <h2 className="text-lg font-semibold mb-2">You Promised</h2>
               <ul className="space-y-3">
-                {pastPromises.map((task, index) => (
+                {pastPromises.map((task) => (
                   <li
-                    key={`${task.title}-past-${index}`}
+                    key={task.id}
                     className="p-4 rounded-xl border border-yellow-300 bg-yellow-50 shadow-sm transition-all"
                   >
                     <div className="font-semibold">{task.title}</div>
