@@ -52,7 +52,7 @@ export default function UserPreferences({ userId, onComplete }) {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-2">
-            Partner's name (optional)
+            Partner&apos;s name (optional)
           </label>
           <input
             type="text"
@@ -65,7 +65,7 @@ export default function UserPreferences({ userId, onComplete }) {
         
         <div>
           <label className="block text-sm font-medium mb-2">
-            Child's age
+            Child&apos;s age
           </label>
           <select
             className="w-full p-3 border rounded-lg"

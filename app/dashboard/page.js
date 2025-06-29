@@ -20,6 +20,10 @@ import { generateSmartDailyTasks, getTimeBasedTasks } from '@/constants/tasks';
 import StreakBanner from '@/components/StreakBanner';
 import UserPreferences from '@/components/UserPreferences';
 import { ArrowPathIcon, PlusIcon } from '@heroicons/react/24/outline';
+// NEW COMPONENTS
+import DashboardStats from '@/components/DashboardStats';
+import QuickOverview from '@/components/QuickOverview';
+import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
 
 export default function Dashboard() {
   const [user] = useAuthState(auth);
@@ -30,6 +34,39 @@ export default function Dashboard() {
   const [newTaskDetail, setNewTaskDetail] = useState('');
   const [userPreferences, setUserPreferences] = useState(null);
   const [showPreferences, setShowPreferences] = useState(false);
+  // Track user's current streak
+  const [streakCount, setStreakCount] = useState(0);
+  // Voice task success banner
+  const [voiceSuccess, setVoiceSuccess] = useState(false);
+
+  // Helper to (re)load today's tasks – reused after voice task insert
+  const fetchTodayTasks = async () => {
+    if (!user) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfDay = Timestamp.fromDate(today);
+
+    const q = query(
+      collection(db, 'tasks'),
+      where('userId', '==', user.uid),
+      where('createdAt', '>=', startOfDay),
+      orderBy('createdAt', 'asc')
+    );
+
+    const snapshot = await getDocs(q);
+    const todayTasks = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    setTasks(todayTasks);
+  };
+
+  // Callback for VoiceTaskRecorder
+  const handleVoiceTasksAdded = async (count) => {
+    if (count > 0) {
+      setVoiceSuccess(true);
+      // hide after a few seconds
+      setTimeout(() => setVoiceSuccess(false), 4000);
+    }
+    await fetchTodayTasks();
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -49,23 +86,26 @@ export default function Dashboard() {
           setShowPreferences(true);
         }
         
-        // Update streak
+        // Update streak & keep local state in sync
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const lastCheckIn = data.lastCheckIn?.toDate();
-
+        let currentStreak = data.streakCount || 0;
         if (!lastCheckIn || lastCheckIn < today) {
+          currentStreak += 1;
           await updateDoc(userRef, {
-            streakCount: (data.streakCount || 0) + 1,
+            streakCount: currentStreak,
             lastCheckIn: Timestamp.now(),
           });
         }
+        setStreakCount(currentStreak);
       } else {
         // New user
         await setDoc(userRef, {
           streakCount: 1,
           lastCheckIn: Timestamp.now(),
         });
+        setStreakCount(1);
         setShowPreferences(true);
       }
     };
@@ -317,9 +357,12 @@ export default function Dashboard() {
   };
 
   return (
-    <main className="max-w-md mx-auto p-4">
+    <main className="max-w-2xl mx-auto p-4">
       <h1 className="text-xl text-gray-600 mb-1">{dateStr}</h1>
       <h2 className="text-2xl font-bold mb-4">{getGreeting()}</h2>
+
+      {/* Quick daily overview */}
+      {user?.uid && <QuickOverview userId={user.uid} />}
 
       {/* Add preferences edit button */}
       <button
@@ -330,6 +373,19 @@ export default function Dashboard() {
       </button>
 
       {user?.uid && <StreakBanner userId={user.uid} />}
+
+      {/* Dashboard statistics */}
+      {user?.uid && (
+        <DashboardStats userId={user.uid} streakCount={streakCount} />
+      )}
+
+      {/* Voice notes -> tasks */}
+      {user?.uid && (
+        <VoiceTaskRecorder
+          userId={user.uid}
+          onTasksAdded={handleVoiceTasksAdded}
+        />
+      )}
 
       <button
         onClick={() => document.getElementById('manualTaskForm').classList.toggle('hidden')}
@@ -428,6 +484,13 @@ export default function Dashboard() {
       {!loading && (
         <div className="mt-6 text-xs text-gray-400 text-center">
           Tap a task to mark it complete
+        </div>
+      )}
+
+      {/* Success message for voice tasks */}
+      {voiceSuccess && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded shadow-lg">
+          Voice tasks added!
         </div>
       )}
     </main>
