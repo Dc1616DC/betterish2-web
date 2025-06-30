@@ -199,12 +199,19 @@ export default function Dashboard() {
     };
 
     const initDashboard = async () => {
-      await loadUserData();
-      if (!showPreferences) {
-        await loadTasks();
-        await loadPastPromises();
+      console.debug('[Dashboard] initDashboard');
+      try {
+        await loadUserData();
+        if (!showPreferences) {
+          await loadTasks();
+          await loadPastPromises();
+        }
+      } catch (err) {
+        console.error('[Dashboard] initDashboard error:', err);
+      } finally {
+        console.debug('[Dashboard] Finished loading — calling setLoading(false)');
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initDashboard();
