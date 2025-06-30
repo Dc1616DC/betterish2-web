@@ -21,11 +21,47 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
 
   // Refs
   const mediaRecorderRef = useRef(null);
+  const streamRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
   const animationFrameRef = useRef(null);
+
+  // Reset all states function
+  const resetState = () => {
+    setIsRecording(false);
+    setIsPreparing(false);
+    setIsTranscribing(false);
+    setIsProcessing(false);
+    setAudioBlob(null);
+    setTranscript('');
+    setError(null);
+    setRecordingTime(0);
+    setAudioLevel(0);
+    
+    // Don't reset extracted tasks here as they might be in use
+    
+    // Clear refs
+    audioChunksRef.current = [];
+    
+    // Stop any ongoing processes
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    // Release media resources
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  };
 
   // Clean up on unmount
   useEffect(() => {
@@ -35,17 +71,27 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
       }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
     };
   }, []);
 
   // Start recording function
   const startRecording = async () => {
     try {
+      // Reset state before starting a new recording
+      resetState();
       setError(null);
       setIsPreparing(true);
       
+      console.log('[VoiceRecorder] Requesting microphone access...');
+      
       // Request microphone permission
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
+      console.log('[VoiceRecorder] Microphone access granted, setting up audio context...');
       
       // Set up audio analyzer for visualization
       const audioContext = new AudioContext();
@@ -61,18 +107,22 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       
       // Start audio level visualization
       const updateAudioLevel = () => {
-        if (!isRecording) return;
+        if (!analyserRef.current || !dataArrayRef.current) return;
         
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((acc, val) => acc + val, 0) / bufferLength;
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+        const average = dataArrayRef.current.reduce((acc, val) => acc + val, 0) / bufferLength;
         const normalized = Math.min(100, average * 2); // Scale for better visual feedback
         setAudioLevel(normalized);
         
-        animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+        if (isRecording) {
+          animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+        }
       };
       
       // Set up MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream);
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       
@@ -83,28 +133,40 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       };
       
       mediaRecorder.onstop = () => {
+        console.log('[VoiceRecorder] Recording stopped, processing audio...');
+        
+        // Create blob from recorded chunks
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setAudioBlob(audioBlob);
         
         // Stop all tracks to release the microphone
-        stream.getTracks().forEach(track => track.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
         
+        // Clear timers
         if (timerRef.current) clearInterval(timerRef.current);
         if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         
         // Only proceed to transcription if we have recorded something meaningful
-        if (recordingTime > 1) {
+        // Reduced from 1 second to 0.5 seconds for better responsiveness
+        if (recordingTime > 0.5 && audioChunksRef.current.length > 0) {
+          console.log('[VoiceRecorder] Recording duration:', recordingTime, 'seconds. Proceeding to transcription.');
           transcribeAudio(audioBlob);
         } else {
+          console.log('[VoiceRecorder] Recording too short or no audio data captured.');
           setIsRecording(false);
           setIsPreparing(false);
+          setError('Recording was too short. Please try again and speak clearly.');
         }
       };
       
       // Start recording
-      mediaRecorder.start();
+      mediaRecorder.start(100); // Capture data in smaller chunks (100ms)
       setIsRecording(true);
       setIsPreparing(false);
+      
+      console.log('[VoiceRecorder] Recording started successfully.');
       
       // Start timer
       setRecordingTime(0);
@@ -116,7 +178,7 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       updateAudioLevel();
       
     } catch (err) {
-      console.error('Error starting recording:', err);
+      console.error('[VoiceRecorder] Error starting recording:', err);
       setIsPreparing(false);
       
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -130,41 +192,49 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
 
   // Stop recording function
   const stopRecording = () => {
+    console.log('[VoiceRecorder] Stopping recording...');
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (err) {
+        console.error('[VoiceRecorder] Error stopping MediaRecorder:', err);
+        resetState();
+        setError(`Error stopping recording: ${err.message}`);
+      }
+    } else {
+      console.warn('[VoiceRecorder] Attempted to stop recording but MediaRecorder was not active');
+      resetState();
     }
   };
 
   // Cancel recording function
   const cancelRecording = () => {
+    console.log('[VoiceRecorder] Cancelling recording...');
+    
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (err) {
+        console.error('[VoiceRecorder] Error stopping MediaRecorder during cancel:', err);
+      }
     }
     
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-    
-    setIsRecording(false);
-    setIsTranscribing(false);
-    setIsProcessing(false);
-    setAudioBlob(null);
-    setTranscript('');
+    resetState();
     setExtractedTasks([]);
-    setError(null);
-    setRecordingTime(0);
-    setAudioLevel(0);
   };
 
   // Transcribe audio using OpenAI Whisper API
   const transcribeAudio = async (blob) => {
     try {
       setIsTranscribing(true);
+      console.log('[VoiceRecorder] Starting transcription, audio size:', Math.round(blob.size / 1024), 'KB');
       
       // Create form data for the API request
       const formData = new FormData();
       formData.append('file', blob, 'recording.webm');
       
       // Send to our secure server-side transcription endpoint
+      console.log('[VoiceRecorder] Sending audio to transcription API...');
       const response = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
@@ -172,10 +242,19 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Transcription failed: ${errorData.error?.message || response.statusText}`);
+        const errorMessage = errorData.error || response.statusText || 'Unknown error';
+        console.error('[VoiceRecorder] Transcription API error:', response.status, errorMessage);
+        throw new Error(`Transcription failed: ${errorMessage}`);
       }
       
       const data = await response.json();
+      
+      if (!data.text || data.text.trim() === '') {
+        console.warn('[VoiceRecorder] Transcription returned empty text');
+        throw new Error('No speech detected. Please try again and speak clearly.');
+      }
+      
+      console.log('[VoiceRecorder] Transcription successful:', data.text);
       setTranscript(data.text);
       setIsTranscribing(false);
       
@@ -183,7 +262,7 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       extractTasks(data.text);
       
     } catch (err) {
-      console.error('Transcription error:', err);
+      console.error('[VoiceRecorder] Transcription error:', err);
       setIsTranscribing(false);
       setError(`Transcription failed: ${err.message}`);
     }
@@ -192,6 +271,7 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
   // Extract tasks from transcript
   const extractTasks = (text) => {
     setIsProcessing(true);
+    console.log('[VoiceRecorder] Extracting tasks from transcript...');
     
     try {
       // Task extraction patterns
@@ -265,11 +345,12 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
         });
       }
       
+      console.log('[VoiceRecorder] Extracted tasks:', tasks.length);
       setExtractedTasks(tasks);
       setIsProcessing(false);
       
     } catch (err) {
-      console.error('Task extraction error:', err);
+      console.error('[VoiceRecorder] Task extraction error:', err);
       setIsProcessing(false);
       setError(`Failed to extract tasks: ${err.message}`);
     }
@@ -284,6 +365,7 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
   const saveTasks = async () => {
     try {
       setIsProcessing(true);
+      console.log('[VoiceRecorder] Saving tasks to Firebase...');
       
       if (!userId) {
         throw new Error('User not logged in');
@@ -305,13 +387,11 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
         )
       );
       
+      console.log('[VoiceRecorder] Successfully saved', savedTasks.length, 'tasks');
+      
       // Reset the recorder state
-      setIsProcessing(false);
-      setIsRecording(false);
-      setAudioBlob(null);
-      setTranscript('');
+      resetState();
       setExtractedTasks([]);
-      setRecordingTime(0);
       
       // Notify parent component
       if (onTasksAdded) {
@@ -319,7 +399,7 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       }
       
     } catch (err) {
-      console.error('Error saving tasks:', err);
+      console.error('[VoiceRecorder] Error saving tasks:', err);
       setIsProcessing(false);
       setError(`Failed to save tasks: ${err.message}`);
     }

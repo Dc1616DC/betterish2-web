@@ -46,12 +46,18 @@ export async function POST(request) {
       );
     }
 
-    // Convert blob to buffer (OpenAI SDK accepts Buffer/Uint8Array/File)
-    const buffer = Buffer.from(await audioFile.arrayBuffer());
+    // Create a proper File object from the incoming Blob that the OpenAI SDK accepts
+    const arrayBuf = await audioFile.arrayBuffer();
+    const uint8Arr = new Uint8Array(arrayBuf);
+    const fileForOpenAI = new File([uint8Arr], audioFile.name || 'recording.webm', {
+      type: audioFile.type,
+    });
 
-    // Call OpenAI Whisper API directly with the buffer
+    console.log('[Transcribe] Sending audio to OpenAI. Size:', fileForOpenAI.size, 'bytes');
+
+    // Call OpenAI Whisper API with the File object
     const transcription = await openai.audio.transcriptions.create({
-      file: buffer,
+      file: fileForOpenAI,
       model: 'whisper-1',
       language: 'en',
     });
