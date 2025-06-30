@@ -68,6 +68,7 @@ export default function Dashboard() {
     await fetchTodayTasks();
   };
 
+  // 1) Load user data & preferences (runs once per login)
   useEffect(() => {
     if (!user) return;
 
@@ -198,23 +199,26 @@ export default function Dashboard() {
       setPastPromises(past);
     };
 
-    const initDashboard = async () => {
-      console.debug('[Dashboard] initDashboard');
+    // only user / prefs update inside effect – no deps to avoid loop
+    loadUserData().catch(console.error);
+  }, [user]);
+
+  // 2) Once preferences are ready & not on preferences screen, load tasks/promises
+  useEffect(() => {
+    if (!user || showPreferences || !userPreferences) return;
+
+    const run = async () => {
       try {
-        await loadUserData();
-        if (!showPreferences) {
-          await loadTasks();
-          await loadPastPromises();
-        }
+        await loadTasks();
+        await loadPastPromises();
       } catch (err) {
-        console.error('[Dashboard] initDashboard error:', err);
+        console.error('[Dashboard] task loading error:', err);
       } finally {
-        console.debug('[Dashboard] Finished loading — calling setLoading(false)');
         setLoading(false);
       }
     };
 
-    initDashboard();
+    run();
   }, [user, userPreferences, showPreferences]);
 
   const handlePreferencesComplete = async (prefs) => {
