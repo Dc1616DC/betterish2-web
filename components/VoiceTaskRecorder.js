@@ -24,6 +24,7 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
   const streamRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
+  const startTimeRef = useRef(null); // tracks actual recording start
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
   const animationFrameRef = useRef(null);
@@ -55,6 +56,9 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+
+    // Clear start time
+    startTimeRef.current = null;
     
     // Release media resources
     if (streamRef.current) {
@@ -135,6 +139,11 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       mediaRecorder.onstop = () => {
         console.log('[VoiceRecorder] Recording stopped, processing audio...');
         
+        // Calculate real recording duration
+        const elapsedSec = startTimeRef.current
+          ? (Date.now() - startTimeRef.current) / 1000
+          : 0;
+
         // Create blob from recorded chunks
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setAudioBlob(audioBlob);
@@ -149,9 +158,9 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
         if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         
         // Only proceed to transcription if we have recorded something meaningful
-        // Reduced from 1 second to 0.5 seconds for better responsiveness
-        if (recordingTime > 0.5 && audioChunksRef.current.length > 0) {
-          console.log('[VoiceRecorder] Recording duration:', recordingTime, 'seconds. Proceeding to transcription.');
+        // threshold 0.5 s
+        if (elapsedSec > 0.5 && audioChunksRef.current.length > 0) {
+          console.log('[VoiceRecorder] Recording duration:', elapsedSec, 'seconds. Proceeding to transcription.');
           transcribeAudio(audioBlob);
         } else {
           console.log('[VoiceRecorder] Recording too short or no audio data captured.');
@@ -165,6 +174,9 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       mediaRecorder.start(100); // Capture data in smaller chunks (100ms)
       setIsRecording(true);
       setIsPreparing(false);
+
+      // Mark real start time
+      startTimeRef.current = Date.now();
       
       console.log('[VoiceRecorder] Recording started successfully.');
       
