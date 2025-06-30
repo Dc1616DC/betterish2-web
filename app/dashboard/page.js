@@ -68,6 +68,101 @@ export default function Dashboard() {
     await fetchTodayTasks();
   };
 
+  // ------------------------------------------------------------------
+  // Helpers shared by multiple effects
+  // ------------------------------------------------------------------
+
+  // Load today's tasks (auto-generate if fewer than 3)
+  const loadTasks = async () => {
+    if (!user) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfDay = Timestamp.fromDate(today);
+
+    const q = query(
+      collection(db, 'tasks'),
+      where('userId', '==', user.uid),
+      where('createdAt', '>=', startOfDay),
+      orderBy('createdAt', 'asc')
+    );
+
+    const snapshot = await getDocs(q);
+    let existing = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    if (existing.length < 3 && userPreferences) {
+      const needed = 3 - existing.length;
+      const suggestions = generateSmartDailyTasks(userPreferences).slice(0, needed);
+
+      const suggestionDocs = await Promise.all(
+        suggestions.map((task) =>
+          addDoc(collection(db, 'tasks'), {
+            ...task,
+            userId: user.uid,
+            createdAt: Timestamp.now(),
+            source: 'auto',
+          })
+        )
+      );
+
+      const newTasksWithIds = suggestions.map((task, index) => ({
+        ...task,
+        id: suggestionDocs[index].id,
+      }));
+      existing = [...existing, ...newTasksWithIds];
+    }
+
+    setTasks(existing);
+  };
+
+  // Load past promises (older incomplete manual tasks)
+  const loadPastPromises = async () => {
+    if (!user) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
+
+    const eligibleTasks = snapshot.docs.filter((docSnap) => {
+      const data = docSnap.data();
+      const isBeforeToday = data.createdAt?.toDate() < today;
+      const isIncomplete = !data.completedAt;
+      const isManual = (data.source ?? 'manual') === 'manual';
+      const isNotDismissed = data.status !== 'dismissed';
+      return isBeforeToday && isIncomplete && isManual && isNotDismissed;
+    });
+
+    const seen = new Set();
+    const filtered = eligibleTasks.filter((docSnap) => {
+      const data = docSnap.data();
+      const key = `${data.title}-${data.detail}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    const past = filtered
+      .map((docSnap) => {
+        const data = docSnap.data();
+        const created = data.createdAt.toDate();
+        const ageDays = Math.floor(
+          (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return {
+          id: docSnap.id,
+          ...data,
+          ageLabel:
+            ageDays === 0 ? 'Today' : `${ageDays} day${ageDays > 1 ? 's' : ''} ago`,
+        };
+      })
+      .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
+      .slice(0, 3);
+
+    setPastPromises(past);
+  };
+
   // 1) Load user data & preferences (runs once per login)
   useEffect(() => {
     if (!user) return;
@@ -109,94 +204,6 @@ export default function Dashboard() {
         setStreakCount(1);
         setShowPreferences(true);
       }
-    };
-
-    const loadTasks = async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const startOfDay = Timestamp.fromDate(today);
-
-      const q = query(
-        collection(db, 'tasks'),
-        where('userId', '==', user.uid),
-        where('createdAt', '>=', startOfDay),
-        orderBy('createdAt', 'asc')
-      );
-
-      const snapshot = await getDocs(q);
-      let existing = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
-      if (existing.length < 3 && userPreferences) {
-        const needed = 3 - existing.length;
-        // Use smart task generation with preferences
-        const suggestions = generateSmartDailyTasks(userPreferences).slice(0, needed);
-        
-        const suggestionDocs = await Promise.all(
-          suggestions.map((task) => {
-            return addDoc(collection(db, 'tasks'), {
-              ...task,
-              userId: user.uid,
-              createdAt: Timestamp.now(),
-              source: 'auto',
-            });
-          })
-        );
-        
-        const newTasksWithIds = suggestions.map((task, index) => ({
-          ...task,
-          id: suggestionDocs[index].id,
-        }));
-        existing = [...existing, ...newTasksWithIds];
-      }
-
-      setTasks(existing);
-    };
-
-    const loadPastPromises = async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const q = query(
-        collection(db, 'tasks'),
-        where('userId', '==', user.uid)
-      );
-
-      const snapshot = await getDocs(q);
-
-      const eligibleTasks = snapshot.docs.filter((doc) => {
-        const data = doc.data();
-        const isBeforeToday = data.createdAt?.toDate() < today;
-        const isIncomplete = !data.completedAt;
-        const isManual = (data.source ?? 'manual') === 'manual';
-        const isNotDismissed = data.status !== 'dismissed';
-
-        return isBeforeToday && isIncomplete && isManual && isNotDismissed;
-      });
-
-      const seen = new Set();
-      const filtered = eligibleTasks.filter((doc) => {
-        const data = doc.data();
-        const key = `${data.title}-${data.detail}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-
-      const past = filtered
-        .map((doc) => {
-          const data = doc.data();
-          const created = data.createdAt.toDate();
-          const ageDays = Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24));
-          return {
-            id: doc.id,
-            ...data,
-            ageLabel: ageDays === 0 ? 'Today' : `${ageDays} day${ageDays > 1 ? 's' : ''} ago`,
-          };
-        })
-        .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
-        .slice(0, 3);
-
-      setPastPromises(past);
     };
 
     // only user / prefs update inside effect – no deps to avoid loop
