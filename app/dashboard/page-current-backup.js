@@ -330,18 +330,11 @@ export default function Dashboard() {
 
   const restoreToToday = async (taskId) => {
     const taskRef = doc(db, 'tasks', taskId);
-    try {
-      await updateDoc(taskRef, { createdAt: Timestamp.now() });
-      const docSnap = await getDoc(taskRef);
-      if (docSnap.exists()) {
-        const restored = { id: taskId, ...docSnap.data() };
-        setTasks((prev) => [...prev, restored]);
-      }
-    } catch (err) {
-      console.error('[Dashboard] restoreToToday error (document may not exist):', err);
-    } finally {
-      setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
-    }
+    await updateDoc(taskRef, { createdAt: Timestamp.now() });
+    const docSnap = await getDoc(taskRef);
+    const restored = { id: taskId, ...docSnap.data() };
+    setTasks((prev) => [...prev, restored]);
+    setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
   };
 
   const addManualTask = async () => {
@@ -444,73 +437,34 @@ export default function Dashboard() {
         <p className="text-gray-500">Loading tasks...</p>
       ) : (
         <>
-          {(() => {
-            const incompleteTasks = tasks.filter((t) => !t.completedAt);
-            const completedTasks = tasks.filter((t) => t.completedAt);
-
-            return (
-              <>
-                {/* -------- Incomplete -------- */}
-                {incompleteTasks.length > 0 && (
-                  <>
-                    <h3 className="text-sm font-semibold text-gray-600 mb-2">
-                      TODAY&apos;S FOCUS
-                    </h3>
-                    <ul className="space-y-3 mb-6">
-                      {incompleteTasks.map((task) => (
-                        <li
-                          key={task.id}
-                          onClick={() => markTaskDone(task.id)}
-                          className="p-4 rounded-xl border flex items-center justify-between transition-all cursor-pointer shadow-sm bg-white hover:bg-gray-50"
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-semibold">{task.title}</span>
-                            {task.detail && (
-                              <span className="text-sm text-gray-500">
-                                {task.detail}
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              swapTask(task.id, task);
-                            }}
-                          >
-                            <ArrowPathIcon className="w-4 h-4 text-gray-400 hover:text-blue-500" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
+          <ul className="space-y-3">
+            {tasks.map((task) => (
+              <li
+                key={task.id}
+                onClick={() => !task.completedAt && markTaskDone(task.id)}
+                className={`p-4 rounded-xl border flex items-center justify-between transition-all cursor-pointer shadow-sm ${
+                  task.completedAt
+                    ? 'bg-gray-100 line-through text-gray-400'
+                    : 'bg-white hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex flex-col">
+                  <span className="font-semibold">{task.title}</span>
+                  {task.detail && <span className="text-sm text-gray-500">{task.detail}</span>}
+                </div>
+                {!task.completedAt && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      swapTask(task.id, task);
+                    }}
+                  >
+                    <ArrowPathIcon className="w-4 h-4 text-gray-400 hover:text-blue-500" />
+                  </button>
                 )}
-
-                {/* -------- Completed -------- */}
-                {completedTasks.length > 0 && (
-                  <>
-                    <h3 className="text-sm font-semibold text-gray-600 mb-2">
-                      COMPLETED
-                    </h3>
-                    <ul className="space-y-3 mb-6">
-                      {completedTasks.map((task) => (
-                        <li
-                          key={task.id}
-                          className="p-4 rounded-xl border flex items-center justify-between bg-gray-100 line-through text-gray-400 cursor-default"
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-semibold">{task.title}</span>
-                            {task.detail && (
-                              <span className="text-sm">{task.detail}</span>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </>
-            );
-          })()}
+              </li>
+            ))}
+          </ul>
 
           {pastPromises.length > 0 && (
             <div className="mt-8">
