@@ -163,15 +163,10 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
       // Create form data for the API request
       const formData = new FormData();
       formData.append('file', blob, 'recording.webm');
-      formData.append('model', 'whisper-1');
-      formData.append('language', 'en');
       
-      // Send to OpenAI Whisper API
-      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      // Send to our secure server-side transcription endpoint
+      const response = await fetch('/api/transcribe', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''}`,
-        },
         body: formData,
       });
       

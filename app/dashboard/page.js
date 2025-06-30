@@ -398,12 +398,12 @@ export default function Dashboard() {
       )} */}
 
       {/* Voice notes -> tasks */}
-      {/* {user?.uid && (
+      {user?.uid && (
         <VoiceTaskRecorder
           userId={user.uid}
           onTasksAdded={handleVoiceTasksAdded}
         />
-      )} */}
+      )}
 
       <button
         onClick={() => document.getElementById('manualTaskForm').classList.toggle('hidden')}
