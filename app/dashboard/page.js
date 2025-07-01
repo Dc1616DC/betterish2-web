@@ -35,6 +35,20 @@ export default function Dashboard() {
   const [streakCount, setStreakCount] = useState(0);
   const [voiceSuccess, setVoiceSuccess] = useState(false);
 
+  // MOVE useMemo HOOKS TO TOP - BEFORE ANY CONDITIONAL RETURNS
+  // Sort tasks with 3+ day old tasks first (nudged)
+  const sortedIncompleteTasks = useMemo(() => {
+    return tasks
+      .filter((t) => !t.completedAt)
+      .map(task => ({
+        ...task,
+        ageInDays: task.createdAt ? Math.floor((Date.now() - task.createdAt.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0
+      }))
+      .sort((a, b) => (b.ageInDays >= 3 ? 1 : 0) - (a.ageInDays >= 3 ? 1 : 0));
+  }, [tasks]);
+
+  const completedTasks = useMemo(() => tasks.filter((t) => t.completedAt), [tasks]);
+
   // Helper to (re)load today's tasks – reused after voice task insert
   const fetchTodayTasks = async () => {
     if (!user) return;
@@ -58,7 +72,6 @@ export default function Dashboard() {
   const handleVoiceTasksAdded = async (count) => {
     if (count > 0) {
       setVoiceSuccess(true);
-      // hide after a few seconds
       setTimeout(() => setVoiceSuccess(false), 4000);
     }
     await fetchTodayTasks();
@@ -78,7 +91,6 @@ export default function Dashboard() {
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
     await updateDoc(taskRef, { createdAt: Timestamp.fromDate(tomorrow) });
-    // Remove from all UI lists immediately for snappy feedback
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
     setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
   };
@@ -86,7 +98,6 @@ export default function Dashboard() {
   const dismissTask = async (taskId) => {
     const taskRef = doc(db, 'tasks', taskId);
     await updateDoc(taskRef, { status: 'dismissed' });
-    // Remove from all UI lists immediately
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
     setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
   };
@@ -126,10 +137,10 @@ export default function Dashboard() {
 
     // Visual feedback based on swipe distance
     let bgColor = 'bg-white';
-    if (swipeDistance > 30) bgColor = 'bg-green-50'; // right swipe
-    else if (swipeDistance < -120) bgColor = 'bg-red-50'; // far left
-    else if (swipeDistance < -40) bgColor = 'bg-orange-50'; // left
-    else if (isNudged) bgColor = 'bg-red-50'; // 3+ day nudge
+    if (swipeDistance > 30) bgColor = 'bg-green-50';
+    else if (swipeDistance < -120) bgColor = 'bg-red-50';
+    else if (swipeDistance < -40) bgColor = 'bg-orange-50';
+    else if (isNudged) bgColor = 'bg-red-50';
 
     return (
       <li
@@ -258,21 +269,18 @@ export default function Dashboard() {
     if (!user) return;
 
     const loadUserData = async () => {
-      // Load user preferences
       const userRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userRef);
       
       if (userDoc.exists()) {
         const data = userDoc.data();
         
-        // Check if user has set up preferences
         if (data.preferences && data.preferences.hasSetup) {
           setUserPreferences(data.preferences);
         } else {
           setShowPreferences(true);
         }
         
-        // Update streak & keep local state in sync
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const lastCheckIn = data.lastCheckIn?.toDate();
@@ -286,7 +294,6 @@ export default function Dashboard() {
         }
         setStreakCount(currentStreak);
       } else {
-        // New user
         await setDoc(userRef, {
           streakCount: 1,
           lastCheckIn: Timestamp.now(),
@@ -296,7 +303,6 @@ export default function Dashboard() {
       }
     };
 
-    // only user / prefs update inside effect – no deps to avoid loop
     loadUserData().catch(console.error);
   }, [user]);
 
@@ -322,7 +328,6 @@ export default function Dashboard() {
     setUserPreferences(prefs);
     setShowPreferences(false);
     
-    // Reload tasks with new preferences
     const loadTasksWithPrefs = async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -392,7 +397,7 @@ export default function Dashboard() {
       userId: user.uid,
       createdAt: Timestamp.now(),
       source: 'manual',
-      category: 'household', // Default category, you can make this selectable
+      category: 'household',
     };
 
     const docRef = await addDoc(collection(db, 'tasks'), newTask);
@@ -410,7 +415,6 @@ export default function Dashboard() {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
-  // Add personalized greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
     const name = user?.displayName?.split(' ')[0] || 'there';
@@ -420,25 +424,11 @@ export default function Dashboard() {
     return `Evening, ${name} 👋`;
   };
 
-  // Sort tasks with 3+ day old tasks first (nudged)
-  const sortedIncompleteTasks = useMemo(() => {
-    return tasks
-      .filter((t) => !t.completedAt)
-      .map(task => ({
-        ...task,
-        ageInDays: task.createdAt ? Math.floor((Date.now() - task.createdAt.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0
-      }))
-      .sort((a, b) => (b.ageInDays >= 3 ? 1 : 0) - (a.ageInDays >= 3 ? 1 : 0));
-  }, [tasks]);
-
-  const completedTasks = useMemo(() => tasks.filter((t) => t.completedAt), [tasks]);
-
   return (
     <main className="max-w-2xl mx-auto p-4">
       <h1 className="text-xl text-gray-600 mb-1">{dateStr}</h1>
       <h2 className="text-2xl font-bold mb-4">{getGreeting()}</h2>
 
-      {/* Add preferences edit button */}
       <button
         onClick={() => setShowPreferences(true)}
         className="text-sm text-gray-500 mb-4 hover:text-gray-700"
@@ -448,7 +438,6 @@ export default function Dashboard() {
 
       {user?.uid && <StreakBanner userId={user.uid} />}
 
-      {/* Voice notes -> tasks */}
       {user?.uid && (
         <VoiceTaskRecorder
           userId={user.uid}
@@ -489,7 +478,6 @@ export default function Dashboard() {
         <p className="text-gray-500">Loading tasks...</p>
       ) : (
         <>
-          {/* TODAY'S FOCUS - Swipeable Tasks */}
           {sortedIncompleteTasks.length > 0 && (
             <>
               <h3 className="text-sm font-semibold text-gray-600 mb-2">
@@ -503,7 +491,6 @@ export default function Dashboard() {
             </>
           )}
 
-          {/* COMPLETED TASKS */}
           {completedTasks.length > 0 && (
             <>
               <h3 className="text-sm font-semibold text-gray-600 mb-2">
@@ -527,7 +514,6 @@ export default function Dashboard() {
             </>
           )}
 
-          {/* PAST PROMISES */}
           {pastPromises.length > 0 && (
             <div className="mt-8">
               <h2 className="text-lg font-semibold mb-2">You Promised</h2>
@@ -577,7 +563,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Success message for voice tasks */}
       {voiceSuccess && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded shadow-lg">
           Voice tasks added!
