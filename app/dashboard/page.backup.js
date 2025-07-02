@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import {
   collection,
@@ -16,12 +16,14 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { generateSmartDailyTasks } from '@/constants/tasks';
+import { generateSmartDailyTasks, getTimeBasedTasks } from '@/constants/tasks';
 import StreakBanner from '@/components/StreakBanner';
 import UserPreferences from '@/components/UserPreferences';
-import { ArrowPathIcon, PlusIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, PlusIcon } from '@heroicons/react/24/outline';
+// NEW COMPONENTS
+import DashboardStats from '@/components/DashboardStats';
+import QuickOverview from '@/components/QuickOverview';
 import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
-import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 
 export default function Dashboard() {
   const [user] = useAuthState(auth);
@@ -32,22 +34,10 @@ export default function Dashboard() {
   const [newTaskDetail, setNewTaskDetail] = useState('');
   const [userPreferences, setUserPreferences] = useState(null);
   const [showPreferences, setShowPreferences] = useState(false);
+  // Track user's current streak
   const [streakCount, setStreakCount] = useState(0);
+  // Voice task success banner
   const [voiceSuccess, setVoiceSuccess] = useState(false);
-
-  // MOVE useMemo HOOKS TO TOP - BEFORE ANY CONDITIONAL RETURNS
-  // Sort tasks with 3+ day old tasks first (nudged)
-  const sortedIncompleteTasks = useMemo(() => {
-    return tasks
-      .filter((t) => !t.completedAt)
-      .map(task => ({
-        ...task,
-        ageInDays: task.createdAt ? Math.floor((Date.now() - task.createdAt.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0
-      }))
-      .sort((a, b) => (b.ageInDays >= 3 ? 1 : 0) - (a.ageInDays >= 3 ? 1 : 0));
-  }, [tasks]);
-
-  const completedTasks = useMemo(() => tasks.filter((t) => t.completedAt), [tasks]);
 
   // Helper to (re)load today's tasks – reused after voice task insert
   const fetchTodayTasks = async () => {
@@ -64,7 +54,7 @@ export default function Dashboard() {
     );
 
     const snapshot = await getDocs(q);
-    const todayTasks = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const todayTasks = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
     setTasks(todayTasks);
   };
 
@@ -72,129 +62,15 @@ export default function Dashboard() {
   const handleVoiceTasksAdded = async (count) => {
     if (count > 0) {
       setVoiceSuccess(true);
+      // hide after a few seconds
       setTimeout(() => setVoiceSuccess(false), 4000);
     }
     await fetchTodayTasks();
   };
 
-  // SWIPE FUNCTIONALITY HELPERS
-  const markTaskDone = async (taskId) => {
-    const taskRef = doc(db, 'tasks', taskId);
-    await updateDoc(taskRef, { completedAt: Timestamp.now() });
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completedAt: Timestamp.now() } : t)));
-    setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
-  };
-
-  const snoozeTask = async (taskId) => {
-    console.log("🟡 Starting snooze for task:", taskId);
-    try {
-      const taskRef = doc(db, "tasks", taskId);
-      
-      // Add debugging - temporary alert for mobile
-      alert("Snoozing task: " + taskId);
-      
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
-      
-      console.log("📅 Setting createdAt to tomorrow:", tomorrow);
-      await updateDoc(taskRef, { 
-        createdAt: Timestamp.fromDate(tomorrow),
-        lastModified: Timestamp.now(),
-        snoozedAt: Timestamp.now()
-      });
-      
-      console.log("✅ Database update completed");
-      alert("Database updated! Task moved to tomorrow.");
-      
-      // Remove from UI
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
-      
-      console.log("✅ Task removed from UI");
-    } catch (error) {
-      console.error("❌ Snooze error:", error);
-      alert("ERROR: " + error.message);
-    }
-  };
-
-  const dismissTask = async (taskId) => {
-    const taskRef = doc(db, 'tasks', taskId);
-    await updateDoc(taskRef, { status: 'dismissed' });
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
-  };
-
-  const swapTask = async (taskId, currentTask) => {
-    const allSuggestions = generateSmartDailyTasks(userPreferences);
-    const replacement = allSuggestions.find(
-      (t) => t.title !== currentTask.title && t.category === currentTask.category
-    );
-    if (!replacement) return;
-    const taskRef = doc(db, 'tasks', taskId);
-    await updateDoc(taskRef, {
-      title: replacement.title,
-      detail: replacement.detail,
-      category: replacement.category,
-      simplicity: replacement.simplicity,
-    });
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, ...replacement, id: taskId } : t
-      )
-    );
-  };
-
-  // TASK ITEM COMPONENT WITH SWIPE GESTURES
-  const TaskItem = ({ task }) => {
-    const { swipeDistance, handlers } = useSwipeGesture({
-      onSwipeRight: () => markTaskDone(task.id),
-      onSwipeLeft: () => snoozeTask(task.id),
-      onSwipeFarLeft: () => dismissTask(task.id),
-    });
-
-    const ageInDays = task.createdAt
-      ? Math.floor((Date.now() - task.createdAt.toDate().getTime()) / (1000 * 60 * 60 * 24))
-      : 0;
-    const isNudged = ageInDays >= 3;
-
-    // Visual feedback based on swipe distance
-    let bgColor = 'bg-white';
-    if (swipeDistance > 30) bgColor = 'bg-green-50';
-    else if (swipeDistance < -120) bgColor = 'bg-red-50';
-    else if (swipeDistance < -40) bgColor = 'bg-orange-50';
-    else if (isNudged) bgColor = 'bg-red-50';
-
-    return (
-      <li
-        {...handlers}
-        className={`p-4 rounded-xl border flex flex-col transition-all duration-200 ease-out cursor-pointer shadow-sm ${bgColor} select-none`}
-        style={{ transform: `translateX(${swipeDistance}px)` }}
-      >
-        <div className="flex items-center justify-between w-full">
-          <div className="flex flex-col flex-grow" onClick={(e) => {e.stopPropagation(); markTaskDone(task.id);}}>
-            <span className="font-semibold">{task.title}</span>
-            {task.detail && <span className="text-sm text-gray-500">{task.detail}</span>}
-          </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              swapTask(task.id, task);
-            }}
-            className="flex-shrink-0 ml-4 p-1"
-          >
-            <ArrowPathIcon className="w-4 h-4 text-gray-400 hover:text-blue-500" />
-          </button>
-        </div>
-        {isNudged && (
-          <div className="mt-2 pt-2 border-t border-red-200 flex items-center text-xs text-red-700">
-            <ExclamationTriangleIcon className="w-4 h-4 mr-2" />
-            <span>This is 3+ days old. Get it done!</span>
-          </div>
-        )}
-      </li>
-    );
-  };
+  // ------------------------------------------------------------------
+  // Helpers shared by multiple effects
+  // ------------------------------------------------------------------
 
   // Load today's tasks (auto-generate if fewer than 3)
   const loadTasks = async () => {
@@ -292,18 +168,21 @@ export default function Dashboard() {
     if (!user) return;
 
     const loadUserData = async () => {
+      // Load user preferences
       const userRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userRef);
       
       if (userDoc.exists()) {
         const data = userDoc.data();
         
+        // Check if user has set up preferences
         if (data.preferences && data.preferences.hasSetup) {
           setUserPreferences(data.preferences);
         } else {
           setShowPreferences(true);
         }
         
+        // Update streak & keep local state in sync
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const lastCheckIn = data.lastCheckIn?.toDate();
@@ -317,6 +196,7 @@ export default function Dashboard() {
         }
         setStreakCount(currentStreak);
       } else {
+        // New user
         await setDoc(userRef, {
           streakCount: 1,
           lastCheckIn: Timestamp.now(),
@@ -326,6 +206,7 @@ export default function Dashboard() {
       }
     };
 
+    // only user / prefs update inside effect – no deps to avoid loop
     loadUserData().catch(console.error);
   }, [user]);
 
@@ -338,7 +219,7 @@ export default function Dashboard() {
         await loadTasks();
         await loadPastPromises();
       } catch (err) {
-        console.error('[Dashboard] loadTasks error:', err);
+        console.error('[Dashboard] task loading error:', err);
       } finally {
         setLoading(false);
       }
@@ -351,6 +232,7 @@ export default function Dashboard() {
     setUserPreferences(prefs);
     setShowPreferences(false);
     
+    // Reload tasks with new preferences
     const loadTasksWithPrefs = async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -395,6 +277,57 @@ export default function Dashboard() {
     await loadPastPromises();
   };
 
+  const markTaskDone = async (taskId) => {
+    const taskRef = doc(db, 'tasks', taskId);
+    await updateDoc(taskRef, { completedAt: Timestamp.now() });
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, completedAt: Timestamp.now() } : t)));
+    setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
+  const swapTask = async (taskId, currentTask) => {
+    // Use smart generation for replacement
+    const allSuggestions = generateSmartDailyTasks(userPreferences);
+    const replacement = allSuggestions.find(
+      (t) => t.title !== currentTask.title && t.category === currentTask.category
+    );
+    
+    if (!replacement) return;
+
+    const taskRef = doc(db, 'tasks', taskId);
+    await updateDoc(taskRef, {
+      title: replacement.title,
+      detail: replacement.detail,
+      category: replacement.category,
+      simplicity: replacement.simplicity,
+    });
+
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId ? { 
+          ...t, 
+          ...replacement,
+          id: taskId
+        } : t
+      )
+    );
+  };
+
+  const snoozeTask = async (taskId) => {
+    const taskRef = doc(db, 'tasks', taskId);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+
+    await updateDoc(taskRef, { createdAt: Timestamp.fromDate(tomorrow) });
+    setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
+  const dismissTask = async (taskId) => {
+    const taskRef = doc(db, 'tasks', taskId);
+    await updateDoc(taskRef, { status: 'dismissed' });
+    setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
   const restoreToToday = async (taskId) => {
     const taskRef = doc(db, 'tasks', taskId);
     try {
@@ -420,7 +353,7 @@ export default function Dashboard() {
       userId: user.uid,
       createdAt: Timestamp.now(),
       source: 'manual',
-      category: 'household',
+      category: 'household', // Default category, you can make this selectable
     };
 
     const docRef = await addDoc(collection(db, 'tasks'), newTask);
@@ -438,6 +371,7 @@ export default function Dashboard() {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
+  // Add personalized greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
     const name = user?.displayName?.split(' ')[0] || 'there';
@@ -452,6 +386,10 @@ export default function Dashboard() {
       <h1 className="text-xl text-gray-600 mb-1">{dateStr}</h1>
       <h2 className="text-2xl font-bold mb-4">{getGreeting()}</h2>
 
+      {/* Quick daily overview */}
+      {/* {user?.uid && <QuickOverview userId={user.uid} />} */}
+
+      {/* Add preferences edit button */}
       <button
         onClick={() => setShowPreferences(true)}
         className="text-sm text-gray-500 mb-4 hover:text-gray-700"
@@ -461,6 +399,12 @@ export default function Dashboard() {
 
       {user?.uid && <StreakBanner userId={user.uid} />}
 
+      {/* Dashboard statistics */}
+      {/* {user?.uid && (
+        <DashboardStats userId={user.uid} streakCount={streakCount} />
+      )} */}
+
+      {/* Voice notes -> tasks */}
       {user?.uid && (
         <VoiceTaskRecorder
           userId={user.uid}
@@ -478,12 +422,11 @@ export default function Dashboard() {
       <div id="manualTaskForm" className="hidden mb-6">
         <input
           className="w-full mb-2 p-2 border border-gray-300 rounded"
-          type="text"
-          placeholder="Task title"
+          placeholder="New task title"
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}
         />
-        <textarea
+        <input
           className="w-full mb-2 p-2 border border-gray-300 rounded"
           placeholder="Task details (optional)"
           value={newTaskDetail}
@@ -491,7 +434,7 @@ export default function Dashboard() {
         />
         <button
           onClick={addManualTask}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           Save Task
         </button>
@@ -501,76 +444,98 @@ export default function Dashboard() {
         <p className="text-gray-500">Loading tasks...</p>
       ) : (
         <>
-          {sortedIncompleteTasks.length > 0 && (
-            <>
-              <h3 className="text-sm font-semibold text-gray-600 mb-2">
-                TODAY&apos;S FOCUS
-              </h3>
-              <ul className="space-y-3 mb-6">
-                {sortedIncompleteTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} />
-                ))}
-              </ul>
-            </>
-          )}
+          {(() => {
+            const incompleteTasks = tasks.filter((t) => !t.completedAt);
+            const completedTasks = tasks.filter((t) => t.completedAt);
 
-          {completedTasks.length > 0 && (
-            <>
-              <h3 className="text-sm font-semibold text-gray-600 mb-2">
-                COMPLETED
-              </h3>
-              <ul className="space-y-3 mb-6">
-                {completedTasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="p-4 rounded-xl border bg-gray-50 text-gray-500 shadow-sm"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold line-through">{task.title}</span>
-                      {task.detail && (
-                        <span className="text-sm line-through">{task.detail}</span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+            return (
+              <>
+                {/* -------- Incomplete -------- */}
+                {incompleteTasks.length > 0 && (
+                  <>
+                    <h3 className="text-sm font-semibold text-gray-600 mb-2">
+                      TODAY&apos;S FOCUS
+                    </h3>
+                    <ul className="space-y-3 mb-6">
+                      {incompleteTasks.map((task) => (
+                        <li
+                          key={task.id}
+                          onClick={() => markTaskDone(task.id)}
+                          className="p-4 rounded-xl border flex items-center justify-between transition-all cursor-pointer shadow-sm bg-white hover:bg-gray-50"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-semibold">{task.title}</span>
+                            {task.detail && (
+                              <span className="text-sm text-gray-500">
+                                {task.detail}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              swapTask(task.id, task);
+                            }}
+                          >
+                            <ArrowPathIcon className="w-4 h-4 text-gray-400 hover:text-blue-500" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
+                {/* -------- Completed -------- */}
+                {completedTasks.length > 0 && (
+                  <>
+                    <h3 className="text-sm font-semibold text-gray-600 mb-2">
+                      COMPLETED
+                    </h3>
+                    <ul className="space-y-3 mb-6">
+                      {completedTasks.map((task) => (
+                        <li
+                          key={task.id}
+                          className="p-4 rounded-xl border flex items-center justify-between bg-gray-100 line-through text-gray-400 cursor-default"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-semibold">{task.title}</span>
+                            {task.detail && (
+                              <span className="text-sm">{task.detail}</span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </>
+            );
+          })()}
 
           {pastPromises.length > 0 && (
             <div className="mt-8">
               <h2 className="text-lg font-semibold mb-2">You Promised</h2>
-              <p className="text-sm text-gray-500 mb-4">
-                Unfinished tasks from previous days
-              </p>
               <ul className="space-y-3">
                 {pastPromises.map((task) => (
                   <li
                     key={task.id}
-                    className="p-4 rounded-xl border bg-yellow-50 border-yellow-200 shadow-sm"
+                    className="p-4 rounded-xl border border-yellow-300 bg-yellow-50 shadow-sm transition-all"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="font-semibold">{task.title}</span>
-                        {task.detail && (
-                          <span className="text-sm text-gray-500">{task.detail}</span>
-                        )}
-                        <span className="text-xs text-gray-400">{task.ageLabel}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => restoreToToday(task.id)}
-                          className="text-xs bg-blue-500 text-white px-3 py-1 rounded"
-                        >
-                          Do Today
-                        </button>
-                        <button
-                          onClick={() => dismissTask(task.id)}
-                          className="text-xs bg-gray-500 text-white px-3 py-1 rounded"
-                        >
-                          Dismiss
-                        </button>
-                      </div>
+                    <div className="font-semibold">{task.title}</div>
+                    <div className="text-sm text-gray-600">{task.detail}</div>
+                    <div className="text-xs text-yellow-700 mt-1 italic">
+                      Promised {task.ageLabel}
+                    </div>
+                    <div className="flex justify-end gap-3 mt-2 text-xs">
+                      <button onClick={() => restoreToToday(task.id)} className="text-green-600 hover:underline">
+                        ↩️ Add Back
+                      </button>
+                      <button onClick={() => snoozeTask(task.id)} className="text-blue-500 hover:underline">
+                        Snooze
+                      </button>
+                      <button onClick={() => dismissTask(task.id)} className="text-gray-500 hover:underline">
+                        Dismiss
+                      </button>
                     </div>
                   </li>
                 ))}
@@ -582,10 +547,11 @@ export default function Dashboard() {
 
       {!loading && (
         <div className="mt-6 text-xs text-gray-400 text-center">
-          👈 Swipe left to snooze • Swipe right to complete • Far left to dismiss 👉
+          Tap a task to mark it complete
         </div>
       )}
 
+      {/* Success message for voice tasks */}
       {voiceSuccess && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded shadow-lg">
           Voice tasks added!
