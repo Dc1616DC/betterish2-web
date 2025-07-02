@@ -17,32 +17,35 @@ export const useSwipeGesture = ({
   const touchStartX = useRef(0);
   const isSwiping = useRef(false);
   const actionTriggered = useRef(false);
+  const currentDistance = useRef(0); // Track current distance
 
   // Shared end logic for both touch and mouse
   const handleEnd = useCallback(() => {
     if (isDisabled || !isSwiping.current || actionTriggered.current) return;
 
-    console.log('Swipe end, distance:', swipeDistance);
+    const finalDistance = currentDistance.current;
+    console.log('Swipe end, distance:', finalDistance);
 
-    if (swipeDistance > SWIPE_RIGHT_THRESHOLD) {
+    if (finalDistance > SWIPE_RIGHT_THRESHOLD) {
       actionTriggered.current = true;
       console.log('✅ Swipe right - mark done');
       if (onSwipeRight) onSwipeRight();
-    } else if (swipeDistance < SWIPE_FAR_LEFT_THRESHOLD) {
+    } else if (finalDistance < SWIPE_FAR_LEFT_THRESHOLD) {
       actionTriggered.current = true;
       console.log('🗑️ Swipe far left - dismiss');
       if (onSwipeFarLeft) onSwipeFarLeft();
-    } else if (swipeDistance < SWIPE_LEFT_THRESHOLD) {
+    } else if (finalDistance < SWIPE_LEFT_THRESHOLD) {
       actionTriggered.current = true;
       console.log('😴 Swipe left - snooze');
       if (onSwipeLeft) onSwipeLeft();
     }
 
     isSwiping.current = false;
+    currentDistance.current = 0;
     if (!actionTriggered.current) {
       setSwipeDistance(0);
     }
-  }, [isDisabled, swipeDistance, onSwipeRight, onSwipeLeft, onSwipeFarLeft]);
+  }, [isDisabled, onSwipeRight, onSwipeLeft, onSwipeFarLeft]);
 
   // Touch Events (Mobile)
   const handleTouchStart = useCallback((e) => {
@@ -51,6 +54,7 @@ export const useSwipeGesture = ({
     actionTriggered.current = false;
     touchStartX.current = e.targetTouches[0].clientX;
     isSwiping.current = true;
+    currentDistance.current = 0;
     setSwipeDistance(0);
     console.log('📱 Touch start');
   }, [isDisabled]);
@@ -60,7 +64,9 @@ export const useSwipeGesture = ({
     e.preventDefault();
     const currentX = e.targetTouches[0].clientX;
     const distance = currentX - touchStartX.current;
-    setSwipeDistance(distance * RESISTANCE_FACTOR);
+    const adjustedDistance = distance * RESISTANCE_FACTOR;
+    currentDistance.current = adjustedDistance;
+    setSwipeDistance(adjustedDistance);
   }, [isDisabled]);
 
   const handleTouchEnd = useCallback(() => {
@@ -74,14 +80,17 @@ export const useSwipeGesture = ({
     actionTriggered.current = false;
     touchStartX.current = e.clientX;
     isSwiping.current = true;
+    currentDistance.current = 0;
     setSwipeDistance(0);
     console.log('🖱️ Mouse down');
 
     const handleMouseMove = (e) => {
       if (isDisabled || !isSwiping.current) return;
       const distance = e.clientX - touchStartX.current;
-      setSwipeDistance(distance * RESISTANCE_FACTOR);
-      console.log('Mouse move distance:', distance);
+      const adjustedDistance = distance * RESISTANCE_FACTOR;
+      currentDistance.current = adjustedDistance;
+      setSwipeDistance(adjustedDistance);
+      console.log('Mouse move distance:', distance, '→ adjusted:', adjustedDistance);
     };
 
     const handleMouseUp = () => {
