@@ -122,6 +122,9 @@ export default function Dashboard() {
       setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
       
       console.log("✅ Task removed from UI");
+      
+      // Reload past promises to ensure dismissed tasks are filtered out
+      await loadPastPromises();
     } catch (error) {
       console.error("❌ Snooze error:", error);
       alert("ERROR: " + error.message);
@@ -142,11 +145,14 @@ export default function Dashboard() {
         console.log("⚠️ Task document does not exist, removing from UI only");
       }
       
-      // Remove from UI regardless
+      // Remove from UI immediately for responsive feel
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
       
-      console.log("✅ Task removed from UI");
+      // Reload past promises to ensure dismissed tasks are filtered out from database
+      await loadPastPromises();
+      
+      console.log("✅ Task dismissed and past promises reloaded");
     } catch (error) {
       console.error("❌ Dismiss error:", error);
       alert("ERROR dismissing task: " + error.message);
@@ -154,6 +160,13 @@ export default function Dashboard() {
       // Still remove from UI to prevent stuck tasks
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
+      
+      // Try to reload past promises even on error
+      try {
+        await loadPastPromises();
+      } catch (reloadError) {
+        console.error("Failed to reload past promises:", reloadError);
+      }
     }
   };
 
