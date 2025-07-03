@@ -93,6 +93,15 @@ export default function Dashboard() {
     try {
       const taskRef = doc(db, "tasks", taskId);
       
+      // Check if document exists first
+      const docSnap = await getDoc(taskRef);
+      if (!docSnap.exists()) {
+        console.log("⚠️ Task document does not exist, removing from UI only");
+        setTasks((prev) => prev.filter((t) => t.id !== taskId));
+        setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
+        return;
+      }
+      
       // Add debugging - temporary alert for mobile
       
       const tomorrow = new Date();
@@ -120,10 +129,41 @@ export default function Dashboard() {
   };
 
   const dismissTask = async (taskId) => {
-    const taskRef = doc(db, 'tasks', taskId);
-    await updateDoc(taskRef, { status: 'dismissed' });
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
+    console.log("🗑️ Starting dismiss for task:", taskId);
+    try {
+      const taskRef = doc(db, "tasks", taskId);
+      
+      // Check if document exists first
+      const docSnap = await getDoc(taskRef);
+      if (!docSnap.exists()) {
+        console.log("⚠️ Task document does not exist, removing from UI only");
+        setTasks((prev) => prev.filter((t) => t.id !== taskId));
+        setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
+        return;
+      }
+      
+      // Check if document exists first
+      const docSnap = await getDoc(taskRef);
+      if (docSnap.exists()) {
+        await updateDoc(taskRef, { status: "dismissed" });
+        console.log("✅ Task dismissed in database");
+      } else {
+        console.log("⚠️ Task document does not exist, removing from UI only");
+      }
+      
+      // Remove from UI regardless
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
+      
+      console.log("✅ Task removed from UI");
+    } catch (error) {
+      console.error("❌ Dismiss error:", error);
+      alert("ERROR dismissing task: " + error.message);
+      
+      // Still remove from UI to prevent stuck tasks
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
+    }
   };
 
   const swapTask = async (taskId, currentTask) => {
