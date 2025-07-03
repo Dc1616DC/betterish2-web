@@ -94,7 +94,6 @@ export default function Dashboard() {
       const taskRef = doc(db, "tasks", taskId);
       
       // Add debugging - temporary alert for mobile
-      alert("Snoozing task: " + taskId);
       
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -108,7 +107,6 @@ export default function Dashboard() {
       });
       
       console.log("✅ Database update completed");
-      alert("Database updated! Task moved to tomorrow.");
       
       // Remove from UI
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
@@ -308,6 +306,21 @@ export default function Dashboard() {
   };
 
   // 1) Load user data & preferences (runs once per login)
+
+  // Fix hydration by setting date/greeting on client only
+  useEffect(() => {
+    setMounted(true);
+    setDateStr(new Date().toLocaleDateString(undefined, {
+      weekday: "long", year: "numeric", month: "long", day: "numeric"
+    }));
+    
+    const hour = new Date().getHours();
+    const name = user?.displayName?.split(" ")[0] || "there";
+    if (hour < 12) setGreeting(`Morning, ${name} 👋`);
+    else if (hour < 17) setGreeting(`Afternoon, ${name} 👋`);
+    else setGreeting(`Evening, ${name} 👋`);
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
 
@@ -350,6 +363,21 @@ export default function Dashboard() {
   }, [user]);
 
   // 2) Once preferences are ready & not on preferences screen, load tasks/promises
+
+  // Fix hydration by setting date/greeting on client only
+  useEffect(() => {
+    setMounted(true);
+    setDateStr(new Date().toLocaleDateString(undefined, {
+      weekday: "long", year: "numeric", month: "long", day: "numeric"
+    }));
+    
+    const hour = new Date().getHours();
+    const name = user?.displayName?.split(" ")[0] || "there";
+    if (hour < 12) setGreeting(`Morning, ${name} 👋`);
+    else if (hour < 17) setGreeting(`Afternoon, ${name} 👋`);
+    else setGreeting(`Evening, ${name} 👋`);
+  }, [user]);
+
   useEffect(() => {
     if (!user || showPreferences || !userPreferences) return;
 
@@ -454,23 +482,12 @@ export default function Dashboard() {
     return <UserPreferences userId={user.uid} onComplete={handlePreferencesComplete} />;
   }
 
-  const dateStr = new Date().toLocaleDateString(undefined, {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    const name = user?.displayName?.split(' ')[0] || 'there';
-    
-    if (hour < 12) return `Morning, ${name} 👋`;
-    if (hour < 17) return `Afternoon, ${name} 👋`;
-    return `Evening, ${name} 👋`;
-  };
 
   return (
     <main className="max-w-2xl mx-auto p-4">
       <h1 className="text-xl text-gray-600 mb-1">{dateStr}</h1>
-      <h2 className="text-2xl font-bold mb-4">{getGreeting()}</h2>
+      <h2 className="text-2xl font-bold mb-4">{greeting}</h2>
 
       <button
         onClick={() => setShowPreferences(true)}

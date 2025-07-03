@@ -24,28 +24,16 @@ export const useSwipeGesture = ({
     if (isDisabled || !isSwiping.current || actionTriggered.current) return;
 
     const finalDistance = currentDistance.current;
-    console.log('Swipe end, distance:', finalDistance);
-    
-    // MOBILE DEBUG: Show which threshold we're hitting
-    alert(`Swipe end: ${finalDistance}. Thresholds: Right>${SWIPE_RIGHT_THRESHOLD}, Left<${SWIPE_LEFT_THRESHOLD}, FarLeft<${SWIPE_FAR_LEFT_THRESHOLD}`);
 
     if (finalDistance > SWIPE_RIGHT_THRESHOLD) {
       actionTriggered.current = true;
-      console.log('✅ Swipe right - mark done');
-      alert('TRIGGER: Swipe right - mark done');
       if (onSwipeRight) onSwipeRight();
     } else if (finalDistance < SWIPE_FAR_LEFT_THRESHOLD) {
       actionTriggered.current = true;
-      console.log('🗑️ Swipe far left - dismiss');
-      alert('TRIGGER: Swipe far left - dismiss');
       if (onSwipeFarLeft) onSwipeFarLeft();
     } else if (finalDistance < SWIPE_LEFT_THRESHOLD) {
       actionTriggered.current = true;
-      console.log('😴 Swipe left - snooze');
-      alert('TRIGGER: Swipe left - snooze');
       if (onSwipeLeft) onSwipeLeft();
-    } else {
-      alert(`NO ACTION: Distance ${finalDistance} not in any threshold range`);
     }
 
     isSwiping.current = false;
@@ -64,8 +52,6 @@ export const useSwipeGesture = ({
     isSwiping.current = true;
     currentDistance.current = 0;
     setSwipeDistance(0);
-    console.log('📱 Touch start');
-    alert('📱 Touch start at: ' + e.targetTouches[0].clientX);
   }, [isDisabled]);
 
   const handleTouchMove = useCallback((e) => {
@@ -76,12 +62,9 @@ export const useSwipeGesture = ({
     const adjustedDistance = distance * RESISTANCE_FACTOR;
     currentDistance.current = adjustedDistance;
     setSwipeDistance(adjustedDistance);
-    console.log('📱 Touch move:', distance, '→', adjustedDistance);
   }, [isDisabled]);
 
   const handleTouchEnd = useCallback(() => {
-    console.log('📱 Touch end');
-    alert('📱 Touch end - calling handleEnd');
     handleEnd();
   }, [handleEnd]);
 
@@ -94,7 +77,6 @@ export const useSwipeGesture = ({
     isSwiping.current = true;
     currentDistance.current = 0;
     setSwipeDistance(0);
-    console.log('🖱️ Mouse down');
 
     const handleMouseMove = (e) => {
       if (isDisabled || !isSwiping.current) return;
@@ -102,11 +84,9 @@ export const useSwipeGesture = ({
       const adjustedDistance = distance * RESISTANCE_FACTOR;
       currentDistance.current = adjustedDistance;
       setSwipeDistance(adjustedDistance);
-      console.log('Mouse move distance:', distance, '→ adjusted:', adjustedDistance);
     };
 
     const handleMouseUp = () => {
-      console.log('🖱️ Mouse up');
       if (isSwiping.current) {
         handleEnd();
       }
