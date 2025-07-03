@@ -135,15 +135,6 @@ export default function Dashboard() {
       
       // Check if document exists first
       const docSnap = await getDoc(taskRef);
-      if (!docSnap.exists()) {
-        console.log("⚠️ Task document does not exist, removing from UI only");
-        setTasks((prev) => prev.filter((t) => t.id !== taskId));
-        setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
-        return;
-      }
-      
-      // Check if document exists first
-      const docSnap = await getDoc(taskRef);
       if (docSnap.exists()) {
         await updateDoc(taskRef, { status: "dismissed" });
         console.log("✅ Task dismissed in database");
