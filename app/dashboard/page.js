@@ -34,6 +34,9 @@ export default function Dashboard() {
   const [showPreferences, setShowPreferences] = useState(false);
   const [streakCount, setStreakCount] = useState(0);
   const [voiceSuccess, setVoiceSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [dateStr, setDateStr] = useState("");
+  const [greeting, setGreeting] = useState("Hello 👋");
 
   // MOVE useMemo HOOKS TO TOP - BEFORE ANY CONDITIONAL RETURNS
   // Sort tasks with 3+ day old tasks first (nudged)
@@ -212,7 +215,24 @@ export default function Dashboard() {
     );
 
     const snapshot = await getDocs(q);
-    let existing = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    let existing = snapshot.docs
+    .map((doc) => ({ id: doc.id, ...doc.data() }))
+    .filter((task) => {
+      // Skip dismissed tasks
+      if (task.status === "dismissed") return false;
+      
+      // Skip tasks that were snoozed today
+      if (task.snoozedAt) {
+        const snoozedDate = task.snoozedAt.toDate();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today.getTime() + 24*60*60*1000);
+        const snoozedToday = snoozedDate >= today && snoozedDate < tomorrow;
+        if (snoozedToday) return false;
+      }
+      
+      return true;
+    });
 
     if (existing.length < 3 && userPreferences) {
       const needed = 3 - existing.length;
