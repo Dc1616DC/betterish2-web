@@ -646,7 +646,7 @@ export default function Dashboard() {
                           Do Today
                         </button>
                         <button
-                          onClick={() => dismissTask(task.id)}
+                          onClick={() => alert("Feature coming soon! Working on a better approach.")}
                           className="text-xs bg-gray-500 text-white px-3 py-1 rounded"
                         >
                           Dismiss
