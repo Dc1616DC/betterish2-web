@@ -131,44 +131,6 @@ export default function Dashboard() {
     }
   };
 
-  const dismissTask = async (taskId) => {
-    console.log("🗑️ Starting dismiss for task:", taskId);
-    try {
-      const taskRef = doc(db, "tasks", taskId);
-      
-      // Check if document exists first
-      const docSnap = await getDoc(taskRef);
-      if (docSnap.exists()) {
-        await updateDoc(taskRef, { status: "dismissed" });
-        console.log("✅ Task dismissed in database");
-      } else {
-        console.log("⚠️ Task document does not exist, removing from UI only");
-      }
-      
-      // Remove from UI immediately for responsive feel
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
-      
-      // Reload past promises to ensure dismissed tasks are filtered out from database
-      await loadPastPromises();
-      
-      console.log("✅ Task dismissed and past promises reloaded");
-    } catch (error) {
-      console.error("❌ Dismiss error:", error);
-      alert("ERROR dismissing task: " + error.message);
-      
-      // Still remove from UI to prevent stuck tasks
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
-      
-      // Try to reload past promises even on error
-      try {
-        await loadPastPromises();
-      } catch (reloadError) {
-        console.error("Failed to reload past promises:", reloadError);
-      }
-    }
-  };
 
   const swapTask = async (taskId, currentTask) => {
     const allSuggestions = generateSmartDailyTasks(userPreferences);
@@ -313,11 +275,18 @@ export default function Dashboard() {
 
     const eligibleTasks = snapshot.docs.filter((docSnap) => {
       const data = docSnap.data();
-      const isBeforeToday = data.createdAt?.toDate() < today;
+      const createdDate = data.createdAt?.toDate();
+      
+      // 1-DAY RULE: Only show tasks from YESTERDAY
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const isFromYesterday = createdDate >= yesterday && createdDate < today;
+      
       const isIncomplete = !data.completedAt;
-      const isManual = (data.source ?? 'manual') === 'manual';
-      const isNotDismissed = data.status !== 'dismissed';
-      return isBeforeToday && isIncomplete && isManual && isNotDismissed;
+      const isManual = (data.source ?? "manual") === "manual";
+      const isNotDismissed = data.status !== "dismissed";
+      
+      return isFromYesterday && isIncomplete && isManual && isNotDismissed;
     });
 
     const seen = new Set();
@@ -488,16 +457,30 @@ export default function Dashboard() {
   };
 
   const restoreToToday = async (taskId) => {
-    const taskRef = doc(db, 'tasks', taskId);
+    const taskRef = doc(db, "tasks", taskId);
     try {
-      await updateDoc(taskRef, { createdAt: Timestamp.now() });
       const docSnap = await getDoc(taskRef);
       if (docSnap.exists()) {
-        const restored = { id: taskId, ...docSnap.data() };
+        const data = docSnap.data();
+        const restoreCount = (data.restoreCount || 0) + 1;
+        
+        // Update task with new creation date and restore tracking
+        await updateDoc(taskRef, {
+          createdAt: Timestamp.now(),
+          restoreCount: restoreCount,
+          lastRestored: Timestamp.now()
+        });
+        
+        // 3-DAY NUDGE: Show alert if task has been restored 3+ times
+        if (restoreCount >= 3) {
+          alert("💪 This task has been on your list for 3 days! Time to tackle it or break it down into smaller steps?");
+        }
+        
+        const restored = { id: taskId, ...data, createdAt: Timestamp.now() };
         setTasks((prev) => [...prev, restored]);
       }
     } catch (err) {
-      console.error('[Dashboard] restoreToToday error (document may not exist):', err);
+      console.error("[Dashboard] restoreToToday error:", err);
     } finally {
       setPastPromises((prev) => prev.filter((t) => t.id !== taskId));
     }
@@ -622,7 +605,7 @@ export default function Dashboard() {
             <div className="mt-8">
               <h2 className="text-lg font-semibold mb-2">You Promised</h2>
               <p className="text-sm text-gray-500 mb-4">
-                Unfinished tasks from previous days
+                Unfinished tasks from yesterday (older tasks moved to Loose Ends)
               </p>
               <ul className="space-y-3">
                 {pastPromises.map((task) => (
@@ -643,13 +626,13 @@ export default function Dashboard() {
                           onClick={() => restoreToToday(task.id)}
                           className="text-xs bg-blue-500 text-white px-3 py-1 rounded"
                         >
-                          Do Today
+                          Add to Today
                         </button>
                         <button
-                          onClick={() => alert("Feature coming soon! Working on a better approach.")}
-                          className="text-xs bg-gray-500 text-white px-3 py-1 rounded"
+                          onClick={() => restoreToToday(task.id)}
+                          className="text-xs bg-blue-500 text-white px-3 py-1 rounded"
                         >
-                          Dismiss
+                          Add to Today
                         </button>
                       </div>
                     </div>
