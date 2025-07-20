@@ -558,7 +558,7 @@ export default function Dashboard() {
   };
 
   // Enhanced task generation using contextual intelligence
-  const generateEnhancedTasks = async () => {
+  const generateEnhancedTasks = useCallback(async () => {
     if (!user || !userPreferences) return [];
 
     if (emergencyModeActive && activeModeTemplates.length > 0) {
@@ -580,7 +580,7 @@ export default function Dashboard() {
     );
 
     return contextualTasks;
-  };
+  }, [user, userPreferences, emergencyModeActive, activeModeTemplates, completionHistory, currentEnergyLevel]);
 
   // Handle emergency mode selection
   const handleEmergencyMode = async (templatePack) => {
@@ -626,7 +626,7 @@ export default function Dashboard() {
   };
 
   // Load and create recurring tasks for today
-  const loadRecurringTasks = async () => {
+  const loadRecurringTasks = useCallback(async () => {
     if (!user) return [];
 
     const today = new Date();
@@ -702,7 +702,7 @@ export default function Dashboard() {
     }
 
     return createdTasks;
-  };
+  }, [user]);
 
   // Load past promises (older incomplete manual tasks)
   const loadPastPromises = useCallback(async () => {
@@ -1051,7 +1051,25 @@ export default function Dashboard() {
     return <UserPreferences userId={user.uid} onComplete={handlePreferencesComplete} />;
   }
 
+  // Handle SSR and loading states
+  if (!mounted) {
+    return (
+      <main className="max-w-2xl mx-auto p-4">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Loading...</p>
+        </div>
+      </main>
+    );
+  }
 
+  if (!user) {
+    return (
+      <main className="max-w-2xl mx-auto p-4">
+        <p className="text-center text-gray-500">Please log in to view your dashboard.</p>
+      </main>
+    );
+  }
 
   return (
     <PullToRefresh onRefresh={refreshAllData}>

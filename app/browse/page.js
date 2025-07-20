@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/lib/firebase';
 import { coreAutoTasks } from '@/lib/coreAutoTasks';
@@ -8,10 +8,16 @@ import { expandedTaskLibrary } from '@/lib/taskEngine';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 
 export default function BrowsePage() {
-  const [user] = useAuthState(auth);
+  const [user, loading] = useAuthState(auth);
   const [addedIds, setAddedIds] = useState({});
   const [showExpanded, setShowExpanded] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const taskSet = showExpanded ? expandedTaskLibrary : groupTasksByCategory(coreAutoTasks);
 
@@ -40,6 +46,26 @@ export default function BrowsePage() {
   const toggleSection = (category) => {
     setExpandedSections((prev) => ({ ...prev, [category]: !prev[category] }));
   };
+
+  // Handle SSR and loading states
+  if (!mounted || loading) {
+    return (
+      <main className="max-w-md mx-auto p-4 pb-24">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="max-w-md mx-auto p-4 pb-24">
+        <p className="text-center text-gray-500">Please log in to browse tasks.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-md mx-auto p-4 pb-24">

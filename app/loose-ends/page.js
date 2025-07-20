@@ -15,11 +15,17 @@ import {
 import { auth, db } from '@/lib/firebase';
 
 export default function LooseEndsPage() {
-  const [user] = useAuthState(auth);
+  const [user, loading] = useAuthState(auth);
   const [manualTasks, setManualTasks] = useState([]);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!mounted || !user) return;
 
     const fetchLooseEnds = async () => {
       const today = new Date();
@@ -89,6 +95,26 @@ export default function LooseEndsPage() {
     await addDoc(collection(db, 'tasks'), newTask);
     setManualTasks((prev) => prev.filter((t) => t.id !== task.id));
   };
+
+  // Handle SSR and loading states
+  if (!mounted || loading) {
+    return (
+      <main className="max-w-md mx-auto p-4">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="max-w-md mx-auto p-4">
+        <p className="text-center text-gray-500">Please log in to view loose ends.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-md mx-auto p-4">
