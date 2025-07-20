@@ -75,7 +75,7 @@ export default function EnergyLevelSelector({ currentLevel = 'medium', onLevelCh
   return (
     <div className="mb-6">
       <h3 className="text-sm font-semibold text-gray-700 mb-3">
-        How's your energy level right now?
+        How&apos;s your energy level right now?
       </h3>
       
       <div className="grid grid-cols-1 gap-3">

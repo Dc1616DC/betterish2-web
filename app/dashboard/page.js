@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import {
   collection,
@@ -99,7 +99,7 @@ export default function Dashboard() {
   };
 
   // Calculate streak based on consecutive days with completed tasks
-  const calculateStreak = async (userData) => {
+  const calculateStreak = useCallback(async (userData) => {
     if (!user) return;
 
     const today = new Date();
@@ -121,7 +121,7 @@ export default function Dashboard() {
     }
 
     setStreakCount(currentStreak);
-  };
+  }, [user]);
 
   // Update streak when a task is completed
   const updateStreakOnTaskCompletion = async () => {
@@ -467,7 +467,7 @@ export default function Dashboard() {
   };
 
   // Load today's tasks (auto-generate if fewer than 3)
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     if (!user) return;
 
     const today = new Date();
@@ -536,7 +536,7 @@ export default function Dashboard() {
     }
 
     setTasks([...existing, ...recurringTasks]);
-  };
+  }, [user, emergencyModeActive, generateEnhancedTasks, loadRecurringTasks, userPreferences]);
 
   // Load completion history for smart features
   const loadCompletionHistory = async () => {
@@ -705,7 +705,7 @@ export default function Dashboard() {
   };
 
   // Load past promises (older incomplete manual tasks)
-  const loadPastPromises = async () => {
+  const loadPastPromises = useCallback(async () => {
     if (!user) return;
 
     const today = new Date();
@@ -772,7 +772,7 @@ export default function Dashboard() {
       .slice(0, 3);
 
     setPastPromises(past);
-  };
+  }, [user]);
 
   // 1) Load user data & preferences (runs once per login)
 
@@ -820,7 +820,7 @@ export default function Dashboard() {
     };
 
     loadUserData().catch(console.error);
-  }, [user]);
+  }, [user, calculateStreak]);
 
   // 2) Once preferences are ready & not on preferences screen, load tasks/promises
 
@@ -839,7 +839,7 @@ export default function Dashboard() {
     };
 
     run();
-  }, [user, userPreferences, showPreferences]);
+  }, [user, userPreferences, showPreferences, loadTasks, loadPastPromises]);
 
   const handlePreferencesComplete = async (prefs) => {
     setUserPreferences(prefs);
@@ -1103,7 +1103,7 @@ export default function Dashboard() {
           <>
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Today's Focus</h2>
+                <h2 className="text-xl font-semibold text-gray-800">Today&apos;s Focus</h2>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={refreshAllData}
@@ -1190,7 +1190,7 @@ export default function Dashboard() {
             {/* Past Promises - Important but secondary */}
             {pastPromises.length > 0 && (
               <div className="mt-8 border-t pt-6">
-                <h3 className="text-lg font-semibold mb-3 text-gray-800">Yesterday's Promises</h3>
+                <h3 className="text-lg font-semibold mb-3 text-gray-800">Yesterday&apos;s Promises</h3>
                 <p className="text-sm text-gray-500 mb-4">
                   Unfinished from yesterday
                 </p>
