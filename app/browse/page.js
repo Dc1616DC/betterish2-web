@@ -6,8 +6,9 @@ import { auth, db } from '@/lib/firebase';
 import { coreAutoTasks } from '@/lib/coreAutoTasks';
 import { expandedTaskLibrary } from '@/lib/taskEngine';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
+import dynamic from 'next/dynamic';
 
-export default function BrowsePage() {
+function BrowsePage() {
   const [user, loading] = useAuthState(auth);
   const [addedIds, setAddedIds] = useState({});
   const [showExpanded, setShowExpanded] = useState(false);
@@ -122,3 +123,16 @@ export default function BrowsePage() {
     </main>
   );
 }
+
+// Export the component with dynamic import to prevent SSR issues
+export default dynamic(() => Promise.resolve(BrowsePage), {
+  ssr: false,
+  loading: () => (
+    <main className="max-w-md mx-auto p-4 pb-24">
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-gray-500 mt-2">Loading...</p>
+      </div>
+    </main>
+  )
+});

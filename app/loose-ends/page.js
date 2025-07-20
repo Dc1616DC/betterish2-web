@@ -13,8 +13,9 @@ import {
   doc
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import dynamic from 'next/dynamic';
 
-export default function LooseEndsPage() {
+function LooseEndsPage() {
   const [user, loading] = useAuthState(auth);
   const [manualTasks, setManualTasks] = useState([]);
   const [mounted, setMounted] = useState(false);
@@ -69,7 +70,7 @@ export default function LooseEndsPage() {
     };
 
     fetchLooseEnds();
-  }, [user]);
+  }, [user, mounted]);
 
   const markTaskDone = async (taskId) => {
     const taskRef = doc(db, 'tasks', taskId);
@@ -161,3 +162,16 @@ export default function LooseEndsPage() {
     </main>
   );
 }
+
+// Export the component with dynamic import to prevent SSR issues
+export default dynamic(() => Promise.resolve(LooseEndsPage), {
+  ssr: false,
+  loading: () => (
+    <main className="max-w-md mx-auto p-4">
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-gray-500 mt-2">Loading...</p>
+      </div>
+    </main>
+  )
+});
