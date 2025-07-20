@@ -21,26 +21,38 @@ export const useSwipeGesture = ({
 
   // Shared end logic for both touch and mouse
   const handleEnd = useCallback(() => {
-    if (isDisabled || !isSwiping.current || actionTriggered.current) return;
+    if (isDisabled || !isSwiping.current) return;
 
     const finalDistance = currentDistance.current;
 
-    if (finalDistance > SWIPE_RIGHT_THRESHOLD) {
-      actionTriggered.current = true;
-      if (onSwipeRight) onSwipeRight();
-    } else if (finalDistance < SWIPE_FAR_LEFT_THRESHOLD) {
-      actionTriggered.current = true;
-      if (onSwipeFarLeft) onSwipeFarLeft();
-    } else if (finalDistance < SWIPE_LEFT_THRESHOLD) {
-      actionTriggered.current = true;
-      if (onSwipeLeft) onSwipeLeft();
+    // Only trigger actions if we haven't already triggered one
+    if (!actionTriggered.current) {
+      if (finalDistance > SWIPE_RIGHT_THRESHOLD) {
+        actionTriggered.current = true;
+        if (onSwipeRight) onSwipeRight();
+      } else if (finalDistance < SWIPE_FAR_LEFT_THRESHOLD) {
+        actionTriggered.current = true;
+        if (onSwipeFarLeft) onSwipeFarLeft();
+      } else if (finalDistance < SWIPE_LEFT_THRESHOLD) {
+        actionTriggered.current = true;
+        if (onSwipeLeft) onSwipeLeft();
+      }
     }
 
+    // Reset state
     isSwiping.current = false;
     currentDistance.current = 0;
-    if (!actionTriggered.current) {
-      setSwipeDistance(0);
-    }
+    
+    // Reset swipe distance with a small delay to allow action to complete
+    setTimeout(() => {
+      if (!actionTriggered.current) {
+        setSwipeDistance(0);
+      } else {
+        // Reset for next gesture
+        actionTriggered.current = false;
+        setSwipeDistance(0);
+      }
+    }, 100);
   }, [isDisabled, onSwipeRight, onSwipeLeft, onSwipeFarLeft]);
 
   // Touch Events (Mobile)

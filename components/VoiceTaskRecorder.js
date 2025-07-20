@@ -5,7 +5,7 @@ import { MicrophoneIcon, StopIcon, XMarkIcon, CheckIcon } from '@heroicons/react
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
+export default function VoiceTaskRecorder({ userId, onTasksAdded, compact = false }) {
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
@@ -539,23 +539,29 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded }) {
         <button
           onClick={startRecording}
           disabled={isPreparing || permissionDenied}
-          className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all ${
+          className={`${
+            compact 
+              ? 'w-12 h-12 flex items-center justify-center rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-300' 
+              : 'w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl'
+          } transition-all ${
             isPreparing 
               ? 'bg-gray-100 text-gray-400' 
               : permissionDenied
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                : compact 
+                  ? '' 
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
           }`}
         >
           {isPreparing ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-              <span>Preparing...</span>
+              {!compact && <span>Preparing...</span>}
             </>
           ) : (
             <>
               <MicrophoneIcon className="w-5 h-5" />
-              <span>{permissionDenied ? 'Microphone Access Denied' : 'Record Voice Tasks'}</span>
+              {!compact && <span>{permissionDenied ? 'Microphone Access Denied' : 'Record Voice Tasks'}</span>}
             </>
           )}
         </button>

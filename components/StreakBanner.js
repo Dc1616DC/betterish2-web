@@ -29,9 +29,31 @@ export default function StreakBanner({ userId }) {
     );
   }
 
+  if (streak === 0) {
+    return (
+      <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg mb-4 text-sm">
+        💪 Complete your first task today to start a streak!
+      </div>
+    );
+  }
+
+  // Special messages for milestones
+  let message = `🔥 You're on a ${streak}-day streak!`;
+  if (streak === 1) {
+    message = "🌱 Great start! Complete another task tomorrow to build your streak!";
+  } else if (streak === 3) {
+    message = `🔥 3 days strong! You're building momentum!`;
+  } else if (streak === 7) {
+    message = `🏆 One week streak! You're crushing it!`;
+  } else if (streak >= 30) {
+    message = `🏅 ${streak} days! You're a productivity legend!`;
+  } else if (streak >= 14) {
+    message = `⭐ ${streak} days! This is becoming a habit!`;
+  }
+
   return (
     <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg mb-4 text-sm">
-      🔥 You’re on a {streak}-day streak!
+      {message}
     </div>
   );
 }
