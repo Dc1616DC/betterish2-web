@@ -53,8 +53,8 @@ export default function LooseEndsPage() {
         const created = data.createdAt.toDate();
         const ageDays = Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24));
         deduped.push({
-          id: docSnap.id,
           ...data,
+          id: docSnap.id, // Ensure Firestore doc ID always wins
           ageLabel: ageDays === 0 ? 'Today' : `${ageDays} day${ageDays > 1 ? 's' : ''} ago`,
         });
       }

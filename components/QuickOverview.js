@@ -60,7 +60,7 @@ export default function QuickOverview({ userId }) {
         ]);
         
         // Process today's tasks
-        const todayTasks = todayTasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const todayTasks = todayTasksSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         const completedTasks = todayTasks.filter(task => task.completedAt).length;
         const remainingTasks = todayTasks.length - completedTasks;
         const completionPercentage = todayTasks.length > 0 
@@ -69,7 +69,7 @@ export default function QuickOverview({ userId }) {
         
         // Process upcoming deadlines
         const deadlines = upcomingDeadlinesSnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .map(doc => ({ ...doc.data(), id: doc.id }))
           .filter(task => !task.completedAt)
           .sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate())
           .slice(0, 3); // Get top 3 upcoming deadlines

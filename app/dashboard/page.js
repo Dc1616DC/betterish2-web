@@ -192,7 +192,7 @@ export default function Dashboard() {
     );
 
     const snapshot = await getDocs(q);
-    const todayTasks = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const todayTasks = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
     setTasks(todayTasks);
   };
 
@@ -484,7 +484,7 @@ export default function Dashboard() {
     const snapshot = await getDocs(q);
     
     let existing = snapshot.docs
-    .map((doc) => ({ id: doc.id, ...doc.data() }))
+    .map((doc) => ({ ...doc.data(), id: doc.id })) // Ensure Firestore doc ID always wins
     .filter((task) => {
       // Skip dismissed tasks
       if (task.status === "dismissed") {
@@ -553,7 +553,7 @@ export default function Dashboard() {
     );
 
     const snapshot = await getDocs(q);
-    const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const history = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
     setCompletionHistory(history);
   };
 
@@ -858,7 +858,7 @@ export default function Dashboard() {
       );
 
       const snapshot = await getDocs(q);
-      let existing = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      let existing = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 
       if (existing.length < 3) {
         const needed = 3 - existing.length;
