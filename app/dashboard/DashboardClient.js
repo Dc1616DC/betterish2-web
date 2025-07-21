@@ -18,19 +18,22 @@ import { initializeFirebaseClient } from '@/lib/firebase-client';  // Use client
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { generateSmartDailyTasks } from '@/constants/tasks';
-import StreakBanner from '@/components/StreakBanner';
 import UserPreferences from '@/components/UserPreferences';
-import { ArrowPathIcon, PlusIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
 import PullToRefresh from '@/components/PullToRefresh';
 import RecurringTaskManager from '@/components/RecurringTaskManager';
 import EmergencyModeSelector from '@/components/EmergencyModeSelector';
-import SmartReminders from '@/components/SmartReminders';
-import EnergyLevelSelector from '@/components/EnergyLevelSelector';
 import RelationshipTracker from '@/components/RelationshipTracker';
-import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { shouldCreateToday } from '@/lib/recurringTasks';
 import { generateSmartContextualTasks } from '@/lib/contextualTasks';
+
+// Import our new modular components
+import DashboardHeader from '@/components/DashboardHeader';
+import TaskList from '@/components/TaskList';
+import TaskActions from '@/components/TaskActions';
+import PastPromises from '@/components/PastPromises';
+import TaskForm from '@/components/TaskForm';
+import TaskErrorBoundary from '@/components/TaskErrorBoundary';
+import DashboardLoading from '@/components/DashboardLoading';
 
 export default function DashboardClient() {
   const [user, setUser] = useState(null);
