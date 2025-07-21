@@ -58,7 +58,9 @@ export const useSwipeGesture = ({
   // Touch Events (Mobile)
   const handleTouchStart = useCallback((e) => {
     if (isDisabled) return;
-    e.preventDefault();
+    
+    // Don't prevent default for better browser behavior
+    // Only prevent scroll if needed during move
     actionTriggered.current = false;
     touchStartX.current = e.targetTouches[0].clientX;
     isSwiping.current = true;
@@ -68,9 +70,15 @@ export const useSwipeGesture = ({
 
   const handleTouchMove = useCallback((e) => {
     if (isDisabled || !isSwiping.current) return;
-    e.preventDefault();
+    
     const currentX = e.targetTouches[0].clientX;
     const distance = currentX - touchStartX.current;
+    
+    // Only prevent default for horizontal swipes to avoid scroll conflicts
+    if (Math.abs(distance) > 10) {
+      e.preventDefault();
+    }
+    
     const adjustedDistance = distance * RESISTANCE_FACTOR;
     currentDistance.current = adjustedDistance;
     setSwipeDistance(adjustedDistance);
