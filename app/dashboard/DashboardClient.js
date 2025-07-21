@@ -122,7 +122,6 @@ export default function DashboardClient() {
     const q = query(
       collection(db, 'tasks'),
       where('userId', '==', user.uid),
-      where('createdAt', '>=', startOfPeriod),
       orderBy('createdAt', 'desc')
     );
 
