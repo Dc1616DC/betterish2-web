@@ -1,3 +1,3 @@
 'use client';
 
-export { default } from './DashboardClientNew';
+export { default } from './DashboardClient';
