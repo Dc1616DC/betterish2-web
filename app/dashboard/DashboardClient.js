@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
 import {
   collection,
   query,
@@ -15,7 +14,9 @@ import {
   getDoc,
   setDoc,
 } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { initializeFirebaseClient } from '@/lib/firebase-client';  // Use client-only Firebase factory
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 import { generateSmartDailyTasks } from '@/constants/tasks';
 import StreakBanner from '@/components/StreakBanner';
 import UserPreferences from '@/components/UserPreferences';
@@ -32,7 +33,9 @@ import { shouldCreateToday } from '@/lib/recurringTasks';
 import { generateSmartContextualTasks } from '@/lib/contextualTasks';
 
 export default function DashboardClient() {
-  const [user] = useAuthState(auth);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const router = useRouter();
   const [tasks, setTasks] = useState([]);
   const [pastPromises, setPastPromises] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +58,16 @@ export default function DashboardClient() {
   const [mounted, setMounted] = useState(false);
   const [dateStr, setDateStr] = useState("");
   const [greeting, setGreeting] = useState("Hello 👋");
+  const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null });
+
+  // Initialize Firebase on client side only
+  useEffect(() => {
+    const { auth, db } = initializeFirebaseClient();
+    setFirebaseInstances({ auth, db });
+  }, []);
+
+  // Extract auth and db for easier access
+  const { auth, db } = firebaseInstances;
 
   // MOVE useMemo HOOKS TO TOP - BEFORE ANY CONDITIONAL RETURNS
   // Sort tasks with 3+ day old incomplete tasks first (nudged), then show completed tasks at bottom
@@ -95,6 +108,15 @@ export default function DashboardClient() {
       console.error('Refresh failed:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // The onAuthStateChanged listener will handle the redirect
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
 
@@ -466,6 +488,110 @@ export default function DashboardClient() {
     );
   };
 
+  // Load and create recurring tasks for today
+  const loadRecurringTasks = useCallback(async () => {
+    if (!user) return [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfDay = Timestamp.fromDate(today);
+
+    // Get all recurring task templates
+    const recurringQuery = query(
+      collection(db, 'recurringTasks'),
+      where('userId', '==', user.uid),
+      where('isActive', '==', true)
+    );
+
+    const recurringSnapshot = await getDocs(recurringQuery);
+    const recurringTemplates = recurringSnapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data() 
+    }));
+
+    // Check which recurring tasks should be created today
+    const tasksToCreate = [];
+    const createdTasks = [];
+
+    for (const template of recurringTemplates) {
+      if (shouldCreateToday(template, today)) {
+        // Check if this recurring task was already created today
+        const existingQuery = query(
+          collection(db, 'tasks'),
+          where('userId', '==', user.uid),
+          where('recurringTaskId', '==', template.id),
+          where('createdAt', '>=', startOfDay)
+        );
+
+        const existingSnapshot = await getDocs(existingQuery);
+        
+        if (existingSnapshot.empty) {
+          // Create the task
+          const newTask = {
+            title: template.title,
+            detail: template.detail,
+            category: template.category,
+            priority: template.priority,
+            userId: user.uid,
+            createdAt: Timestamp.now(),
+            source: 'recurring',
+            recurringTaskId: template.id,
+            isRecurring: true
+          };
+
+          tasksToCreate.push(newTask);
+        } else {
+          // Task already exists, add to our list
+          createdTasks.push(...existingSnapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data() 
+          })));
+        }
+      }
+    }
+
+    // Create new recurring tasks
+    if (tasksToCreate.length > 0) {
+      const newTaskDocs = await Promise.all(
+        tasksToCreate.map(task => addDoc(collection(db, 'tasks'), task))
+      );
+
+      const newTasks = tasksToCreate.map((task, index) => ({
+        ...task,
+        id: newTaskDocs[index].id
+      }));
+
+      createdTasks.push(...newTasks);
+    }
+
+    return createdTasks;
+  }, [user]);
+
+  // Enhanced task generation using contextual intelligence
+  const generateEnhancedTasks = useCallback(async () => {
+    if (!user || !userPreferences) return [];
+
+    if (emergencyModeActive && activeModeTemplates.length > 0) {
+      // Return emergency mode tasks
+      return activeModeTemplates.map(template => ({
+        ...template,
+        id: 'emergency-' + Math.random(),
+        userId: user.uid,
+        createdAt: Timestamp.now(),
+        source: 'emergency'
+      }));
+    }
+
+    // Use contextual task generation
+    const contextualTasks = generateSmartContextualTasks(
+      userPreferences, 
+      completionHistory, 
+      currentEnergyLevel
+    );
+
+    return contextualTasks;
+  }, [user, userPreferences, emergencyModeActive, activeModeTemplates, completionHistory, currentEnergyLevel]);
+
   // Load today's tasks (auto-generate if fewer than 3)
   const loadTasks = useCallback(async () => {
     if (!user) return;
@@ -557,31 +683,6 @@ export default function DashboardClient() {
     setCompletionHistory(history);
   };
 
-  // Enhanced task generation using contextual intelligence
-  const generateEnhancedTasks = useCallback(async () => {
-    if (!user || !userPreferences) return [];
-
-    if (emergencyModeActive && activeModeTemplates.length > 0) {
-      // Return emergency mode tasks
-      return activeModeTemplates.map(template => ({
-        ...template,
-        id: 'emergency-' + Math.random(),
-        userId: user.uid,
-        createdAt: Timestamp.now(),
-        source: 'emergency'
-      }));
-    }
-
-    // Use contextual task generation
-    const contextualTasks = generateSmartContextualTasks(
-      userPreferences, 
-      completionHistory, 
-      currentEnergyLevel
-    );
-
-    return contextualTasks;
-  }, [user, userPreferences, emergencyModeActive, activeModeTemplates, completionHistory, currentEnergyLevel]);
-
   // Handle emergency mode selection
   const handleEmergencyMode = async (templatePack) => {
     try {
@@ -624,85 +725,6 @@ export default function DashboardClient() {
     setActiveModeTemplates([]);
     await loadTasks(); // Reload normal tasks
   };
-
-  // Load and create recurring tasks for today
-  const loadRecurringTasks = useCallback(async () => {
-    if (!user) return [];
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startOfDay = Timestamp.fromDate(today);
-
-    // Get all recurring task templates
-    const recurringQuery = query(
-      collection(db, 'recurringTasks'),
-      where('userId', '==', user.uid),
-      where('isActive', '==', true)
-    );
-
-    const recurringSnapshot = await getDocs(recurringQuery);
-    const recurringTemplates = recurringSnapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...doc.data() 
-    }));
-
-    // Check which recurring tasks should be created today
-    const tasksToCreate = [];
-    const createdTasks = [];
-
-    for (const template of recurringTemplates) {
-      if (shouldCreateToday(template, today)) {
-        // Check if this recurring task was already created today
-        const existingQuery = query(
-          collection(db, 'tasks'),
-          where('userId', '==', user.uid),
-          where('recurringTaskId', '==', template.id),
-          where('createdAt', '>=', startOfDay)
-        );
-
-        const existingSnapshot = await getDocs(existingQuery);
-        
-        if (existingSnapshot.empty) {
-          // Create the task
-          const newTask = {
-            title: template.title,
-            detail: template.detail,
-            category: template.category,
-            priority: template.priority,
-            userId: user.uid,
-            createdAt: Timestamp.now(),
-            source: 'recurring',
-            recurringTaskId: template.id,
-            isRecurring: true
-          };
-
-          tasksToCreate.push(newTask);
-        } else {
-          // Task already exists, add to our list
-          createdTasks.push(...existingSnapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            ...doc.data() 
-          })));
-        }
-      }
-    }
-
-    // Create new recurring tasks
-    if (tasksToCreate.length > 0) {
-      const newTaskDocs = await Promise.all(
-        tasksToCreate.map(task => addDoc(collection(db, 'tasks'), task))
-      );
-
-      const newTasks = tasksToCreate.map((task, index) => ({
-        ...task,
-        id: newTaskDocs[index].id
-      }));
-
-      createdTasks.push(...newTasks);
-    }
-
-    return createdTasks;
-  }, [user]);
 
   // Load past promises (older incomplete manual tasks)
   const loadPastPromises = useCallback(async () => {
@@ -773,6 +795,45 @@ export default function DashboardClient() {
 
     setPastPromises(past);
   }, [user]);
+
+  // Auth state management
+  useEffect(() => {
+    if (!auth) {
+      setAuthLoading(false);
+      // Don't redirect immediately - let auth state stabilize first
+      return;
+    }
+
+    let authStabilized = false;
+    const stabilizationTimer = setTimeout(() => {
+      authStabilized = true;
+      // If no user after stabilization period, redirect to login
+      if (!user) {
+        router.push('/login');
+      }
+    }, 1500); // Wait 1.5 seconds for auth state to stabilize
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        setAuthLoading(false);
+        // Clear the stabilization timer since we have a user
+        clearTimeout(stabilizationTimer);
+      } else {
+        setUser(null);
+        setAuthLoading(false);
+        // Only redirect to login if auth state has stabilized and we truly have no user
+        if (authStabilized) {
+          router.push('/login');
+        }
+      }
+    });
+
+    return () => {
+      clearTimeout(stabilizationTimer);
+      unsubscribe();
+    };
+  }, [router, auth, user]);
 
   // 1) Load user data & preferences (runs once per login)
 
@@ -1046,12 +1107,44 @@ export default function DashboardClient() {
     }
   };
 
-  // Show preferences screen if needed
+  // Conditional rendering instead of early returns to avoid hooks violations
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!auth || !db) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Initializing Firebase...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (showPreferences && user) {
     return <UserPreferences userId={user.uid} onComplete={handlePreferencesComplete} />;
   }
 
-  // Handle SSR and loading states
   if (!mounted) {
     return (
       <main className="max-w-2xl mx-auto p-4">
@@ -1059,14 +1152,6 @@ export default function DashboardClient() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="text-gray-500 mt-2">Loading...</p>
         </div>
-      </main>
-    );
-  }
-
-  if (!user) {
-    return (
-      <main className="max-w-2xl mx-auto p-4">
-        <p className="text-center text-gray-500">Please log in to view your dashboard.</p>
       </main>
     );
   }
