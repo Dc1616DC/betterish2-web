@@ -111,37 +111,42 @@ export default function DashboardClient() {
   const loadTasks = useCallback(async () => {
     if (!user || !db) return;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Get recent tasks (last 30 days) to include today's and older incomplete tasks
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const startOfPeriod = Timestamp.fromDate(thirtyDaysAgo);
-
+    // Simplest possible query - just fetch user's tasks
     const q = query(
       collection(db, 'tasks'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.uid)
     );
 
     const snapshot = await getDocs(q);
     const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Filter for today's tasks and recent incomplete tasks
-    const relevantTasks = allTasks.filter(task => {
-      if (!task.createdAt) return false;
-      const taskDate = task.createdAt.toDate();
-      
-      // Include today's tasks
-      if (taskDate >= today) return true;
-      
-      // Include incomplete tasks from the last few days (for past promises)
-      if (!task.completedAt && taskDate >= thirtyDaysAgo) return true;
-      
-      return false;
-    });
+    // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
     
+    const relevantTasks = allTasks
+      .filter(task => {
+        if (!task.createdAt) return false;
+        const taskDate = task.createdAt.toDate();
+        
+        // Include only today's tasks
+        if (taskDate >= today) return true;
+        
+        // Include only incomplete tasks from last 3 days (not 30!)
+        if (!task.completedAt && taskDate >= threeDaysAgo) return true;
+        
+        return false;
+      })
+      .sort((a, b) => {
+        // Sort by creation date, newest first
+        const aDate = a.createdAt?.toDate?.() || new Date(0);
+        const bDate = b.createdAt?.toDate?.() || new Date(0);
+        return bDate.getTime() - aDate.getTime();
+      });
+    
+    console.log(`[Dashboard] Loaded ${relevantTasks.length} relevant tasks from ${allTasks.length} total`);
     setTasks(relevantTasks);
   }, [user, db]);
 

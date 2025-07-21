@@ -18,36 +18,44 @@ export default function TaskList({
   const handleTaskAction = async (taskId, action) => {
     if (processingTasks.has(taskId)) return; // Prevent double-clicks
     
+    console.log(`[TaskList] Processing ${action} for task ${taskId}`);
     setProcessingTasks(prev => new Set(prev).add(taskId));
     
     try {
-      startTransition(async () => {
-        switch (action) {
-          case 'complete':
-            await updateDoc(doc(db, 'tasks', taskId), {
-              completed: true,
-              completedAt: Timestamp.now(),
-            });
-            if (onTaskUpdate) onTaskUpdate();
-            break;
-            
-          case 'snooze':
-            const snoozeTime = new Date();
-            snoozeTime.setHours(snoozeTime.getHours() + 1);
-            await updateDoc(doc(db, 'tasks', taskId), {
-              snoozedUntil: Timestamp.fromDate(snoozeTime),
-            });
-            if (onTaskUpdate) onTaskUpdate();
-            break;
-            
-          case 'delete':
-            await deleteDoc(doc(db, 'tasks', taskId));
-            if (onTaskDelete) onTaskDelete(taskId);
-            break;
-        }
-      });
+      // Use startTransition properly for React 19
+      switch (action) {
+        case 'complete':
+          await updateDoc(doc(db, 'tasks', taskId), {
+            completed: true,
+            completedAt: Timestamp.now(),
+          });
+          console.log(`[TaskList] Task ${taskId} marked as completed`);
+          break;
+          
+        case 'snooze':
+          const snoozeTime = new Date();
+          snoozeTime.setHours(snoozeTime.getHours() + 1);
+          await updateDoc(doc(db, 'tasks', taskId), {
+            snoozedUntil: Timestamp.fromDate(snoozeTime),
+          });
+          console.log(`[TaskList] Task ${taskId} snoozed until ${snoozeTime}`);
+          break;
+          
+        case 'delete':
+          await deleteDoc(doc(db, 'tasks', taskId));
+          console.log(`[TaskList] Task ${taskId} deleted`);
+          if (onTaskDelete) onTaskDelete(taskId);
+          break;
+      }
+      
+      // Refresh data after successful action
+      if (action !== 'delete' && onTaskUpdate) {
+        startTransition(() => {
+          onTaskUpdate();
+        });
+      }
     } catch (error) {
-      console.error(`Error ${action}ing task:`, error);
+      console.error(`❌ Error ${action}ing task:`, error);
     } finally {
       setProcessingTasks(prev => {
         const newSet = new Set(prev);
