@@ -122,7 +122,7 @@ export default function DashboardClient() {
 
   // Calculate streak based on consecutive days with completed tasks
   const calculateStreak = useCallback(async (userData) => {
-    if (!user) return;
+    if (!user || !db) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -143,7 +143,7 @@ export default function DashboardClient() {
     }
 
     setStreakCount(currentStreak);
-  }, [user]);
+  }, [user, db]);
 
   // Update streak when a task is completed
   const updateStreakOnTaskCompletion = async () => {
@@ -490,7 +490,7 @@ export default function DashboardClient() {
 
   // Load and create recurring tasks for today
   const loadRecurringTasks = useCallback(async () => {
-    if (!user) return [];
+    if (!user || !db) return [];
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -565,7 +565,7 @@ export default function DashboardClient() {
     }
 
     return createdTasks;
-  }, [user]);
+  }, [user, db]);
 
   // Enhanced task generation using contextual intelligence
   const generateEnhancedTasks = useCallback(async () => {
@@ -662,7 +662,7 @@ export default function DashboardClient() {
     }
 
     setTasks([...existing, ...recurringTasks]);
-  }, [user, emergencyModeActive, generateEnhancedTasks, loadRecurringTasks, userPreferences]);
+  }, [user, emergencyModeActive, generateEnhancedTasks, loadRecurringTasks, userPreferences, db]);
 
   // Load completion history for smart features
   const loadCompletionHistory = async () => {
@@ -794,7 +794,7 @@ export default function DashboardClient() {
       .slice(0, 3);
 
     setPastPromises(past);
-  }, [user]);
+  }, [user, db]);
 
   // Auth state management
   useEffect(() => {
@@ -852,7 +852,7 @@ export default function DashboardClient() {
   }, [user]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !db) return;
 
     const loadUserData = async () => {
       const userRef = doc(db, 'users', user.uid);
@@ -881,7 +881,7 @@ export default function DashboardClient() {
     };
 
     loadUserData().catch(console.error);
-  }, [user, calculateStreak]);
+  }, [user, calculateStreak, db]);
 
   // 2) Once preferences are ready & not on preferences screen, load tasks/promises
 
@@ -900,7 +900,7 @@ export default function DashboardClient() {
     };
 
     run();
-  }, [user, userPreferences, showPreferences, loadTasks, loadPastPromises]);
+  }, [user, userPreferences, showPreferences, loadTasks, loadPastPromises, db]);
 
   const handlePreferencesComplete = async (prefs) => {
     setUserPreferences(prefs);

@@ -3,6 +3,12 @@ import { adminAuth } from '@/lib/firebase-admin';
 
 export async function POST(req) {
   try {
+    // Check if Firebase Admin is available
+    if (!adminAuth) {
+      console.warn('[Auth API] Firebase Admin not available, returning 501');
+      return new Response('Service Unavailable - Admin SDK not configured', { status: 501 });
+    }
+
     const authHeader = req.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response('Unauthorized', { status: 401 });
