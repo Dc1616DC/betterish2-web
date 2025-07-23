@@ -76,7 +76,7 @@ export default function DashboardClient() {
   // Sort tasks with 3+ day old incomplete tasks first (nudged), then show completed tasks at bottom
   const sortedTasks = useMemo(() => {
     const incomplete = tasks
-      .filter((t) => !t.completedAt && !t.completed)
+      .filter((t) => !t.completedAt)
       .map(task => ({
         ...task,
         ageInDays: task.createdAt ? Math.floor((Date.now() - task.createdAt.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0
@@ -84,12 +84,8 @@ export default function DashboardClient() {
       .sort((a, b) => (b.ageInDays >= 3 ? 1 : 0) - (a.ageInDays >= 3 ? 1 : 0));
     
     const completed = tasks
-      .filter((t) => t.completedAt || t.completed)
-      .sort((a, b) => {
-        const aTime = a.completedAt ? (a.completedAt.toDate ? a.completedAt.toDate().getTime() : a.completedAt.getTime()) : Date.now();
-        const bTime = b.completedAt ? (b.completedAt.toDate ? b.completedAt.toDate().getTime() : b.completedAt.getTime()) : Date.now();
-        return bTime - aTime;
-      });
+      .filter((t) => t.completedAt)
+      .sort((a, b) => b.completedAt.toDate().getTime() - a.completedAt.toDate().getTime());
     
     return [...incomplete, ...completed];
   }, [tasks]);
@@ -115,56 +111,20 @@ export default function DashboardClient() {
   const loadTasks = useCallback(async () => {
     if (!user || !db) return;
 
-    // Simplest possible query - just fetch user's tasks
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfDay = Timestamp.fromDate(today);
+
     const q = query(
       collection(db, 'tasks'),
-      where('userId', '==', user.uid)
+      where('userId', '==', user.uid),
+      where('createdAt', '>=', startOfDay),
+      orderBy('createdAt', 'desc')
     );
 
     const snapshot = await getDocs(q);
-    const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Debug: Log all tasks with "house_002" or similar titles
-    const debugTasks = allTasks.filter(task => 
-      task.title?.toLowerCase().includes('kitchen') || 
-      task.title?.toLowerCase().includes('counter') ||
-      task.id.includes('house_002')
-    );
-    if (debugTasks.length > 0) {
-      console.log(`[Dashboard] DEBUG - Found ${debugTasks.length} kitchen/counter tasks:`, debugTasks);
-    }
-    
-    // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const threeDaysAgo = new Date(today);
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    
-    const relevantTasks = allTasks
-      .filter(task => {
-        if (!task.createdAt) return false;
-        const taskDate = task.createdAt.toDate();
-        
-        // Include today's incomplete tasks
-        if (taskDate >= today && !task.completedAt && !task.completed) return true;
-        
-        // Include today's completed tasks (but we'll sort them to bottom)
-        if (taskDate >= today && (task.completedAt || task.completed)) return true;
-        
-        // Include incomplete tasks from last 3 days 
-        if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
-        
-        return false;
-      })
-      .sort((a, b) => {
-        // Sort by creation date, newest first
-        const aDate = a.createdAt?.toDate?.() || new Date(0);
-        const bDate = b.createdAt?.toDate?.() || new Date(0);
-        return bDate.getTime() - aDate.getTime();
-      });
-    
-    console.log(`[Dashboard] Loaded ${relevantTasks.length} relevant tasks from ${allTasks.length} total`);
-    setTasks(relevantTasks);
+    const loadedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setTasks(loadedTasks);
   }, [user, db]);
 
   // Load past promises
@@ -493,22 +453,6 @@ export default function DashboardClient() {
               onTaskUpdate={refreshAllData}
               onTaskDelete={(taskId) => {
                 setTasks(prev => prev.filter(t => t.id !== taskId));
-              }}
-              onTaskComplete={(taskId) => {
-                console.log(`[Dashboard] Optimistically completing task ${taskId}`);
-                // Optimistic update: immediately mark task as completed
-                setTasks(prev => {
-                  const updated = prev.map(task => 
-                    task.id === taskId 
-                      ? { ...task, completed: true, completedAt: Timestamp.now() }
-                      : task
-                  );
-                  console.log(`[Dashboard] Tasks after optimistic update:`, updated.filter(t => t.id === taskId));
-                  return updated;
-                });
-                
-                // DON'T refresh immediately - let optimistic update show first
-                // setTimeout(() => refreshAllData(), 2000); // Wait 2 seconds instead of 500ms
               }}
               loading={loading}
             />

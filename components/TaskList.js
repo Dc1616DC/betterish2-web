@@ -10,26 +10,40 @@ export default function TaskList({
   user, 
   onTaskUpdate,
   onTaskDelete,
+  onTaskComplete,
   loading = false 
 }) {
   const [isPending, startTransition] = useTransition();
   const [processingTasks, setProcessingTasks] = useState(new Set());
 
-  const handleTaskAction = async (taskId, action) => {
+  const handleTaskAction = async (taskId, action, taskData = null) => {
     if (processingTasks.has(taskId)) return; // Prevent double-clicks
     
     console.log(`[TaskList] Processing ${action} for task ${taskId}`);
     setProcessingTasks(prev => new Set(prev).add(taskId));
     
     try {
-      // Use startTransition properly for React 19
+      // Use optimistic updates for immediate UI feedback
       switch (action) {
         case 'complete':
+          // Debug logging
+          console.log(`[TaskList] Attempting to complete task:`, {
+            taskId,
+            taskTitle: taskData?.title,
+            currentUserId: user?.uid,
+            dbExists: !!db
+          });
+          
+          // Optimistic update first
+          if (onTaskComplete) {
+            onTaskComplete(taskId);
+          }
+          
           await updateDoc(doc(db, 'tasks', taskId), {
             completed: true,
             completedAt: Timestamp.now(),
           });
-          console.log(`[TaskList] Task ${taskId} marked as completed`);
+          console.log(`[TaskList] Task ${taskId} marked as completed in Firestore`);
           break;
           
         case 'snooze':
@@ -42,16 +56,34 @@ export default function TaskList({
           break;
           
         case 'delete':
+          // Debug logging with full task data
+          console.log(`[TaskList] Attempting to delete task:`, {
+            taskId,
+            taskTitle: taskData?.title,
+            taskSource: taskData?.source,
+            taskCategory: taskData?.category,
+            currentUserId: user?.uid,
+            userExists: !!user,
+            fullTaskData: taskData
+          });
+          
           await deleteDoc(doc(db, 'tasks', taskId));
-          console.log(`[TaskList] Task ${taskId} deleted`);
-          if (onTaskDelete) onTaskDelete(taskId);
+          console.log(`[TaskList] Task ${taskId} deleted successfully from Firestore`);
+          
+          // Optimistically remove from UI immediately
+          if (onTaskDelete) {
+            console.log(`[TaskList] Calling onTaskDelete for ${taskId}`);
+            onTaskDelete(taskId);
+          }
           break;
       }
       
-      // Refresh data after successful action
-      if (action !== 'delete' && onTaskUpdate) {
+      // Only refresh for snooze actions, not for complete (handled by optimistic update)
+      if (action === 'snooze' && onTaskUpdate) {
         startTransition(() => {
-          onTaskUpdate();
+          setTimeout(() => {
+            onTaskUpdate();
+          }, 200);
         });
       }
     } catch (error) {
@@ -89,7 +121,7 @@ export default function TaskList({
         <TaskItem 
           key={task.id}
           task={task}
-          onAction={handleTaskAction}
+          onAction={(taskId, action) => handleTaskAction(taskId, action, task)}
           isProcessing={processingTasks.has(task.id)}
         />
       ))}
@@ -142,11 +174,13 @@ function TaskItem({ task, onAction, isProcessing }) {
     return `${diffInWeeks} weeks ago`;
   };
 
+  const isCompleted = task.completed || task.completedAt;
+
   return (
     <div
       className={`relative rounded-lg border-2 transition-all duration-200 ${getBackgroundColor()} ${
         isProcessing ? 'opacity-50' : ''
-      }`}
+      } ${isCompleted ? 'bg-gray-50 border-gray-300' : ''}`}
       style={{
         transform: `translateX(${swipeGesture.swipeDistance}px)`,
       }}
@@ -154,16 +188,20 @@ function TaskItem({ task, onAction, isProcessing }) {
     >
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-gray-900 text-lg">
+          <h3 className={`font-semibold text-lg ${
+            isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'
+          }`}>
             {task.title}
           </h3>
           <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-            {getTaskAgeLabel(task.createdAt)}
+            {isCompleted ? '✅ Completed' : getTaskAgeLabel(task.createdAt)}
           </span>
         </div>
         
         {task.detail && (
-          <p className="text-gray-600 text-sm mb-3">
+          <p className={`text-sm mb-3 ${
+            isCompleted ? 'text-gray-500 line-through' : 'text-gray-600'
+          }`}>
             {task.detail}
           </p>
         )}
@@ -171,12 +209,17 @@ function TaskItem({ task, onAction, isProcessing }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             {task.category && (
-              <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+              <span className={`inline-block text-xs px-2 py-1 rounded-full ${
+                isCompleted 
+                  ? 'bg-gray-100 text-gray-500' 
+                  : 'bg-blue-100 text-blue-800'
+              }`}>
                 {task.category}
               </span>
             )}
             {task.priority && (
               <span className={`inline-block text-xs px-2 py-1 rounded-full ${
+                isCompleted ? 'bg-gray-100 text-gray-500' :
                 task.priority === 'high' ? 'bg-red-100 text-red-800' :
                 task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                 'bg-green-100 text-green-800'
@@ -186,29 +229,46 @@ function TaskItem({ task, onAction, isProcessing }) {
             )}
           </div>
           
-          <div className="flex space-x-2">
-            <button
-              onClick={() => onAction(task.id, 'complete')}
-              disabled={isProcessing}
-              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
-            >
-              ✓
-            </button>
-            <button
-              onClick={() => onAction(task.id, 'snooze')}
-              disabled={isProcessing}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
-            >
-              💤
-            </button>
-            <button
-              onClick={() => onAction(task.id, 'delete')}
-              disabled={isProcessing}
-              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
-            >
-              🗑️
-            </button>
-          </div>
+          {!isCompleted && (
+            <div className="flex space-x-2">
+              <button
+                onClick={() => onAction(task.id, 'complete')}
+                disabled={isProcessing}
+                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+              >
+                ✓
+              </button>
+              <button
+                onClick={() => onAction(task.id, 'snooze')}
+                disabled={isProcessing}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+              >
+                💤
+              </button>
+              <button
+                onClick={() => onAction(task.id, 'delete')}
+                disabled={isProcessing}
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+              >
+                🗑️
+              </button>
+            </div>
+          )}
+          
+          {isCompleted && (
+            <div className="flex space-x-2">
+              <span className="text-green-600 text-sm font-medium">
+                ✅ Done
+              </span>
+              <button
+                onClick={() => onAction(task.id, 'delete')}
+                disabled={isProcessing}
+                className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+              >
+                🗑️
+              </button>
+            </div>
+          )}
         </div>
       </div>
       
