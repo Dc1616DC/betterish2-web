@@ -255,15 +255,11 @@ export default function DashboardClient() {
     const threeDaysAgo = new Date(today);
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
     
-    // SERVER-SIDE OPTIMIZED QUERY: Filter on server, not client
+    // FIXED QUERY: Use single inequality filter + client-side filtering
     const q = query(
       collection(db, 'tasks'),
       where('userId', '==', user.uid),
-      where('deleted', '!=', true),  // Exclude deleted tasks server-side
-      where('dismissed', '!=', true), // Exclude dismissed tasks server-side
       where('createdAt', '>=', Timestamp.fromDate(threeDaysAgo)), // Only recent tasks
-      orderBy('dismissed'),  // Required for inequality filter
-      orderBy('deleted'),    // Required for inequality filter  
       orderBy('createdAt', 'desc') // Sort server-side
     );
 
@@ -275,7 +271,10 @@ export default function DashboardClient() {
       const relevantTasks = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(task => {
-          // Minimal client-side filtering for complex conditions
+          // Client-side filtering for complex conditions
+          if (task.deleted === true) return false;
+          if (task.dismissed === true) return false;
+          
           const taskDate = task.createdAt?.toDate();
           if (!taskDate) return false;
           
@@ -333,17 +332,13 @@ export default function DashboardClient() {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    // OPTIMIZED QUERY: Server-side filtering for past promises
+    // FIXED QUERY: Simple date range + client-side filtering
     const q = query(
       collection(db, 'tasks'), 
       where('userId', '==', user.uid),
       where('source', '==', 'manual'), // Only manual tasks
-      where('deleted', '!=', true),    // Exclude deleted
-      where('dismissed', '!=', true),  // Exclude dismissed
       where('createdAt', '>=', Timestamp.fromDate(fourteenDaysAgo)), // 14-day window
       where('createdAt', '<', Timestamp.fromDate(today)), // Before today
-      orderBy('dismissed'),  // Required for inequality filter
-      orderBy('deleted'),    // Required for inequality filter
       orderBy('createdAt', 'desc') // Most recent first
     );
 
@@ -371,7 +366,9 @@ export default function DashboardClient() {
           };
         })
         .filter(task => {
-          // Final filters for complex conditions not easily done server-side
+          // Client-side filtering for complex conditions
+          if (task.deleted === true) return false; // Exclude deleted
+          if (task.dismissed === true) return false; // Exclude dismissed
           if (task.completedAt) return false; // Exclude completed
           if (task.snoozedUntil && task.snoozedUntil.toDate() > new Date()) return false; // Exclude snoozed
           if (task.lastRestored) {
