@@ -37,6 +37,7 @@ import PastPromises from '@/components/PastPromises';
 import TaskForm from '@/components/TaskForm';
 import TaskErrorBoundary from '@/components/TaskErrorBoundary';
 import DashboardLoading from '@/components/DashboardLoading';
+import NotificationPermission from '@/components/NotificationPermission';
 
 export default function DashboardClient() {
   // State variables
@@ -65,7 +66,7 @@ export default function DashboardClient() {
   const [mounted, setMounted] = useState(false);
   const [dateStr, setDateStr] = useState("");
   const [greeting, setGreeting] = useState("Hello 👋");
-  const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null });
+  const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null, messaging: null });
 
   // Initialize Firebase on client side only with proper error handling
   useEffect(() => {
@@ -73,9 +74,9 @@ export default function DashboardClient() {
     
     const initFirebase = async () => {
       try {
-        const { auth, db } = initializeFirebaseClient();
+        const { auth, db, messaging } = initializeFirebaseClient();
         if (mounted && auth && db) {
-          setFirebaseInstances({ auth, db });
+          setFirebaseInstances({ auth, db, messaging });
         }
       } catch (error) {
         if (mounted) {
@@ -92,8 +93,8 @@ export default function DashboardClient() {
     };
   }, [router]);
 
-  // Extract auth and db for easier access
-  const { auth, db } = firebaseInstances;
+  // Extract auth, db, and messaging for easier access
+  const { auth, db, messaging } = firebaseInstances;
 
   // Sort tasks with 3+ day old incomplete tasks first (nudged), then show completed tasks at bottom
   const sortedTasks = useMemo(() => {
@@ -829,6 +830,15 @@ export default function DashboardClient() {
             showMoreOptions={showMoreOptions}
             onToggleMoreOptions={() => setShowMoreOptions(!showMoreOptions)}
           />
+
+          {/* Notification Permission Request */}
+          {user && messaging && (
+            <NotificationPermission
+              messaging={messaging}
+              user={user}
+              db={db}
+            />
+          )}
 
           {/* Task Actions Component */}
           <TaskActions
