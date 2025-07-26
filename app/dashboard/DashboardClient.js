@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo, lazy, Suspense } from 'react';
 import {
   collection,
   query,
@@ -21,9 +21,11 @@ import { useRouter } from 'next/navigation';
 import { generateSmartDailyTasks } from '@/constants/tasks';
 import UserPreferences from '@/components/UserPreferences';
 import PullToRefresh from '@/components/PullToRefresh';
-import RecurringTaskManager from '@/components/RecurringTaskManager';
-import EmergencyModeSelector from '@/components/EmergencyModeSelector';
 import RelationshipTracker from '@/components/RelationshipTracker';
+
+// Lazy load heavy components for better performance
+const LazyRecurringTaskManager = lazy(() => import('@/components/RecurringTaskManager'));
+const LazyEmergencyModeSelector = lazy(() => import('@/components/EmergencyModeSelector'));
 import { shouldCreateToday } from '@/lib/recurringTasks';
 import { generateSmartContextualTasks } from '@/lib/contextualTasks';
 
@@ -242,71 +244,76 @@ export default function DashboardClient() {
     setLoading(false);
   }, [user, userPreferences]);
 
-  // Load today's tasks with REAL-TIME LISTENER
+  // Load today's tasks with OPTIMIZED SERVER-SIDE FILTERING
   const loadTasksRealTime = useCallback(() => {
     if (!user?.uid || !db) return null;
 
-    // Simple query - just get user's tasks, filter client-side
+    // Calculate date ranges for server-side filtering
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    
+    // SERVER-SIDE OPTIMIZED QUERY: Filter on server, not client
     const q = query(
       collection(db, 'tasks'),
-      where('userId', '==', user.uid)
+      where('userId', '==', user.uid),
+      where('deleted', '!=', true),  // Exclude deleted tasks server-side
+      where('dismissed', '!=', true), // Exclude dismissed tasks server-side
+      where('createdAt', '>=', Timestamp.fromDate(threeDaysAgo)), // Only recent tasks
+      orderBy('dismissed'),  // Required for inequality filter
+      orderBy('deleted'),    // Required for inequality filter  
+      orderBy('createdAt', 'desc') // Sort server-side
     );
 
-    // REAL-TIME LISTENER for tasks with error handling
+    // REAL-TIME LISTENER with minimal client-side processing
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
-      // Received tasks from Firestore
+      // Received pre-filtered tasks from Firestore
       
-      const allTasks = snapshot.docs
+      const relevantTasks = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(task => {
-          // Filter out deleted and dismissed tasks
-          if (task.deleted === true) return false;
-          if (task.dismissed === true) return false;
-          // For old tasks without these fields, treat as not deleted/dismissed
-          return true;
-        });
-      
-      // Filter out tasks that should be hidden from UI
-      
-      // Processing tasks
-      
-      // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const threeDaysAgo = new Date(today);
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-      
-      const relevantTasks = allTasks
-        .filter(task => {
-          if (!task.createdAt) return false;
-          const taskDate = task.createdAt.toDate();
+          // Minimal client-side filtering for complex conditions
+          const taskDate = task.createdAt?.toDate();
+          if (!taskDate) return false;
           
-          // Include today's incomplete tasks
-          if (taskDate >= today && !task.completedAt && !task.completed) return true;
+          // Include today's tasks (completed or not)
+          if (taskDate >= today) return true;
           
-          // Include today's completed tasks (but we'll sort them to bottom)
-          if (taskDate >= today && (task.completedAt || task.completed)) return true;
-          
-          // Include incomplete tasks from last 3 days 
-          if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
+          // Include incomplete tasks from last 3 days
+          if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo) return true;
           
           return false;
-        })
-        .sort((a, b) => {
-          // Sort by creation date, newest first
-          const aDate = a.createdAt?.toDate?.() || new Date(0);
-          const bDate = b.createdAt?.toDate?.() || new Date(0);
-          return bDate.getTime() - aDate.getTime();
         });
       
-        // Setting relevant tasks for display
+        // Tasks already sorted by Firestore orderBy
         setTasks(relevantTasks);
       },
       (error) => {
         // Handle Firestore errors gracefully
         if (error.code === 'permission-denied') {
           router.push('/login');
+        } else if (error.code === 'failed-precondition') {
+          // Fallback to simpler query if composite index doesn't exist
+          console.warn('Composite index needed for optimal query performance');
+          const fallbackQuery = query(
+            collection(db, 'tasks'),
+            where('userId', '==', user.uid),
+            orderBy('createdAt', 'desc')
+          );
+          // Set up fallback listener with client-side filtering
+          return onSnapshot(fallbackQuery, (snapshot) => {
+            const allTasks = snapshot.docs
+              .map(doc => ({ id: doc.id, ...doc.data() }))
+              .filter(task => {
+                if (task.deleted === true || task.dismissed === true) return false;
+                const taskDate = task.createdAt?.toDate();
+                if (!taskDate || taskDate < threeDaysAgo) return false;
+                return true;
+              });
+            setTasks(allTasks);
+          });
         }
       }
     );
@@ -314,96 +321,40 @@ export default function DashboardClient() {
     return unsubscribe;
   }, [user?.uid, db, router]);
 
-  // Load past promises with REAL-TIME LISTENER
+  // Load past promises with OPTIMIZED SERVER-SIDE FILTERING
   const loadPastPromisesRealTime = useCallback(() => {
     if (!user?.uid || !db) return null;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const fourteenDaysAgo = new Date(today);
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
+    // OPTIMIZED QUERY: Server-side filtering for past promises
     const q = query(
       collection(db, 'tasks'), 
-      where('userId', '==', user.uid)
+      where('userId', '==', user.uid),
+      where('source', '==', 'manual'), // Only manual tasks
+      where('deleted', '!=', true),    // Exclude deleted
+      where('dismissed', '!=', true),  // Exclude dismissed
+      where('createdAt', '>=', Timestamp.fromDate(fourteenDaysAgo)), // 14-day window
+      where('createdAt', '<', Timestamp.fromDate(today)), // Before today
+      orderBy('dismissed'),  // Required for inequality filter
+      orderBy('deleted'),    // Required for inequality filter
+      orderBy('createdAt', 'desc') // Most recent first
     );
 
-    // REAL-TIME LISTENER with error handling
+    // OPTIMIZED REAL-TIME LISTENER with minimal client-side processing
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
-      // Received tasks for past promises
+      // Received pre-filtered tasks from Firestore - much faster!
       
-      const eligibleTasks = snapshot.docs
-        .filter((docSnap) => {
-          const data = docSnap.data();
-          
-          // Filter out deleted and dismissed tasks (handle both undefined and explicit values)
-          if (data.deleted === true) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`[DEBUG FILTER] Excluding deleted task ${docSnap.id}: ${data.title}`);
-            }
-            return false;
-          }
-          if (data.dismissed === true) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`[DEBUG FILTER] Excluding dismissed task ${docSnap.id}: ${data.title}`);
-            }
-            return false;
-          }
-          
-          // For debugging: log tasks that are getting through
-          if (process.env.NODE_ENV === 'development') {
-            if (!data.hasOwnProperty('dismissed') || !data.hasOwnProperty('deleted')) {
-              console.log(`[DEBUG FILTER] Task ${docSnap.id} missing fields:`, {
-                title: data.title,
-                dismissed: data.dismissed,
-                deleted: data.deleted,
-                hasDismissed: data.hasOwnProperty('dismissed'),
-                hasDeleted: data.hasOwnProperty('deleted')
-              });
-            }
-          }
-          
-          const createdDate = data.createdAt?.toDate();
-          
-          if (data.lastRestored) {
-            const restoredDate = data.lastRestored.toDate();
-            const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
-            if (restoredToday) return false;
-          }
-          
-          if (!createdDate) return false;
-          if (data.completedAt) return false;
-          if (data.snoozedUntil && data.snoozedUntil.toDate() > new Date()) return false;
-          
-          const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-          
-          // Only include tasks that are between 1-14 days old and manually created
-          const isValidForPastPromises = (
-            daysSinceCreated >= 1 && 
-            daysSinceCreated <= 14 && 
-            data.source === 'manual'
-          );
-          
-          // Additional check: exclude template tasks by ID pattern
-          const isTemplateTask = (
-            docSnap.id.startsWith('rel_') ||
-            docSnap.id.startsWith('baby_') ||
-            docSnap.id.startsWith('house_') ||
-            docSnap.id.startsWith('self_') ||
-            docSnap.id.startsWith('admin_') ||
-            docSnap.id.startsWith('seas_')
-          );
-          
-          if (isTemplateTask && process.env.NODE_ENV === 'development') {
-            console.log(`[DEBUG FILTER] Excluding template task ${docSnap.id}: ${data.title}`);
-          }
-          
-          return isValidForPastPromises && !isTemplateTask;
-        });
-
-      const past = eligibleTasks
+      const pastPromisesReady = snapshot.docs
         .map((docSnap) => {
           const data = docSnap.data();
-          const createdDate = data.createdAt.toDate();
+          const createdDate = data.createdAt?.toDate();
           const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
           
           let ageLabel = '';
@@ -418,10 +369,17 @@ export default function DashboardClient() {
             daysSinceCreated
           };
         })
-        .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
-        .slice(0, 3)
-        // FINAL FILTER: Remove any template tasks that somehow got through
         .filter(task => {
+          // Final filters for complex conditions not easily done server-side
+          if (task.completedAt) return false; // Exclude completed
+          if (task.snoozedUntil && task.snoozedUntil.toDate() > new Date()) return false; // Exclude snoozed
+          if (task.lastRestored) {
+            const restoredDate = task.lastRestored.toDate();
+            const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
+            if (restoredToday) return false; // Exclude recently restored
+          }
+          
+          // Exclude template task IDs (safety net)
           const isTemplateId = (
             task.id.startsWith('rel_') ||
             task.id.startsWith('baby_') ||
@@ -431,26 +389,38 @@ export default function DashboardClient() {
             task.id.startsWith('seas_')
           );
           
-          if (isTemplateId && process.env.NODE_ENV === 'development') {
-            console.log(`[DEBUG PAST] FINAL FILTER: Excluding template task ${task.id}: ${task.title}`);
-          }
-          
           return !isTemplateId;
-        });
+        })
+        .slice(0, 3); // Limit to 3 most recent (already sorted by server)
 
-        // Setting past promises
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[DEBUG PAST] Eligible tasks from Firestore:`, 
-            eligibleTasks.map(doc => ({ id: doc.id, title: doc.data().title, source: doc.data().source })));
-          console.log(`[DEBUG PAST] Final past promises to set:`, 
-            past.map(p => ({ id: p.id, title: p.title, source: p.source })));
-        }
-        setPastPromises(past);
+        setPastPromises(pastPromisesReady);
       },
       (error) => {
-        // Handle Firestore errors gracefully
+        // Handle Firestore errors gracefully with fallback
         if (error.code === 'permission-denied') {
           router.push('/login');
+        } else if (error.code === 'failed-precondition') {
+          // Fallback query if composite index doesn't exist yet
+          console.warn('Composite index needed for optimal past promises performance');
+          const fallbackQuery = query(
+            collection(db, 'tasks'),
+            where('userId', '==', user.uid),
+            where('source', '==', 'manual'),
+            orderBy('createdAt', 'desc')
+          );
+          return onSnapshot(fallbackQuery, (snapshot) => {
+            const allTasks = snapshot.docs
+              .map(doc => ({ id: doc.id, ...doc.data() }))
+              .filter(task => {
+                if (task.deleted === true || task.dismissed === true) return false;
+                const taskDate = task.createdAt?.toDate();
+                if (!taskDate || taskDate >= today || taskDate < fourteenDaysAgo) return false;
+                if (task.completedAt) return false;
+                return true;
+              })
+              .slice(0, 3);
+            setPastPromises(allTasks);
+          });
         }
       }
     );
@@ -943,22 +913,26 @@ export default function DashboardClient() {
             initialPriority={newTaskPriority}
           />
 
-          {/* Recurring Task Manager */}
+          {/* Recurring Task Manager - Lazy Loaded */}
           {showRecurringForm && (
-            <RecurringTaskManager
-              isVisible={showRecurringForm}
-              onSave={saveRecurringTask}
-              onClose={() => setShowRecurringForm(false)}
-            />
+            <Suspense fallback={<DashboardLoading message="Loading recurring tasks..." />}>
+              <LazyRecurringTaskManager
+                isVisible={showRecurringForm}
+                onSave={saveRecurringTask}
+                onClose={() => setShowRecurringForm(false)}
+              />
+            </Suspense>
           )}
 
-          {/* Emergency Mode Selector */}
+          {/* Emergency Mode Selector - Lazy Loaded */}
           {showEmergencyMode && (
-            <EmergencyModeSelector
-              isVisible={showEmergencyMode}
-              onModeSelect={handleEmergencyMode}
-              onClose={() => setShowEmergencyMode(false)}
-            />
+            <Suspense fallback={<DashboardLoading message="Loading emergency mode..." />}>
+              <LazyEmergencyModeSelector
+                isVisible={showEmergencyMode}
+                onModeSelect={handleEmergencyMode}
+                onClose={() => setShowEmergencyMode(false)}
+              />
+            </Suspense>
           )}
 
           {/* Relationship Tracker */}

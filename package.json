@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "build:production": "NODE_ENV=production next build",
-    "export": "next export"
+    "export": "next export",
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@next/bundle-analyzer": "^15.4.4",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
