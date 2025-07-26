@@ -66,7 +66,7 @@ export default function DashboardClient() {
   const [mounted, setMounted] = useState(false);
   const [dateStr, setDateStr] = useState("");
   const [greeting, setGreeting] = useState("Hello 👋");
-  const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null, messaging: null });
+  const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null });
 
   // Initialize Firebase on client side only with proper error handling
   useEffect(() => {
@@ -74,9 +74,9 @@ export default function DashboardClient() {
     
     const initFirebase = async () => {
       try {
-        const { auth, db, messaging } = initializeFirebaseClient();
+        const { auth, db } = initializeFirebaseClient();
         if (mounted && auth && db) {
-          setFirebaseInstances({ auth, db, messaging });
+          setFirebaseInstances({ auth, db });
         }
       } catch (error) {
         if (mounted) {
@@ -93,8 +93,8 @@ export default function DashboardClient() {
     };
   }, [router]);
 
-  // Extract auth, db, and messaging for easier access
-  const { auth, db, messaging } = firebaseInstances;
+  // Extract auth and db for easier access
+  const { auth, db } = firebaseInstances;
 
   // Sort tasks with 3+ day old incomplete tasks first (nudged), then show completed tasks at bottom
   const sortedTasks = useMemo(() => {
@@ -828,14 +828,8 @@ export default function DashboardClient() {
             onToggleMoreOptions={() => setShowMoreOptions(!showMoreOptions)}
           />
 
-          {/* Notification Permission Request */}
-          {user && messaging && (
-            <NotificationPermission
-              messaging={messaging}
-              user={user}
-              db={db}
-            />
-          )}
+          {/* Notification Permission Request - Temporarily Disabled */}
+          {/* Will re-enable after fixing Firebase messaging integration */}
 
           {/* Task Actions Component */}
           <TaskActions
