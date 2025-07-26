@@ -85,12 +85,16 @@ function LooseEndsPage() {
   };
 
   const addToToday = async (task) => {
+    // Don't include template ID when saving to Firestore
     const newTask = {
       title: task.title,
       detail: task.detail,
       userId: user.uid,
       createdAt: Timestamp.now(),
-      source: 'manual'
+      source: 'manual',
+      // Add dismissed and deleted fields for consistency
+      dismissed: false,
+      deleted: false
     };
 
     await addDoc(collection(db, 'tasks'), newTask);

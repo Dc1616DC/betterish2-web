@@ -5,7 +5,7 @@ export async function POST(req) {
   try {
     // Check if Firebase Admin is available
     if (!adminAuth) {
-      console.warn('[Auth API] Firebase Admin not available, returning 501');
+      // Firebase Admin not available
       return new Response('Service Unavailable - Admin SDK not configured', { status: 501 });
     }
 
@@ -36,7 +36,7 @@ export async function POST(req) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    // Login error occurred
     return new Response(JSON.stringify({ error: 'Invalid token' }), { 
       status: 401,
       headers: { 'Content-Type': 'application/json' }

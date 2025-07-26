@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import {
   collection,
   query,
@@ -13,6 +13,7 @@ import {
   updateDoc,
   getDoc,
   setDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 import { initializeFirebaseClient } from '@/lib/firebase-client';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -64,11 +65,30 @@ export default function DashboardClient() {
   const [greeting, setGreeting] = useState("Hello 👋");
   const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null });
 
-  // Initialize Firebase on client side only
+  // Initialize Firebase on client side only with proper error handling
   useEffect(() => {
-    const { auth, db } = initializeFirebaseClient();
-    setFirebaseInstances({ auth, db });
-  }, []);
+    let mounted = true;
+    
+    const initFirebase = async () => {
+      try {
+        const { auth, db } = initializeFirebaseClient();
+        if (mounted && auth && db) {
+          setFirebaseInstances({ auth, db });
+        }
+      } catch (error) {
+        if (mounted) {
+          // Firebase initialization failed - redirect to login
+          router.push('/login');
+        }
+      }
+    };
+    
+    initFirebase();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
 
   // Extract auth and db for easier access
   const { auth, db } = firebaseInstances;
@@ -96,150 +116,368 @@ export default function DashboardClient() {
 
   const completedTaskCount = useMemo(() => tasks.filter((t) => t.completedAt).length, [tasks]);
 
-  // Helper to refresh all data
-  const refreshAllData = async () => {
-    if (!user || !userPreferences) return;
+  // One-time field migration for old tasks (only runs once per user session)
+  const [hasRunFieldMigration, setHasRunFieldMigration] = useState(false);
+  const [hasRunTemplateCleanup, setHasRunTemplateCleanup] = useState(false);
+  
+  const runFieldMigrationOnce = useCallback(async () => {
+    if (!user || !db) return;
+    // In development, always run migration to catch issues
+    if (process.env.NODE_ENV === 'production' && hasRunFieldMigration) return;
+    
+    setHasRunFieldMigration(true);
     
     try {
-      setLoading(true);
-      await loadTasks();
-      await loadPastPromises();
+      const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      
+      const tasksToUpdate = [];
+      
+      snapshot.docs.forEach(docSnap => {
+        const data = docSnap.data();
+        const needsUpdate = (
+          typeof data.dismissed === 'undefined' ||
+          typeof data.deleted === 'undefined'
+        );
+        
+        if (needsUpdate) {
+          const updates = {};
+          if (typeof data.dismissed === 'undefined') updates.dismissed = false;
+          if (typeof data.deleted === 'undefined') updates.deleted = false;
+          
+          tasksToUpdate.push({ id: docSnap.id, updates });
+        }
+      });
+      
+      // Batch update all tasks that need field migration
+      if (tasksToUpdate.length > 0) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[MIGRATION] Updating ${tasksToUpdate.length} tasks with missing fields`);
+        }
+        await Promise.all(
+          tasksToUpdate.map(({ id, updates }) => 
+            updateDoc(doc(db, 'tasks', id), updates)
+          )
+        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[MIGRATION] Field migration completed successfully`);
+        }
+      }
     } catch (error) {
-      console.error('Error refreshing data:', error);
-    } finally {
-      setLoading(false);
+      // Field migration failed - will retry on next session
+      setHasRunFieldMigration(false);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[MIGRATION] Field migration failed:', error);
+      }
     }
-  };
+  }, [user, db, hasRunFieldMigration]);
 
-  // Load today's tasks
-  const loadTasks = useCallback(async () => {
+  // One-time cleanup of orphaned template tasks
+  const cleanupOrphanedTemplateTasks = useCallback(async () => {
     if (!user || !db) return;
+    // In development, always run cleanup to ensure it works
+    if (process.env.NODE_ENV === 'production' && hasRunTemplateCleanup) return;
+    
+    setHasRunTemplateCleanup(true);
+    
+    try {
+      const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      
+      const templateTasksToDelete = [];
+      
+      snapshot.docs.forEach(docSnap => {
+        const taskId = docSnap.id;
+        const taskData = docSnap.data();
+        const isTemplateTask = (
+          taskId.startsWith('rel_') ||
+          taskId.startsWith('baby_') ||
+          taskId.startsWith('house_') ||
+          taskId.startsWith('self_') ||
+          taskId.startsWith('admin_') ||
+          taskId.startsWith('seas_')
+        );
+        
+        
+        if (isTemplateTask) {
+          templateTasksToDelete.push({ id: taskId, title: taskData.title });
+        }
+      });
+      
+      // Delete orphaned template tasks
+      if (templateTasksToDelete.length > 0) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[CLEANUP] Found ${templateTasksToDelete.length} template tasks to delete:`, templateTasksToDelete);
+        }
+        
+        const deletePromises = templateTasksToDelete.map(async (task) => {
+          try {
+            await updateDoc(doc(db, 'tasks', task.id), {
+              deleted: true,
+              deletedAt: Timestamp.now()
+            });
+          } catch (error) {
+            // Template cleanup error - ignore
+          }
+        });
+        
+        await Promise.all(deletePromises);
+        
+        // Template cleanup completed
+      }
+    } catch (error) {
+      // Template cleanup failed - will retry on next session
+      setHasRunTemplateCleanup(false);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[CLEANUP] Template cleanup failed:', error);
+      }
+    }
+  }, [user, db, hasRunTemplateCleanup]);
 
-    // Simplest possible query - just fetch user's tasks
+  // Helper to refresh all data (simplified since we have real-time listeners)
+  const refreshAllData = useCallback(async () => {
+    if (!user || !userPreferences) return;
+    
+    // Real-time listeners handle data updates automatically
+    setLoading(false);
+  }, [user, userPreferences]);
+
+  // Load today's tasks with REAL-TIME LISTENER
+  const loadTasksRealTime = useCallback(() => {
+    if (!user?.uid || !db) return null;
+
+    // Simple query - just get user's tasks, filter client-side
     const q = query(
       collection(db, 'tasks'),
       where('userId', '==', user.uid)
     );
 
-    const snapshot = await getDocs(q);
-    const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Debug: Log all tasks with "house_002" or similar titles
-    const debugTasks = allTasks.filter(task => 
-      task.title?.toLowerCase().includes('kitchen') || 
-      task.title?.toLowerCase().includes('counter') ||
-      task.id.includes('house_002')
-    );
-    if (debugTasks.length > 0) {
-      console.log(`[Dashboard] DEBUG - Found ${debugTasks.length} kitchen/counter tasks:`, debugTasks);
-    }
-    
-    // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const threeDaysAgo = new Date(today);
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    
-    const relevantTasks = allTasks
-      .filter(task => {
-        if (!task.createdAt) return false;
-        const taskDate = task.createdAt.toDate();
-        
-        // Include today's incomplete tasks
-        if (taskDate >= today && !task.completedAt && !task.completed) return true;
-        
-        // Include today's completed tasks (but we'll sort them to bottom)
-        if (taskDate >= today && (task.completedAt || task.completed)) return true;
-        
-        // Include incomplete tasks from last 3 days 
-        if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
-        
-        return false;
-      })
-      .sort((a, b) => {
-        // Sort by creation date, newest first
-        const aDate = a.createdAt?.toDate?.() || new Date(0);
-        const bDate = b.createdAt?.toDate?.() || new Date(0);
-        return bDate.getTime() - aDate.getTime();
-      });
-    
-    console.log(`[Dashboard] Loaded ${relevantTasks.length} relevant tasks from ${allTasks.length} total`);
-    setTasks(relevantTasks);
-  }, [user, db]);
-
-  // Load past promises
-  const loadPastPromises = useCallback(async () => {
-    if (!user || !db) return;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
-    const snapshot = await getDocs(q);
-
-    const eligibleTasks = snapshot.docs.filter((docSnap) => {
-      const data = docSnap.data();
-      const createdDate = data.createdAt?.toDate();
+    // REAL-TIME LISTENER for tasks with error handling
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+      // Received tasks from Firestore
       
-      if (data.lastRestored) {
-        const restoredDate = data.lastRestored.toDate();
-        const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
-        if (restoredToday) return false;
+      const allTasks = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(task => {
+          // Filter out deleted and dismissed tasks
+          if (task.deleted === true) return false;
+          if (task.dismissed === true) return false;
+          // For old tasks without these fields, treat as not deleted/dismissed
+          return true;
+        });
+      
+      // Filter out tasks that should be hidden from UI
+      
+      // Processing tasks
+      
+      // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const threeDaysAgo = new Date(today);
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      const relevantTasks = allTasks
+        .filter(task => {
+          if (!task.createdAt) return false;
+          const taskDate = task.createdAt.toDate();
+          
+          // Include today's incomplete tasks
+          if (taskDate >= today && !task.completedAt && !task.completed) return true;
+          
+          // Include today's completed tasks (but we'll sort them to bottom)
+          if (taskDate >= today && (task.completedAt || task.completed)) return true;
+          
+          // Include incomplete tasks from last 3 days 
+          if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
+          
+          return false;
+        })
+        .sort((a, b) => {
+          // Sort by creation date, newest first
+          const aDate = a.createdAt?.toDate?.() || new Date(0);
+          const bDate = b.createdAt?.toDate?.() || new Date(0);
+          return bDate.getTime() - aDate.getTime();
+        });
+      
+        // Setting relevant tasks for display
+        setTasks(relevantTasks);
+      },
+      (error) => {
+        // Handle Firestore errors gracefully
+        if (error.code === 'permission-denied') {
+          router.push('/login');
+        }
       }
-      
-      if (!createdDate) return false;
-      if (data.completedAt) return false;
-      if (data.snoozedUntil && data.snoozedUntil.toDate() > new Date()) return false;
-      
-      const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-      return daysSinceCreated >= 1 && daysSinceCreated <= 14 && data.source === 'manual';
-    });
+    );
 
-    const past = eligibleTasks
-      .map((docSnap) => {
-        const data = docSnap.data();
-        const createdDate = data.createdAt.toDate();
-        const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-        
-        let ageLabel = '';
-        if (daysSinceCreated === 1) ageLabel = 'Yesterday';
-        else if (daysSinceCreated <= 7) ageLabel = `${daysSinceCreated} days ago`;
-        else ageLabel = 'Over a week ago';
-        
-        return {
-          id: docSnap.id,
-          ...data,
-          ageLabel,
-          daysSinceCreated
-        };
-      })
-      .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
-      .slice(0, 3);
+    return unsubscribe;
+  }, [user?.uid, db, router]);
 
-    setPastPromises(past);
-  }, [user, db]);
+  // Load past promises with REAL-TIME LISTENER
+  const loadPastPromisesRealTime = useCallback(() => {
+    if (!user?.uid || !db) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const q = query(
+      collection(db, 'tasks'), 
+      where('userId', '==', user.uid)
+    );
+
+    // REAL-TIME LISTENER with error handling
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+      // Received tasks for past promises
+      
+      const eligibleTasks = snapshot.docs
+        .filter((docSnap) => {
+          const data = docSnap.data();
+          
+          // Filter out deleted and dismissed tasks (handle both undefined and explicit values)
+          if (data.deleted === true) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[DEBUG FILTER] Excluding deleted task ${docSnap.id}: ${data.title}`);
+            }
+            return false;
+          }
+          if (data.dismissed === true) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[DEBUG FILTER] Excluding dismissed task ${docSnap.id}: ${data.title}`);
+            }
+            return false;
+          }
+          
+          // For debugging: log tasks that are getting through
+          if (process.env.NODE_ENV === 'development') {
+            if (!data.hasOwnProperty('dismissed') || !data.hasOwnProperty('deleted')) {
+              console.log(`[DEBUG FILTER] Task ${docSnap.id} missing fields:`, {
+                title: data.title,
+                dismissed: data.dismissed,
+                deleted: data.deleted,
+                hasDismissed: data.hasOwnProperty('dismissed'),
+                hasDeleted: data.hasOwnProperty('deleted')
+              });
+            }
+          }
+          
+          const createdDate = data.createdAt?.toDate();
+          
+          if (data.lastRestored) {
+            const restoredDate = data.lastRestored.toDate();
+            const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
+            if (restoredToday) return false;
+          }
+          
+          if (!createdDate) return false;
+          if (data.completedAt) return false;
+          if (data.snoozedUntil && data.snoozedUntil.toDate() > new Date()) return false;
+          
+          const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+          
+          // Only include tasks that are between 1-14 days old and manually created
+          const isValidForPastPromises = (
+            daysSinceCreated >= 1 && 
+            daysSinceCreated <= 14 && 
+            data.source === 'manual'
+          );
+          
+          // Additional check: exclude template tasks by ID pattern
+          const isTemplateTask = (
+            docSnap.id.startsWith('rel_') ||
+            docSnap.id.startsWith('baby_') ||
+            docSnap.id.startsWith('house_') ||
+            docSnap.id.startsWith('self_') ||
+            docSnap.id.startsWith('admin_') ||
+            docSnap.id.startsWith('seas_')
+          );
+          
+          if (isTemplateTask && process.env.NODE_ENV === 'development') {
+            console.log(`[DEBUG FILTER] Excluding template task ${docSnap.id}: ${data.title}`);
+          }
+          
+          return isValidForPastPromises && !isTemplateTask;
+        });
+
+      const past = eligibleTasks
+        .map((docSnap) => {
+          const data = docSnap.data();
+          const createdDate = data.createdAt.toDate();
+          const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+          
+          let ageLabel = '';
+          if (daysSinceCreated === 1) ageLabel = 'Yesterday';
+          else if (daysSinceCreated <= 7) ageLabel = `${daysSinceCreated} days ago`;
+          else ageLabel = 'Over a week ago';
+          
+          return {
+            id: docSnap.id,
+            ...data,
+            ageLabel,
+            daysSinceCreated
+          };
+        })
+        .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
+        .slice(0, 3)
+        // FINAL FILTER: Remove any template tasks that somehow got through
+        .filter(task => {
+          const isTemplateId = (
+            task.id.startsWith('rel_') ||
+            task.id.startsWith('baby_') ||
+            task.id.startsWith('house_') ||
+            task.id.startsWith('self_') ||
+            task.id.startsWith('admin_') ||
+            task.id.startsWith('seas_')
+          );
+          
+          if (isTemplateId && process.env.NODE_ENV === 'development') {
+            console.log(`[DEBUG PAST] FINAL FILTER: Excluding template task ${task.id}: ${task.title}`);
+          }
+          
+          return !isTemplateId;
+        });
+
+        // Setting past promises
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[DEBUG PAST] Eligible tasks from Firestore:`, 
+            eligibleTasks.map(doc => ({ id: doc.id, title: doc.data().title, source: doc.data().source })));
+          console.log(`[DEBUG PAST] Final past promises to set:`, 
+            past.map(p => ({ id: p.id, title: p.title, source: p.source })));
+        }
+        setPastPromises(past);
+      },
+      (error) => {
+        // Handle Firestore errors gracefully
+        if (error.code === 'permission-denied') {
+          router.push('/login');
+        }
+      }
+    );
+
+    return unsubscribe;
+  }, [user?.uid, db, router]);
 
   // Handle voice tasks added
-  const handleVoiceTasksAdded = () => {
+  const handleVoiceTasksAdded = useCallback(() => {
     setVoiceSuccess(true);
     setTimeout(() => setVoiceSuccess(false), 3000);
     refreshAllData();
-  };
+  }, [refreshAllData]);
 
   // Clear emergency mode
-  const clearEmergencyMode = () => {
+  const clearEmergencyMode = useCallback(() => {
     setEmergencyModeActive(false);
     setActiveModeTemplates([]);
-    loadTasks();
-  };
+  }, []);
 
   // Handle emergency mode selection
-  const handleEmergencyMode = (mode) => {
+  const handleEmergencyMode = useCallback((mode) => {
     setEmergencyModeActive(true);
     setActiveModeTemplates(mode.tasks || []);
     setShowEmergencyMode(false);
     refreshAllData();
-  };
+  }, [refreshAllData]);
 
   // Restore task to today
   const restoreToToday = async (taskId) => {
@@ -275,28 +513,124 @@ export default function DashboardClient() {
 
   // Snooze task
   const snoozeTask = async (taskId) => {
-    if (!db) return;
+    if (!db || !user || !user.uid) {
+      console.error('[Dashboard] No authenticated user or db for snooze operation', { user: !!user, db: !!db });
+      return;
+    }
+    
+    // Snoozing task
     
     const snoozeTime = new Date();
     snoozeTime.setHours(snoozeTime.getHours() + 1);
     
-    await updateDoc(doc(db, 'tasks', taskId), {
-      snoozedUntil: Timestamp.fromDate(snoozeTime),
-    });
-    
-    setPastPromises(prev => prev.filter(t => t.id !== taskId));
+    try {
+      // FIRST: Check if document exists
+      const taskRef = doc(db, 'tasks', taskId);
+      const taskDoc = await getDoc(taskRef);
+      
+      if (!taskDoc.exists()) {
+        // Document doesn't exist - removing from UI
+        setPastPromises(prev => prev.filter(t => t.id !== taskId));
+        return;
+      }
+      
+      await updateDoc(taskRef, {
+        snoozedUntil: Timestamp.fromDate(snoozeTime),
+      })
+        .catch(error => {
+          // Firestore update error
+          throw error;
+        });
+      
+      // Task snoozed successfully
+      setPastPromises(prev => prev.filter(t => t.id !== taskId));
+    } catch (error) {
+      // Failed to snooze task
+      // Optionally show user feedback here
+    }
   };
 
+  // Track dismissing tasks to prevent double-clicks
+  const [dismissingTasks, setDismissingTasks] = useState(new Set());
+  
   // Dismiss task
   const dismissTask = async (taskId) => {
-    if (!db) return;
+    if (!db || !user || !user.uid) {
+      return;
+    }
     
-    await updateDoc(doc(db, 'tasks', taskId), {
-      dismissed: true,
-      dismissedAt: Timestamp.now(),
-    });
+    // Prevent double-clicks
+    if (dismissingTasks.has(taskId)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[DEBUG] Task ${taskId} already being dismissed - ignoring`);
+      }
+      return;
+    }
     
-    setPastPromises(prev => prev.filter(t => t.id !== taskId));
+    setDismissingTasks(prev => new Set(prev).add(taskId));
+    
+    if (process.env.NODE_ENV === 'development') {
+      const isTemplateId = (
+        taskId.startsWith('rel_') ||
+        taskId.startsWith('baby_') ||
+        taskId.startsWith('house_') ||
+        taskId.startsWith('self_') ||
+        taskId.startsWith('admin_') ||
+        taskId.startsWith('seas_')
+      );
+      console.log(`[DEBUG] Dismissing task ${taskId} (isTemplate: ${isTemplateId})`);
+    }
+    
+    try {
+      // FIRST: Check if document exists and isn't already dismissed
+      const taskRef = doc(db, 'tasks', taskId);
+      const taskDoc = await getDoc(taskRef);
+      
+      if (!taskDoc.exists()) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[DEBUG] Task ${taskId} doesn't exist - removing from UI`);
+        }
+        setPastPromises(prev => prev.filter(t => t.id !== taskId));
+        return;
+      }
+      
+      const taskData = taskDoc.data();
+      if (taskData.dismissed) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[DEBUG] Task ${taskId} already dismissed - removing from UI`);
+        }
+        setPastPromises(prev => prev.filter(t => t.id !== taskId));
+        return;
+      }
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[DEBUG] Updating task ${taskId} in Firestore with dismissed: true`);
+      }
+      
+      await updateDoc(taskRef, {
+        dismissed: true,
+        dismissedAt: Timestamp.now(),
+      });
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[DEBUG] ✅ Task ${taskId} dismissed successfully in Firestore`);
+      }
+      
+      // Task dismissed successfully - remove from UI
+      setPastPromises(prev => prev.filter(t => t.id !== taskId));
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`[DEBUG] ❌ Failed to dismiss task ${taskId}:`, error);
+      }
+      // Don't remove from UI if there was an error
+    } finally {
+      // Always remove from dismissing set
+      setDismissingTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
+    }
   };
 
   // Save recurring task
@@ -343,82 +677,135 @@ export default function DashboardClient() {
     else setGreeting(`Evening, ${name} 👋`);
   }, [user]);
 
-  // Auth state management
+  // Improved auth state management with better race condition handling
   useEffect(() => {
     if (!auth) {
       setAuthLoading(false);
       return;
     }
 
-    let authStabilized = false;
-    const stabilizationTimer = setTimeout(() => {
-      authStabilized = true;
-      if (!user) {
-        router.push('/login');
-      }
-    }, 1500);
+    let mounted = true;
+    let stabilizationTimer;
 
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const handleAuthStateChange = (currentUser) => {
+      if (!mounted) return;
+      
       if (currentUser) {
         setUser(currentUser);
-        clearTimeout(stabilizationTimer);
-      } else if (authStabilized) {
-        router.push('/login');
-      }
-      setAuthLoading(false);
-    });
-
-    return () => {
-      clearTimeout(stabilizationTimer);
-      unsubscribe();
-    };
-  }, [auth, router, user]);
-
-  // Load user data and tasks
-  useEffect(() => {
-    if (!user || !db) return;
-
-    const loadUserData = async () => {
-      const userRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userRef);
-      
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        
-        if (data.preferences && data.preferences.hasSetup) {
-          setUserPreferences(data.preferences);
-        } else {
-          setShowPreferences(true);
+        setAuthLoading(false);
+        if (stabilizationTimer) {
+          clearTimeout(stabilizationTimer);
+          stabilizationTimer = null;
         }
       } else {
-        await setDoc(userRef, {
-          streakCount: 0,
-          lastTaskCompletionDate: null,
-        });
-        setShowPreferences(true);
+        setUser(null);
+        // Only redirect if we've given auth time to initialize
+        stabilizationTimer = setTimeout(() => {
+          if (mounted && !currentUser) {
+            router.push('/login');
+          }
+        }, 1000);
+        setAuthLoading(false);
       }
     };
 
-    loadUserData().catch(console.error);
-  }, [user, db]);
+    const unsubscribe = onAuthStateChanged(auth, handleAuthStateChange);
 
-  // Load tasks and promises when ready
+    return () => {
+      mounted = false;
+      if (stabilizationTimer) {
+        clearTimeout(stabilizationTimer);
+      }
+      unsubscribe();
+    };
+  }, [auth, router]);
+
+  // Load user data and tasks with proper error handling
+  useEffect(() => {
+    if (!user?.uid || !db) return;
+
+    let mounted = true;
+
+    const loadUserData = async () => {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (!mounted) return;
+        
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          
+          if (data.preferences?.hasSetup) {
+            setUserPreferences(data.preferences);
+          } else {
+            setShowPreferences(true);
+          }
+        } else {
+          await setDoc(userRef, {
+            streakCount: 0,
+            lastTaskCompletionDate: null,
+          });
+          if (mounted) {
+            setShowPreferences(true);
+          }
+        }
+      } catch (error) {
+        if (mounted && error.code === 'permission-denied') {
+          router.push('/login');
+        }
+      }
+    };
+
+    loadUserData();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [user?.uid, db, router]);
+
+  // Load tasks and promises when ready (with real-time listeners + auto-cleanup)
   useEffect(() => {
     if (!user || showPreferences || !userPreferences || !db) return;
 
-    const run = async () => {
-      try {
-        await loadTasks();
-        await loadPastPromises();
-      } catch (err) {
-        console.error('[Dashboard] loadTasks error:', err);
-      } finally {
-        setLoading(false);
-      }
+    // Setting up real-time listeners and one-time field migration
+    
+    const initializeDashboard = async () => {
+      // Run field migration and ensure it completes
+      await runFieldMigrationOnce();
+      
+      // Clean up orphaned template tasks
+      await cleanupOrphanedTemplateTasks();
+      
+      // Small delay to ensure all writes are committed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Set up real-time listeners
+      const tasksUnsubscribe = loadTasksRealTime();
+      const pastPromisesUnsubscribe = loadPastPromisesRealTime();
+      
+      setLoading(false);
+      
+      return { tasksUnsubscribe, pastPromisesUnsubscribe };
     };
-
-    run();
-  }, [user, userPreferences, showPreferences, loadTasks, loadPastPromises, db]);
+    
+    const cleanup = initializeDashboard();
+    
+    // Return cleanup function with proper error handling
+    return () => {
+      cleanup.then(({ tasksUnsubscribe, pastPromisesUnsubscribe }) => {
+        // Unsubscribing from real-time listeners
+        try {
+          if (tasksUnsubscribe) tasksUnsubscribe();
+          if (pastPromisesUnsubscribe) pastPromisesUnsubscribe();
+        } catch (error) {
+          // Ignore cleanup errors
+        }
+      }).catch(() => {
+        // Ignore initialization errors during cleanup
+      });
+    };
+  }, [user, userPreferences, showPreferences, loadTasksRealTime, loadPastPromisesRealTime, runFieldMigrationOnce, cleanupOrphanedTemplateTasks, db]);
 
   // Loading states
   if (!mounted) {
@@ -495,7 +882,6 @@ export default function DashboardClient() {
                 setTasks(prev => prev.filter(t => t.id !== taskId));
               }}
               onTaskComplete={(taskId) => {
-                console.log(`[Dashboard] Optimistically completing task ${taskId}`);
                 // Optimistic update: immediately mark task as completed
                 setTasks(prev => {
                   const updated = prev.map(task => 
@@ -503,7 +889,6 @@ export default function DashboardClient() {
                       ? { ...task, completed: true, completedAt: Timestamp.now() }
                       : task
                   );
-                  console.log(`[Dashboard] Tasks after optimistic update:`, updated.filter(t => t.id === taskId));
                   return updated;
                 });
                 
@@ -547,7 +932,7 @@ export default function DashboardClient() {
                   navigator.vibrate(10);
                 }
               } catch (error) {
-                console.error("❌ Add task error:", error);
+                // Add task error
                 setTasks(prev => prev.filter(t => !t.id.startsWith('temp-')));
                 throw error;
               }

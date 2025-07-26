@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo, useCallback, memo } from 'react';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
-import { updateDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { useDebounceCallback } from '@/hooks/useDebounce';
+import { updateDoc, doc, Timestamp, getDoc } from 'firebase/firestore';
 
-export default function TaskList({ 
+const TaskList = memo(function TaskList({ 
   tasks, 
   db, 
   user, 
@@ -16,63 +17,116 @@ export default function TaskList({
   const [isPending, startTransition] = useTransition();
   const [processingTasks, setProcessingTasks] = useState(new Set());
 
-  const handleTaskAction = async (taskId, action, taskData = null) => {
+  const handleTaskAction = useCallback(async (taskId, action, taskData = null) => {
     if (processingTasks.has(taskId)) return; // Prevent double-clicks
     
-    console.log(`[TaskList] Processing ${action} for task ${taskId}`);
+    // Processing task action
     setProcessingTasks(prev => new Set(prev).add(taskId));
     
     try {
       // Use optimistic updates for immediate UI feedback
       switch (action) {
         case 'complete':
+          // Auth guard - crucial for Firebase v9
+          if (!user || !user.uid) {
+            // No authenticated user for complete operation
+            return;
+          }
+          
           // Debug logging
-          console.log(`[TaskList] Attempting to complete task:`, {
-            taskId,
-            taskTitle: taskData?.title,
-            currentUserId: user?.uid,
-            dbExists: !!db
-          });
+          // Attempting to complete task
+          
+          // FIRST: Check if document exists before trying to update
+          const completeTaskRef = doc(db, 'tasks', taskId);
+          const completeTaskDoc = await getDoc(completeTaskRef);
+          
+          if (!completeTaskDoc.exists()) {
+            // Document doesn't exist - removing from UI
+            // Document doesn't exist, just remove from UI via optimistic update
+            if (onTaskComplete) {
+              onTaskComplete(taskId);
+            }
+            break;
+          }
           
           // Optimistic update first
           if (onTaskComplete) {
             onTaskComplete(taskId);
           }
           
-          await updateDoc(doc(db, 'tasks', taskId), {
+          await updateDoc(completeTaskRef, {
             completed: true,
-            completedAt: Timestamp.now(),
-          });
-          console.log(`[TaskList] Task ${taskId} marked as completed in Firestore`);
+            completedAt: new Date()
+          })
+            .catch(error => {
+              // Firestore update error
+              throw error;
+            });
+          // Task marked as completed
           break;
           
         case 'snooze':
+          // Auth guard
+          if (!user || !user.uid) {
+            // No authenticated user for snooze operation
+            return;
+          }
+          
+          // FIRST: Check if document exists before trying to update
+          const snoozeTaskRef = doc(db, 'tasks', taskId);
+          const snoozeTaskDoc = await getDoc(snoozeTaskRef);
+          
+          if (!snoozeTaskDoc.exists()) {
+            console.log(`[TaskList] ⚠️ Document ${taskId} doesn't exist - cannot snooze non-existent task`);
+            // Document doesn't exist, just remove from UI
+            if (onTaskDelete) {
+              onTaskDelete(taskId);
+            }
+            break;
+          }
+          
           const snoozeTime = new Date();
           snoozeTime.setHours(snoozeTime.getHours() + 1);
-          await updateDoc(doc(db, 'tasks', taskId), {
+          await updateDoc(snoozeTaskRef, {
             snoozedUntil: Timestamp.fromDate(snoozeTime),
           });
-          console.log(`[TaskList] Task ${taskId} snoozed until ${snoozeTime}`);
+          // Task snoozed successfully
           break;
           
         case 'delete':
+          // Auth guard - crucial for Firebase v9
+          if (!user || !user.uid) {
+            // No authenticated user for delete operation
+            return;
+          }
+          
           // Debug logging with full task data
-          console.log(`[TaskList] Attempting to delete task:`, {
-            taskId,
-            taskTitle: taskData?.title,
-            taskSource: taskData?.source,
-            taskCategory: taskData?.category,
-            currentUserId: user?.uid,
-            userExists: !!user,
-            fullTaskData: taskData
-          });
+          // Attempting to soft-delete task
           
-          await deleteDoc(doc(db, 'tasks', taskId));
-          console.log(`[TaskList] Task ${taskId} deleted successfully from Firestore`);
+          // FIRST: Check if document exists before trying to update
+          const taskRef = doc(db, 'tasks', taskId);
+          const taskDoc = await getDoc(taskRef);
           
-          // Optimistically remove from UI immediately
+          if (!taskDoc.exists()) {
+            // Document doesn't exist - removing from UI
+            // Document doesn't exist, just remove from UI
+            if (onTaskDelete) {
+              onTaskDelete(taskId);
+            }
+            break;
+          }
+          
+          // SOFT DELETE: Mark as deleted instead of hard deleting
+          await updateDoc(taskRef, {
+            deleted: true,
+            deletedAt: new Date()
+          })
+            .catch(error => {
+              // Firestore update error
+              throw error;
+            });
+          // Task soft-deleted successfully
           if (onTaskDelete) {
-            console.log(`[TaskList] Calling onTaskDelete for ${taskId}`);
             onTaskDelete(taskId);
           }
           break;
@@ -87,7 +141,7 @@ export default function TaskList({
         });
       }
     } catch (error) {
-      console.error(`❌ Error ${action}ing task:`, error);
+      // Error processing task action
     } finally {
       setProcessingTasks(prev => {
         const newSet = new Set(prev);
@@ -95,7 +149,10 @@ export default function TaskList({
         return newSet;
       });
     }
-  };
+  }, [db, user, onTaskUpdate, onTaskDelete, onTaskComplete, processingTasks]);
+
+  // Debounce task actions to prevent rapid fire clicks
+  const debouncedHandleTaskAction = useDebounceCallback(handleTaskAction, 300);
 
   if (loading) {
     return (
@@ -121,15 +178,15 @@ export default function TaskList({
         <TaskItem 
           key={task.id}
           task={task}
-          onAction={(taskId, action) => handleTaskAction(taskId, action, task)}
+          onAction={(taskId, action) => debouncedHandleTaskAction(taskId, action, task)}
           isProcessing={processingTasks.has(task.id)}
         />
       ))}
     </div>
   );
-}
+});
 
-function TaskItem({ task, onAction, isProcessing }) {
+const TaskItem = memo(function TaskItem({ task, onAction, isProcessing }) {
   const [swipeRevealed, setSwipeRevealed] = useState('');
 
   const swipeGesture = useSwipeGesture({
@@ -279,4 +336,6 @@ function TaskItem({ task, onAction, isProcessing }) {
       )}
     </div>
   );
-}
+});
+
+export default TaskList;

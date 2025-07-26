@@ -33,15 +33,21 @@ function BrowsePage() {
   const handleAdd = async (task) => {
     if (!user) return;
 
+    // Remove template ID to let Firestore generate proper document ID
+    const { id: templateId, ...taskData } = task;
+    
     const taskToAdd = {
-      ...task,
+      ...taskData,
       userId: user.uid,
       createdAt: Timestamp.now(),
-      source: 'manual'
+      source: 'manual',
+      // Add dismissed and deleted fields for consistency
+      dismissed: false,
+      deleted: false
     };
 
     await addDoc(collection(db, 'tasks'), taskToAdd);
-    setAddedIds((prev) => ({ ...prev, [task.id]: true }));
+    setAddedIds((prev) => ({ ...prev, [templateId]: true }));
   };
 
   const toggleSection = (category) => {

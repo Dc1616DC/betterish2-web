@@ -33,7 +33,7 @@ export default function PastPromises({
         }
       });
     } catch (error) {
-      console.error(`Error ${action}ing past promise:`, error);
+      // Error handling for past promise action
     } finally {
       setProcessingTasks(prev => {
         const newSet = new Set(prev);

@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import BottomNav from "@/components/BottomNav"; // ✅ Import it
+import BottomNav from "@/components/BottomNav";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,8 +24,10 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased pb-20`}
       >
-        {children}
-        <BottomNav /> {/* ✅ Add this here */}
+        <ErrorBoundary fallbackMessage="Something went wrong with the app. Please refresh the page.">
+          {children}
+          <BottomNav />
+        </ErrorBoundary>
       </body>
     </html>
   );

@@ -53,7 +53,7 @@ export async function POST(request) {
       type: audioFile.type,
     });
 
-    console.log('[Transcribe] Sending audio to OpenAI. Size:', fileForOpenAI.size, 'bytes');
+    // Sending audio to OpenAI for transcription
 
     // Call OpenAI Whisper API with the File object
     const transcription = await openai.audio.transcriptions.create({
@@ -69,7 +69,7 @@ export async function POST(request) {
     });
     
   } catch (error) {
-    console.error('Transcription error:', error);
+    // Transcription error occurred
     
     // Determine appropriate error message and status
     let status = 500;

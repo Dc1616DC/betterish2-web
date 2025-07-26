@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
 
 export default function TaskForm({
   isOpen,
@@ -16,15 +17,36 @@ export default function TaskForm({
   const [category, setCategory] = useState(initialCategory);
   const [priority, setPriority] = useState(initialPriority);
   const [isPending, startTransition] = useTransition();
+  const [validationErrors, setValidationErrors] = useState({});
+  const { error, handleAsync, clearError } = useErrorHandler();
 
   if (!isOpen) return null;
 
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!title.trim()) {
+      errors.title = 'Task title is required';
+    } else if (title.trim().length > 100) {
+      errors.title = 'Task title must be less than 100 characters';
+    }
+    
+    if (detail.trim().length > 500) {
+      errors.detail = 'Task detail must be less than 500 characters';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    clearError();
+    
+    if (!validateForm()) return;
 
     startTransition(async () => {
-      try {
+      await handleAsync(async () => {
         await onSubmit({
           title: title.trim(),
           detail: detail.trim(),
@@ -32,16 +54,14 @@ export default function TaskForm({
           priority
         });
         
-        // Reset form
+        // Reset form on success
         setTitle('');
         setDetail('');
         setCategory('household');
         setPriority('medium');
+        setValidationErrors({});
         onClose();
-      } catch (error) {
-        console.error('Error submitting task:', error);
-        // Don't close form on error so user can retry
-      }
+      });
     });
   };
 
@@ -60,26 +80,58 @@ export default function TaskForm({
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
         <h3 className="font-semibold text-gray-800 mb-4">Add New Task</h3>
         
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+            <p className="text-red-800 text-sm">{error}</p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            type="text"
-            placeholder="What needs to be done?"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            autoFocus
-            disabled={isPending}
-            required
-          />
+          <div>
+            <input
+              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                validationErrors.title ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
+              type="text"
+              placeholder="What needs to be done?"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (validationErrors.title) {
+                  setValidationErrors(prev => ({ ...prev, title: null }));
+                }
+              }}
+              autoFocus
+              disabled={isPending}
+              maxLength={100}
+            />
+            {validationErrors.title && (
+              <p className="text-red-600 text-sm mt-1">{validationErrors.title}</p>
+            )}
+          </div>
           
-          <textarea
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-            rows="3"
-            placeholder="Any details? (optional)"
-            value={detail}
-            onChange={(e) => setDetail(e.target.value)}
-            disabled={isPending}
-          />
+          <div>
+            <textarea
+              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
+                validationErrors.detail ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
+              rows="3"
+              placeholder="Any details? (optional)"
+              value={detail}
+              onChange={(e) => {
+                setDetail(e.target.value);
+                if (validationErrors.detail) {
+                  setValidationErrors(prev => ({ ...prev, detail: null }));
+                }
+              }}
+              disabled={isPending}
+              maxLength={500}
+            />
+            {validationErrors.detail && (
+              <p className="text-red-600 text-sm mt-1">{validationErrors.detail}</p>
+            )}
+            <p className="text-gray-500 text-xs mt-1">{detail.length}/500 characters</p>
+          </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
