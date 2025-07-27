@@ -278,6 +278,21 @@ export default function DashboardClient() {
       const data = docSnap.data();
       const createdDate = data.createdAt?.toDate();
       
+      // Exclude template task IDs that shouldn't be in past promises
+      const isTemplateId = (
+        docSnap.id.startsWith('rel_') ||
+        docSnap.id.startsWith('baby_') ||
+        docSnap.id.startsWith('house_') ||
+        docSnap.id.startsWith('self_') ||
+        docSnap.id.startsWith('admin_') ||
+        docSnap.id.startsWith('seas_')
+      );
+      
+      if (isTemplateId) {
+        console.log(`[DEBUG REFRESH] Excluding template task ${docSnap.id} from past promises`);
+        return false;
+      }
+      
       if (process.env.NODE_ENV === 'development') {
         if (data.title?.toLowerCase().includes('kitchen') || data.title?.toLowerCase().includes('counter')) {
           console.log(`[DEBUG REFRESH] Task ${docSnap.id}: dismissed=${data.dismissed}, deleted=${data.deleted}, title="${data.title}"`);
@@ -386,6 +401,21 @@ export default function DashboardClient() {
     const eligibleTasks = snapshot.docs.filter((docSnap) => {
       const data = docSnap.data();
       const createdDate = data.createdAt?.toDate();
+      
+      // Exclude template task IDs that shouldn't be in past promises
+      const isTemplateId = (
+        docSnap.id.startsWith('rel_') ||
+        docSnap.id.startsWith('baby_') ||
+        docSnap.id.startsWith('house_') ||
+        docSnap.id.startsWith('self_') ||
+        docSnap.id.startsWith('admin_') ||
+        docSnap.id.startsWith('seas_')
+      );
+      
+      if (isTemplateId) {
+        console.log(`[DEBUG LOAD] Excluding template task ${docSnap.id} from past promises`);
+        return false;
+      }
       
       if (process.env.NODE_ENV === 'development') {
         if (data.title?.toLowerCase().includes('kitchen') || data.title?.toLowerCase().includes('counter')) {
