@@ -13,7 +13,6 @@ import {
   updateDoc,
   getDoc,
   setDoc,
-  onSnapshot,
 } from 'firebase/firestore';
 import { initializeFirebaseClient } from '@/lib/firebase-client';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -155,12 +154,15 @@ export default function DashboardClient() {
       // Batch update all tasks that need field migration
       if (tasksToUpdate.length > 0) {
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[MIGRATION] Updating ${tasksToUpdate.length} tasks with missing fields`);
+          console.log(`[MIGRATION] Updating ${tasksToUpdate.length} tasks with missing fields:`, tasksToUpdate.map(t => t.id));
         }
         await Promise.all(
-          tasksToUpdate.map(({ id, updates }) => 
-            updateDoc(doc(db, 'tasks', id), updates)
-          )
+          tasksToUpdate.map(({ id, updates }) => {
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[MIGRATION] Updating task ${id} with:`, updates);
+            }
+            return updateDoc(doc(db, 'tasks', id), updates);
+          })
         );
         if (process.env.NODE_ENV === 'development') {
           console.log(`[MIGRATION] Field migration completed successfully`);
@@ -237,194 +239,116 @@ export default function DashboardClient() {
     }
   }, [user, db, hasRunTemplateCleanup]);
 
-  // Helper to refresh all data (simplified since we have real-time listeners)
+  // Helper to refresh all data
   const refreshAllData = useCallback(async () => {
     if (!user || !userPreferences) return;
     
-    // Real-time listeners handle data updates automatically
-    setLoading(false);
-  }, [user, userPreferences]);
+    await loadTasks();
+    await loadPastPromises();
+  }, [user, userPreferences, loadTasks, loadPastPromises]);
 
-  // Load today's tasks with OPTIMIZED SERVER-SIDE FILTERING
-  const loadTasksRealTime = useCallback(() => {
-    if (!user?.uid || !db) return null;
+  // Load today's tasks - SIMPLE VERSION THAT WORKED
+  const loadTasks = useCallback(async () => {
+    if (!user || !db) return;
 
-    // Calculate date ranges for server-side filtering
+    // Simplest possible query - just fetch user's tasks
+    const q = query(
+      collection(db, 'tasks'),
+      where('userId', '==', user.uid)
+    );
+
+    const snapshot = await getDocs(q);
+    const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const threeDaysAgo = new Date(today);
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
     
-    // FIXED QUERY: Use single inequality filter + client-side filtering
-    const q = query(
-      collection(db, 'tasks'),
-      where('userId', '==', user.uid),
-      where('createdAt', '>=', Timestamp.fromDate(threeDaysAgo)), // Only recent tasks
-      orderBy('createdAt', 'desc') // Sort server-side
-    );
+    const relevantTasks = allTasks
+      .filter(task => {
+        if (task.deleted === true) return false;
+        if (task.dismissed === true) return false;
+        if (!task.createdAt) return false;
+        
+        const taskDate = task.createdAt.toDate();
+        
+        // Include today's incomplete tasks
+        if (taskDate >= today && !task.completedAt && !task.completed) return true;
+        
+        // Include today's completed tasks (but we'll sort them to bottom)
+        if (taskDate >= today && (task.completedAt || task.completed)) return true;
+        
+        // Include incomplete tasks from last 3 days 
+        if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
+        
+        return false;
+      })
+      .sort((a, b) => {
+        // Sort by creation date, newest first
+        const aDate = a.createdAt?.toDate?.() || new Date(0);
+        const bDate = b.createdAt?.toDate?.() || new Date(0);
+        return bDate.getTime() - aDate.getTime();
+      });
+    
+    setTasks(relevantTasks);
+  }, [user, db]);
 
-    // REAL-TIME LISTENER with minimal client-side processing
-    const unsubscribe = onSnapshot(q, 
-      (snapshot) => {
-      // Received pre-filtered tasks from Firestore
-      
-      const relevantTasks = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(task => {
-          // Client-side filtering for complex conditions
-          if (task.deleted === true) return false;
-          if (task.dismissed === true) return false;
-          
-          const taskDate = task.createdAt?.toDate();
-          if (!taskDate) return false;
-          
-          // Include today's tasks (completed or not)
-          if (taskDate >= today) return true;
-          
-          // Include incomplete tasks from last 3 days
-          if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo) return true;
-          
-          return false;
-        });
-      
-        // Tasks already sorted by Firestore orderBy
-        setTasks(relevantTasks);
-      },
-      (error) => {
-        // Handle Firestore errors gracefully
-        if (error.code === 'permission-denied') {
-          router.push('/login');
-        } else if (error.code === 'failed-precondition') {
-          // Fallback to simpler query if composite index doesn't exist
-          console.warn('Composite index needed for optimal query performance');
-          const fallbackQuery = query(
-            collection(db, 'tasks'),
-            where('userId', '==', user.uid),
-            orderBy('createdAt', 'desc')
-          );
-          // Set up fallback listener with client-side filtering
-          return onSnapshot(fallbackQuery, (snapshot) => {
-            const allTasks = snapshot.docs
-              .map(doc => ({ id: doc.id, ...doc.data() }))
-              .filter(task => {
-                if (task.deleted === true || task.dismissed === true) return false;
-                const taskDate = task.createdAt?.toDate();
-                if (!taskDate || taskDate < threeDaysAgo) return false;
-                return true;
-              });
-            setTasks(allTasks);
-          });
-        }
-      }
-    );
-
-    return unsubscribe;
-  }, [user?.uid, db, router]);
-
-  // Load past promises with OPTIMIZED SERVER-SIDE FILTERING
-  const loadPastPromisesRealTime = useCallback(() => {
-    if (!user?.uid || !db) return null;
+  // Load past promises - SIMPLE VERSION THAT WORKED
+  const loadPastPromises = useCallback(async () => {
+    if (!user || !db) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const fourteenDaysAgo = new Date(today);
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
 
-    // FIXED QUERY: Simple date range + client-side filtering
-    const q = query(
-      collection(db, 'tasks'), 
-      where('userId', '==', user.uid),
-      where('source', '==', 'manual'), // Only manual tasks
-      where('createdAt', '>=', Timestamp.fromDate(fourteenDaysAgo)), // 14-day window
-      where('createdAt', '<', Timestamp.fromDate(today)), // Before today
-      orderBy('createdAt', 'desc') // Most recent first
-    );
+    const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
 
-    // OPTIMIZED REAL-TIME LISTENER with minimal client-side processing
-    const unsubscribe = onSnapshot(q, 
-      (snapshot) => {
-      // Received pre-filtered tasks from Firestore - much faster!
+    const eligibleTasks = snapshot.docs.filter((docSnap) => {
+      const data = docSnap.data();
+      const createdDate = data.createdAt?.toDate();
       
-      const pastPromisesReady = snapshot.docs
-        .map((docSnap) => {
-          const data = docSnap.data();
-          const createdDate = data.createdAt?.toDate();
-          const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-          
-          let ageLabel = '';
-          if (daysSinceCreated === 1) ageLabel = 'Yesterday';
-          else if (daysSinceCreated <= 7) ageLabel = `${daysSinceCreated} days ago`;
-          else ageLabel = 'Over a week ago';
-          
-          return {
-            id: docSnap.id,
-            ...data,
-            ageLabel,
-            daysSinceCreated
-          };
-        })
-        .filter(task => {
-          // Client-side filtering for complex conditions
-          if (task.deleted === true) return false; // Exclude deleted
-          if (task.dismissed === true) return false; // Exclude dismissed
-          if (task.completedAt) return false; // Exclude completed
-          if (task.snoozedUntil && task.snoozedUntil.toDate() > new Date()) return false; // Exclude snoozed
-          if (task.lastRestored) {
-            const restoredDate = task.lastRestored.toDate();
-            const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
-            if (restoredToday) return false; // Exclude recently restored
-          }
-          
-          // Exclude template task IDs (safety net)
-          const isTemplateId = (
-            task.id.startsWith('rel_') ||
-            task.id.startsWith('baby_') ||
-            task.id.startsWith('house_') ||
-            task.id.startsWith('self_') ||
-            task.id.startsWith('admin_') ||
-            task.id.startsWith('seas_')
-          );
-          
-          return !isTemplateId;
-        })
-        .slice(0, 3); // Limit to 3 most recent (already sorted by server)
-
-        setPastPromises(pastPromisesReady);
-      },
-      (error) => {
-        // Handle Firestore errors gracefully with fallback
-        if (error.code === 'permission-denied') {
-          router.push('/login');
-        } else if (error.code === 'failed-precondition') {
-          // Fallback query if composite index doesn't exist yet
-          console.warn('Composite index needed for optimal past promises performance');
-          const fallbackQuery = query(
-            collection(db, 'tasks'),
-            where('userId', '==', user.uid),
-            where('source', '==', 'manual'),
-            orderBy('createdAt', 'desc')
-          );
-          return onSnapshot(fallbackQuery, (snapshot) => {
-            const allTasks = snapshot.docs
-              .map(doc => ({ id: doc.id, ...doc.data() }))
-              .filter(task => {
-                if (task.deleted === true || task.dismissed === true) return false;
-                const taskDate = task.createdAt?.toDate();
-                if (!taskDate || taskDate >= today || taskDate < fourteenDaysAgo) return false;
-                if (task.completedAt) return false;
-                return true;
-              })
-              .slice(0, 3);
-            setPastPromises(allTasks);
-          });
-        }
+      if (data.deleted === true) return false;
+      if (data.dismissed === true) return false;
+      
+      if (data.lastRestored) {
+        const restoredDate = data.lastRestored.toDate();
+        const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
+        if (restoredToday) return false;
       }
-    );
+      
+      if (!createdDate) return false;
+      if (data.completedAt) return false;
+      if (data.snoozedUntil && data.snoozedUntil.toDate() > new Date()) return false;
+      
+      const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+      return daysSinceCreated >= 1 && daysSinceCreated <= 14 && data.source === 'manual';
+    });
 
-    return unsubscribe;
-  }, [user?.uid, db, router]);
+    const past = eligibleTasks
+      .map((docSnap) => {
+        const data = docSnap.data();
+        const createdDate = data.createdAt.toDate();
+        const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+        
+        let ageLabel = '';
+        if (daysSinceCreated === 1) ageLabel = 'Yesterday';
+        else if (daysSinceCreated <= 7) ageLabel = `${daysSinceCreated} days ago`;
+        else ageLabel = 'Over a week ago';
+        
+        return {
+          id: docSnap.id,
+          ...data,
+          ageLabel,
+          daysSinceCreated
+        };
+      })
+      .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
+      .slice(0, 3);
+
+    setPastPromises(past);
+  }, [user, db]);
 
   // Handle voice tasks added
   const handleVoiceTasksAdded = useCallback(() => {
@@ -563,7 +487,7 @@ export default function DashboardClient() {
       }
       
       const taskData = taskDoc.data();
-      if (taskData.dismissed) {
+      if (taskData.dismissed === true) {
         if (process.env.NODE_ENV === 'development') {
           console.log(`[DEBUG] Task ${taskId} already dismissed - removing from UI`);
         }
@@ -584,8 +508,8 @@ export default function DashboardClient() {
         console.log(`[DEBUG] ✅ Task ${taskId} dismissed successfully in Firestore`);
       }
       
-      // Task dismissed successfully - remove from UI
-      setPastPromises(prev => prev.filter(t => t.id !== taskId));
+      // Task dismissed successfully - refresh data to ensure it stays gone
+      await refreshAllData();
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error(`[DEBUG] ❌ Failed to dismiss task ${taskId}:`, error);
@@ -732,12 +656,10 @@ export default function DashboardClient() {
     };
   }, [user?.uid, db, router]);
 
-  // Load tasks and promises when ready (with real-time listeners + auto-cleanup)
+  // Load tasks and promises when ready - SIMPLE VERSION
   useEffect(() => {
     if (!user || showPreferences || !userPreferences || !db) return;
 
-    // Setting up real-time listeners and one-time field migration
-    
     const initializeDashboard = async () => {
       // Run field migration and ensure it completes
       await runFieldMigrationOnce();
@@ -745,35 +667,15 @@ export default function DashboardClient() {
       // Clean up orphaned template tasks
       await cleanupOrphanedTemplateTasks();
       
-      // Small delay to ensure all writes are committed
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Set up real-time listeners
-      const tasksUnsubscribe = loadTasksRealTime();
-      const pastPromisesUnsubscribe = loadPastPromisesRealTime();
+      // Load data using simple queries
+      await loadTasks();
+      await loadPastPromises();
       
       setLoading(false);
-      
-      return { tasksUnsubscribe, pastPromisesUnsubscribe };
     };
     
-    const cleanup = initializeDashboard();
-    
-    // Return cleanup function with proper error handling
-    return () => {
-      cleanup.then(({ tasksUnsubscribe, pastPromisesUnsubscribe }) => {
-        // Unsubscribing from real-time listeners
-        try {
-          if (tasksUnsubscribe) tasksUnsubscribe();
-          if (pastPromisesUnsubscribe) pastPromisesUnsubscribe();
-        } catch (error) {
-          // Ignore cleanup errors
-        }
-      }).catch(() => {
-        // Ignore initialization errors during cleanup
-      });
-    };
-  }, [user, userPreferences, showPreferences, loadTasksRealTime, loadPastPromisesRealTime, runFieldMigrationOnce, cleanupOrphanedTemplateTasks, db]);
+    initializeDashboard();
+  }, [user, userPreferences, showPreferences, loadTasks, loadPastPromises, runFieldMigrationOnce, cleanupOrphanedTemplateTasks, db]);
 
   // Loading states
   if (!mounted) {
@@ -863,8 +765,8 @@ export default function DashboardClient() {
                   return updated;
                 });
                 
-                // DON'T refresh immediately - let optimistic update show first
-                // setTimeout(() => refreshAllData(), 2000); // Wait 2 seconds instead of 500ms
+                // Refresh after a short delay to ensure changes are reflected
+                setTimeout(() => refreshAllData(), 1000);
               }}
               loading={loading}
             />
@@ -888,6 +790,8 @@ export default function DashboardClient() {
                 userId: user.uid,
                 createdAt: Timestamp.now(),
                 source: 'manual',
+                dismissed: false,
+                deleted: false,
               };
 
               // Optimistic update
