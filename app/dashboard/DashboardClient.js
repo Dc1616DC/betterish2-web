@@ -13,6 +13,7 @@ import {
   updateDoc,
   getDoc,
   setDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { initializeFirebaseClient } from '@/lib/firebase-client';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -349,6 +350,55 @@ export default function DashboardClient() {
     setPastPromises(prev => prev.filter(t => t.id !== taskId));
   };
 
+  // Cleanup template tasks from database
+  const cleanupTemplateTasks = async () => {
+    if (!db || !user?.uid) {
+      console.error('Cannot cleanup: missing db or user');
+      return;
+    }
+    
+    try {
+      console.log('🧹 Starting template task cleanup...');
+      
+      const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      
+      const templateTasks = [];
+      const templatePrefixes = ['rel_', 'baby_', 'house_', 'self_', 'admin_', 'seas_'];
+      
+      snapshot.docs.forEach((docSnap) => {
+        const isTemplate = templatePrefixes.some(prefix => docSnap.id.startsWith(prefix));
+        if (isTemplate) {
+          templateTasks.push({
+            id: docSnap.id,
+            title: docSnap.data().title,
+            ref: docSnap.ref
+          });
+        }
+      });
+      
+      console.log(`Found ${templateTasks.length} template tasks:`, templateTasks);
+      
+      if (templateTasks.length === 0) {
+        alert('✅ No template tasks found. Database is clean!');
+        return;
+      }
+      
+      const confirmed = confirm(`⚠️ Delete ${templateTasks.length} template tasks from database?`);
+      if (!confirmed) return;
+      
+      await Promise.all(templateTasks.map(task => deleteDoc(task.ref)));
+      
+      console.log('✅ Deleted all template tasks!');
+      alert('✅ Template tasks deleted! Refreshing dashboard...');
+      
+      await refreshAllData();
+    } catch (error) {
+      console.error('❌ Cleanup error:', error);
+      alert('❌ Cleanup failed. Check console for details.');
+    }
+  };
+
   // Dismiss task
   const dismissTask = async (taskId) => {
     if (!db || !user?.uid) {
@@ -551,6 +601,22 @@ export default function DashboardClient() {
             showMoreOptions={showMoreOptions}
             onToggleMoreOptions={() => setShowMoreOptions(!showMoreOptions)}
           />
+
+          {/* Temporary Cleanup Button */}
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <h3 className="text-sm font-medium text-red-900 mb-2">
+              🧹 Database Cleanup Required
+            </h3>
+            <p className="text-sm text-red-700 mb-3">
+              Template tasks are causing dismiss errors. Click to clean them up.
+            </p>
+            <button
+              onClick={cleanupTemplateTasks}
+              className="text-sm bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition-colors"
+            >
+              Clean Up Template Tasks
+            </button>
+          </div>
 
           {/* Task Actions Component */}
           <TaskActions
