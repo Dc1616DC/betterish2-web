@@ -142,6 +142,23 @@ export default function DashboardClient() {
     
     const relevantTasks = allTasks
       .filter(task => {
+        // EXCLUDE TEMPLATE TASKS FROM MAIN TASK LIST
+        const isTemplateId = (
+          task.id.startsWith('rel_') ||
+          task.id.startsWith('baby_') ||
+          task.id.startsWith('house_') ||
+          task.id.startsWith('self_') ||
+          task.id.startsWith('admin_') ||
+          task.id.startsWith('seas_')
+        );
+        if (isTemplateId) {
+          console.log(`[FILTER] Excluding template task ${task.id} from main tasks`);
+          return false;
+        }
+        
+        // EXCLUDE DISMISSED AND DELETED TASKS
+        if (task.dismissed === true || task.deleted === true) return false;
+        
         if (!task.createdAt) return false;
         const taskDate = task.createdAt.toDate();
         
