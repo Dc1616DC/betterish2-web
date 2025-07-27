@@ -76,19 +76,6 @@ export default function DashboardClient() {
 
   // Sort tasks with 3+ day old incomplete tasks first (nudged), then show completed tasks at bottom
   const sortedTasks = useMemo(() => {
-    // Debug: Check for template tasks in the tasks array
-    const templateTasksInArray = tasks.filter(t => 
-      t.id?.startsWith('rel_') || 
-      t.id?.startsWith('house_') || 
-      t.id?.startsWith('baby_')
-    );
-    
-    if (templateTasksInArray.length > 0) {
-      console.log(`[SORTED TASKS] Found ${templateTasksInArray.length} template tasks in tasks array:`, 
-        templateTasksInArray.map(t => ({ id: t.id, title: t.title }))
-      );
-    }
-    
     const incomplete = tasks
       .filter((t) => !t.completedAt && !t.completed)
       .map(task => ({
@@ -138,16 +125,6 @@ export default function DashboardClient() {
     const snapshot = await getDocs(q);
     const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Debug: Log all tasks with "house_002" or similar titles
-    const debugTasks = allTasks.filter(task => 
-      task.title?.toLowerCase().includes('kitchen') || 
-      task.title?.toLowerCase().includes('counter') ||
-      task.id.includes('house_002')
-    );
-    if (debugTasks.length > 0) {
-      console.log(`[Dashboard] DEBUG - Found ${debugTasks.length} kitchen/counter tasks:`, debugTasks);
-    }
-    
     // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -166,7 +143,6 @@ export default function DashboardClient() {
           task.id.startsWith('seas_')
         );
         if (isTemplateId) {
-          console.log(`[FILTER] Excluding template task ${task.id} from main tasks`);
           return false;
         }
         
@@ -194,7 +170,6 @@ export default function DashboardClient() {
         return bDate.getTime() - aDate.getTime();
       });
     
-    console.log(`[Dashboard] Loaded ${relevantTasks.length} relevant tasks from ${allTasks.length} total`);
     setTasks(relevantTasks);
   }, [user, db]);
 
@@ -208,19 +183,6 @@ export default function DashboardClient() {
     const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
     const snapshot = await getDocs(q);
 
-    console.log(`[PAST PROMISES] Found ${snapshot.docs.length} total user tasks in database`);
-    
-    // Debug: Log all rel_014 tasks found
-    const rel014Tasks = snapshot.docs.filter(doc => doc.id === 'rel_014' || doc.data().title?.includes('Tell her one thing she\'s great at'));
-    if (rel014Tasks.length > 0) {
-      console.log(`[PAST PROMISES] Found ${rel014Tasks.length} rel_014 tasks:`, rel014Tasks.map(doc => ({
-        id: doc.id,
-        title: doc.data().title,
-        dismissed: doc.data().dismissed,
-        deleted: doc.data().deleted
-      })));
-    }
-
     // Clean up legacy data that might be missing fields
     const cleanupPromises = [];
     
@@ -230,7 +192,6 @@ export default function DashboardClient() {
       
       // Clean up missing fields on legacy tasks
       if (data.dismissed === undefined || data.deleted === undefined) {
-        console.log(`[CLEANUP] Fixing missing fields on task ${docSnap.id}`);
         cleanupPromises.push(
           updateDoc(docSnap.ref, {
             dismissed: data.dismissed || false,
@@ -249,13 +210,11 @@ export default function DashboardClient() {
         docSnap.id.startsWith('seas_')
       );
       if (isTemplateId) {
-        console.log(`[FILTER] Excluding template task ${docSnap.id} from past promises`);
         return false;
       }
       
       // EXCLUDE DISMISSED TASKS
       if (data.dismissed === true) {
-        console.log(`[FILTER] Excluding dismissed task ${docSnap.id} from past promises`);
         return false;
       }
       
@@ -296,12 +255,10 @@ export default function DashboardClient() {
 
     // Execute cleanup of legacy fields
     if (cleanupPromises.length > 0) {
-      console.log(`[CLEANUP] Updating ${cleanupPromises.length} tasks with missing fields`);
       try {
         await Promise.all(cleanupPromises);
-        console.log(`[CLEANUP] Successfully updated legacy task fields`);
       } catch (error) {
-        console.error('[CLEANUP] Error updating legacy fields:', error);
+        console.error('Error updating legacy fields:', error);
       }
     }
 
@@ -315,11 +272,7 @@ export default function DashboardClient() {
         task.id.startsWith('admin_') ||
         task.id.startsWith('seas_')
       );
-      if (isTemplateId) {
-        console.log(`[SAFETY NET] Filtered out template task ${task.id} from past promises`);
-        return false;
-      }
-      return true;
+      return !isTemplateId;
     });
     
     setPastPromises(safePastPromises);
@@ -474,43 +427,19 @@ export default function DashboardClient() {
   // Dismiss task
   const dismissTask = async (taskId) => {
     if (!db || !user?.uid) {
-      console.error('Cannot dismiss task: missing db or user', { db: !!db, user: !!user, uid: user?.uid });
       return;
     }
     
     try {
-      console.log(`[DISMISS] Starting dismiss of task ${taskId} for user ${user.uid}`);
-      
-      // First, check if the document exists
-      const docRef = doc(db, 'tasks', taskId);
-      const docSnap = await getDoc(docRef);
-      
-      if (!docSnap.exists()) {
-        console.error(`[DISMISS] Task ${taskId} does not exist in Firestore - removing from local state`);
-        // Remove from pastPromises state since it doesn't exist in database
-        setPastPromises(prev => {
-          const filtered = prev.filter(t => t.id !== taskId);
-          console.log(`[DISMISS] Removed ${taskId} from pastPromises. Before: ${prev.length}, After: ${filtered.length}`);
-          console.log('[DISMISS] pastPromises after removal:', filtered.map(t => ({ id: t.id, title: t.title })));
-          return filtered;
-        });
-        return;
-      }
-      
-      console.log(`[DISMISS] Task ${taskId} exists in database, proceeding with dismiss`);
-      
-      await updateDoc(docRef, {
+      await updateDoc(doc(db, 'tasks', taskId), {
         dismissed: true,
         dismissedAt: Timestamp.now(),
       });
       
-      console.log(`[DISMISS] Successfully dismissed task ${taskId}`);
-      
       // Refresh data to ensure dismissed task doesn't reappear
       await loadPastPromises();
-      console.log(`[DISMISS] Refreshed past promises after dismissing ${taskId}`);
     } catch (error) {
-      console.error(`[DISMISS] Error dismissing task ${taskId}:`, error.code, error.message, error);
+      console.error('Error dismissing task:', error);
       
       // Check for various not-found error patterns
       const isNotFound = error.code === 'not-found' || 
@@ -518,26 +447,10 @@ export default function DashboardClient() {
                         error.message?.includes('not found');
       
       if (isNotFound) {
-        console.error(`[DISMISS] Task ${taskId} not found in database - removing from local state`);
         // Remove from pastPromises state since it doesn't exist in database
-        setPastPromises(prev => {
-          const filtered = prev.filter(t => t.id !== taskId);
-          console.log(`[DISMISS] Removed ${taskId} from pastPromises. Before: ${prev.length}, After: ${filtered.length}`);
-          return filtered;
-        });
-        
-        // Also remove from tasks state if it exists there
-        setTasks(prev => {
-          const filtered = prev.filter(t => t.id !== taskId);
-          if (prev.length !== filtered.length) {
-            console.log(`[DISMISS] Also removed ${taskId} from tasks state`);
-          }
-          return filtered;
-        });
-        
-        console.log(`[DISMISS] Local state cleanup complete for ${taskId}`);
+        setPastPromises(prev => prev.filter(t => t.id !== taskId));
+        setTasks(prev => prev.filter(t => t.id !== taskId));
       } else if (error.code === 'permission-denied') {
-        console.error('[DISMISS] Permission denied - user may not be authenticated');
         router.push('/login');
       }
     }
@@ -740,20 +653,14 @@ export default function DashboardClient() {
                 setTasks(prev => prev.filter(t => t.id !== taskId));
               }}
               onTaskComplete={(taskId) => {
-                console.log(`[Dashboard] Optimistically completing task ${taskId}`);
                 // Optimistic update: immediately mark task as completed
-                setTasks(prev => {
-                  const updated = prev.map(task => 
+                setTasks(prev => 
+                  prev.map(task => 
                     task.id === taskId 
                       ? { ...task, completed: true, completedAt: Timestamp.now() }
                       : task
-                  );
-                  console.log(`[Dashboard] Tasks after optimistic update:`, updated.filter(t => t.id === taskId));
-                  return updated;
-                });
-                
-                // DON'T refresh immediately - let optimistic update show first
-                // setTimeout(() => refreshAllData(), 2000); // Wait 2 seconds instead of 500ms
+                  )
+                );
               }}
               loading={loading}
             />
@@ -766,16 +673,6 @@ export default function DashboardClient() {
             onSnoozeTask={snoozeTask}
             onDismissTask={dismissTask}
           />
-          
-          {/* Debug: Show what's in pastPromises */}
-          {process.env.NODE_ENV === 'development' && pastPromises.length > 0 && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-              <strong>DEBUG - Past Promises ({pastPromises.length}):</strong>
-              <pre className="mt-2 text-xs overflow-auto">
-                {JSON.stringify(pastPromises.map(p => ({ id: p.id, title: p.title })), null, 2)}
-              </pre>
-            </div>
-          )}
 
           {/* Task Form Modal */}
           <TaskForm
