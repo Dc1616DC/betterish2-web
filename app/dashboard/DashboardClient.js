@@ -488,16 +488,32 @@ export default function DashboardClient() {
       await loadPastPromises();
       console.log(`[DISMISS] Refreshed past promises after dismissing ${taskId}`);
     } catch (error) {
-      console.error(`[DISMISS] Error dismissing task ${taskId}:`, error.code, error.message);
+      console.error(`[DISMISS] Error dismissing task ${taskId}:`, error.code, error.message, error);
       
-      if (error.code === 'not-found') {
-        console.error(`[DISMISS] Task ${taskId} not found - removing from local state`);
+      // Check for various not-found error patterns
+      const isNotFound = error.code === 'not-found' || 
+                        error.message?.includes('No document to update') ||
+                        error.message?.includes('not found');
+      
+      if (isNotFound) {
+        console.error(`[DISMISS] Task ${taskId} not found in database - removing from local state`);
         // Remove from pastPromises state since it doesn't exist in database
         setPastPromises(prev => {
           const filtered = prev.filter(t => t.id !== taskId);
           console.log(`[DISMISS] Removed ${taskId} from pastPromises. Before: ${prev.length}, After: ${filtered.length}`);
           return filtered;
         });
+        
+        // Also remove from tasks state if it exists there
+        setTasks(prev => {
+          const filtered = prev.filter(t => t.id !== taskId);
+          if (prev.length !== filtered.length) {
+            console.log(`[DISMISS] Also removed ${taskId} from tasks state`);
+          }
+          return filtered;
+        });
+        
+        console.log(`[DISMISS] Local state cleanup complete for ${taskId}`);
       } else if (error.code === 'permission-denied') {
         console.error('[DISMISS] Permission denied - user may not be authenticated');
         router.push('/login');
