@@ -471,7 +471,12 @@ export default function DashboardClient() {
       if (!docSnap.exists()) {
         console.error(`[DISMISS] Task ${taskId} does not exist in Firestore - removing from local state`);
         // Remove from pastPromises state since it doesn't exist in database
-        setPastPromises(prev => prev.filter(t => t.id !== taskId));
+        setPastPromises(prev => {
+          const filtered = prev.filter(t => t.id !== taskId);
+          console.log(`[DISMISS] Removed ${taskId} from pastPromises. Before: ${prev.length}, After: ${filtered.length}`);
+          console.log('[DISMISS] pastPromises after removal:', filtered.map(t => ({ id: t.id, title: t.title })));
+          return filtered;
+        });
         return;
       }
       
