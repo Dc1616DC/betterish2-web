@@ -27,11 +27,17 @@ const TaskList = memo(function TaskList({
       // Use optimistic updates for immediate UI feedback
       switch (action) {
         case 'complete':
-          // Auth guard - crucial for Firebase v9
-          if (!user || !user.uid) {
-            // No authenticated user for complete operation
+          // Auth and DB guard - crucial for Firebase v9
+          if (!user || !user.uid || !db) {
+            console.error('[TASK] Cannot complete task: missing auth or db', { 
+              user: !!user, 
+              uid: user?.uid, 
+              db: !!db 
+            });
             return;
           }
+          
+          console.log(`[TASK] Starting completion of task ${taskId} for user ${user.uid}`);
           
           // Debug logging
           // Attempting to complete task

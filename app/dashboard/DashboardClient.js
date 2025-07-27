@@ -177,9 +177,23 @@ export default function DashboardClient() {
     const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
     const snapshot = await getDocs(q);
 
+    // Clean up legacy data that might be missing fields
+    const cleanupPromises = [];
+    
     const eligibleTasks = snapshot.docs.filter((docSnap) => {
       const data = docSnap.data();
       const createdDate = data.createdAt?.toDate();
+      
+      // Clean up missing fields on legacy tasks
+      if (data.dismissed === undefined || data.deleted === undefined) {
+        console.log(`[CLEANUP] Fixing missing fields on task ${docSnap.id}`);
+        cleanupPromises.push(
+          updateDoc(docSnap.ref, {
+            dismissed: data.dismissed || false,
+            deleted: data.deleted || false,
+          })
+        );
+      }
       
       // EXCLUDE TEMPLATE TASKS COMPLETELY
       const isTemplateId = (
@@ -190,10 +204,16 @@ export default function DashboardClient() {
         docSnap.id.startsWith('admin_') ||
         docSnap.id.startsWith('seas_')
       );
-      if (isTemplateId) return false;
+      if (isTemplateId) {
+        console.log(`[FILTER] Excluding template task ${docSnap.id} from past promises`);
+        return false;
+      }
       
       // EXCLUDE DISMISSED TASKS
-      if (data.dismissed === true) return false;
+      if (data.dismissed === true) {
+        console.log(`[FILTER] Excluding dismissed task ${docSnap.id} from past promises`);
+        return false;
+      }
       
       if (data.lastRestored) {
         const restoredDate = data.lastRestored.toDate();
@@ -229,6 +249,17 @@ export default function DashboardClient() {
       })
       .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
       .slice(0, 3);
+
+    // Execute cleanup of legacy fields
+    if (cleanupPromises.length > 0) {
+      console.log(`[CLEANUP] Updating ${cleanupPromises.length} tasks with missing fields`);
+      try {
+        await Promise.all(cleanupPromises);
+        console.log(`[CLEANUP] Successfully updated legacy task fields`);
+      } catch (error) {
+        console.error('[CLEANUP] Error updating legacy fields:', error);
+      }
+    }
 
     setPastPromises(past);
   }, [user, db]);
@@ -303,18 +334,30 @@ export default function DashboardClient() {
 
   // Dismiss task
   const dismissTask = async (taskId) => {
-    if (!db) return;
+    if (!db || !user?.uid) {
+      console.error('Cannot dismiss task: missing db or user', { db: !!db, user: !!user, uid: user?.uid });
+      return;
+    }
     
     try {
+      console.log(`[DISMISS] Starting dismiss of task ${taskId} for user ${user.uid}`);
+      
       await updateDoc(doc(db, 'tasks', taskId), {
         dismissed: true,
         dismissedAt: Timestamp.now(),
       });
       
+      console.log(`[DISMISS] Successfully dismissed task ${taskId}`);
+      
       // Refresh data to ensure dismissed task doesn't reappear
       await loadPastPromises();
+      console.log(`[DISMISS] Refreshed past promises after dismissing ${taskId}`);
     } catch (error) {
-      console.error('Error dismissing task:', error);
+      console.error(`[DISMISS] Error dismissing task ${taskId}:`, error.code, error.message);
+      if (error.code === 'permission-denied') {
+        console.error('[DISMISS] Permission denied - user may not be authenticated');
+        router.push('/login');
+      }
     }
   };
 
