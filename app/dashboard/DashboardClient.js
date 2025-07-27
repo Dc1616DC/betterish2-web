@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, memo, lazy, Suspense } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   collection,
   query,
@@ -20,11 +20,9 @@ import { useRouter } from 'next/navigation';
 import { generateSmartDailyTasks } from '@/constants/tasks';
 import UserPreferences from '@/components/UserPreferences';
 import PullToRefresh from '@/components/PullToRefresh';
+import RecurringTaskManager from '@/components/RecurringTaskManager';
+import EmergencyModeSelector from '@/components/EmergencyModeSelector';
 import RelationshipTracker from '@/components/RelationshipTracker';
-
-// Lazy load heavy components for better performance
-const LazyRecurringTaskManager = lazy(() => import('@/components/RecurringTaskManager'));
-const LazyEmergencyModeSelector = lazy(() => import('@/components/EmergencyModeSelector'));
 import { shouldCreateToday } from '@/lib/recurringTasks';
 import { generateSmartContextualTasks } from '@/lib/contextualTasks';
 
@@ -36,7 +34,6 @@ import PastPromises from '@/components/PastPromises';
 import TaskForm from '@/components/TaskForm';
 import TaskErrorBoundary from '@/components/TaskErrorBoundary';
 import DashboardLoading from '@/components/DashboardLoading';
-import NotificationPermission from '@/components/NotificationPermission';
 
 export default function DashboardClient() {
   // State variables
@@ -67,30 +64,11 @@ export default function DashboardClient() {
   const [greeting, setGreeting] = useState("Hello 👋");
   const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null });
 
-  // Initialize Firebase on client side only with proper error handling
+  // Initialize Firebase on client side only
   useEffect(() => {
-    let mounted = true;
-    
-    const initFirebase = async () => {
-      try {
-        const { auth, db } = initializeFirebaseClient();
-        if (mounted && auth && db) {
-          setFirebaseInstances({ auth, db });
-        }
-      } catch (error) {
-        if (mounted) {
-          // Firebase initialization failed - redirect to login
-          router.push('/login');
-        }
-      }
-    };
-    
-    initFirebase();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [router]);
+    const { auth, db } = initializeFirebaseClient();
+    setFirebaseInstances({ auth, db });
+  }, []);
 
   // Extract auth and db for easier access
   const { auth, db } = firebaseInstances;
@@ -118,229 +96,22 @@ export default function DashboardClient() {
 
   const completedTaskCount = useMemo(() => tasks.filter((t) => t.completedAt).length, [tasks]);
 
-  // One-time field migration for old tasks (only runs once per user session)
-  const [hasRunFieldMigration, setHasRunFieldMigration] = useState(false);
-  const [hasRunTemplateCleanup, setHasRunTemplateCleanup] = useState(false);
-  
-  const runFieldMigrationOnce = useCallback(async () => {
-    if (!user || !db) return;
-    // Always run migration if it hasn't been run yet
-    if (hasRunFieldMigration) return;
-    
-    setHasRunFieldMigration(true);
-    
-    try {
-      const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
-      const snapshot = await getDocs(q);
-      
-      const tasksToUpdate = [];
-      
-      snapshot.docs.forEach(docSnap => {
-        const data = docSnap.data();
-        const needsUpdate = (
-          typeof data.dismissed === 'undefined' ||
-          typeof data.deleted === 'undefined'
-        );
-        
-        if (needsUpdate) {
-          const updates = {};
-          if (typeof data.dismissed === 'undefined') updates.dismissed = false;
-          if (typeof data.deleted === 'undefined') updates.deleted = false;
-          
-          tasksToUpdate.push({ id: docSnap.id, updates });
-        }
-      });
-      
-      // Batch update all tasks that need field migration
-      if (tasksToUpdate.length > 0) {
-        console.log(`[MIGRATION] Updating ${tasksToUpdate.length} tasks with missing fields:`, tasksToUpdate.map(t => t.id));
-        await Promise.all(
-          tasksToUpdate.map(({ id, updates }) => {
-            console.log(`[MIGRATION] Updating task ${id} with:`, updates);
-            return updateDoc(doc(db, 'tasks', id), updates);
-          })
-        );
-        console.log(`[MIGRATION] Field migration completed successfully`);
-      }
-    } catch (error) {
-      // Field migration failed - will retry on next session
-      setHasRunFieldMigration(false);
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[MIGRATION] Field migration failed:', error);
-      }
-    }
-  }, [user, db, hasRunFieldMigration]);
-
-  // One-time cleanup of orphaned template tasks
-  const cleanupOrphanedTemplateTasks = useCallback(async () => {
-    if (!user || !db) return;
-    // Always run cleanup if it hasn't been run yet
-    if (hasRunTemplateCleanup) return;
-    
-    setHasRunTemplateCleanup(true);
-    
-    try {
-      const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
-      const snapshot = await getDocs(q);
-      
-      const templateTasksToDelete = [];
-      
-      snapshot.docs.forEach(docSnap => {
-        const taskId = docSnap.id;
-        const taskData = docSnap.data();
-        const isTemplateTask = (
-          taskId.startsWith('rel_') ||
-          taskId.startsWith('baby_') ||
-          taskId.startsWith('house_') ||
-          taskId.startsWith('self_') ||
-          taskId.startsWith('admin_') ||
-          taskId.startsWith('seas_')
-        );
-        
-        
-        if (isTemplateTask) {
-          templateTasksToDelete.push({ id: taskId, title: taskData.title });
-        }
-      });
-      
-      // Delete orphaned template tasks
-      if (templateTasksToDelete.length > 0) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[CLEANUP] Found ${templateTasksToDelete.length} template tasks to delete:`, templateTasksToDelete);
-        }
-        
-        const deletePromises = templateTasksToDelete.map(async (task) => {
-          try {
-            await updateDoc(doc(db, 'tasks', task.id), {
-              deleted: true,
-              deletedAt: Timestamp.now()
-            });
-          } catch (error) {
-            // Template cleanup error - ignore
-          }
-        });
-        
-        await Promise.all(deletePromises);
-        
-        // Template cleanup completed
-      }
-    } catch (error) {
-      // Template cleanup failed - will retry on next session
-      setHasRunTemplateCleanup(false);
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[CLEANUP] Template cleanup failed:', error);
-      }
-    }
-  }, [user, db, hasRunTemplateCleanup]);
-
   // Helper to refresh all data
-  const refreshAllData = useCallback(async () => {
-    if (!user || !userPreferences || !db) return;
+  const refreshAllData = async () => {
+    if (!user || !userPreferences) return;
     
-    // Inline the data loading to avoid circular dependencies
-    // Load tasks
-    const tasksQuery = query(collection(db, 'tasks'), where('userId', '==', user.uid));
-    const tasksSnapshot = await getDocs(tasksQuery);
-    const allTasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const threeDaysAgo = new Date(today);
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    
-    const relevantTasks = allTasks
-      .filter(task => {
-        if (task.deleted === true) return false;
-        if (task.dismissed === true) return false;
-        if (!task.createdAt) return false;
-        
-        const taskDate = task.createdAt.toDate();
-        
-        if (taskDate >= today && !task.completedAt && !task.completed) return true;
-        if (taskDate >= today && (task.completedAt || task.completed)) return true;
-        if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
-        
-        return false;
-      })
-      .sort((a, b) => {
-        const aDate = a.createdAt?.toDate?.() || new Date(0);
-        const bDate = b.createdAt?.toDate?.() || new Date(0);
-        return bDate.getTime() - aDate.getTime();
-      });
-    
-    setTasks(relevantTasks);
-    
-    // Load past promises
-    const pastPromisesQuery = query(collection(db, 'tasks'), where('userId', '==', user.uid));
-    const pastPromisesSnapshot = await getDocs(pastPromisesQuery);
+    try {
+      setLoading(true);
+      await loadTasks();
+      await loadPastPromises();
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const eligibleTasks = pastPromisesSnapshot.docs.filter((docSnap) => {
-      const data = docSnap.data();
-      const createdDate = data.createdAt?.toDate();
-      
-      // Exclude template task IDs that shouldn't be in past promises
-      const isTemplateId = (
-        docSnap.id.startsWith('rel_') ||
-        docSnap.id.startsWith('baby_') ||
-        docSnap.id.startsWith('house_') ||
-        docSnap.id.startsWith('self_') ||
-        docSnap.id.startsWith('admin_') ||
-        docSnap.id.startsWith('seas_')
-      );
-      
-      if (isTemplateId) {
-        console.log(`[DEBUG REFRESH] Excluding template task ${docSnap.id} from past promises`);
-        return false;
-      }
-      
-      if (process.env.NODE_ENV === 'development') {
-        if (data.title?.toLowerCase().includes('kitchen') || data.title?.toLowerCase().includes('counter')) {
-          console.log(`[DEBUG REFRESH] Task ${docSnap.id}: dismissed=${data.dismissed}, deleted=${data.deleted}, title="${data.title}"`);
-        }
-      }
-      
-      if (data.deleted === true) return false;
-      if (data.dismissed === true) return false;
-      
-      if (data.lastRestored) {
-        const restoredDate = data.lastRestored.toDate();
-        const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
-        if (restoredToday) return false;
-      }
-      
-      if (!createdDate) return false;
-      if (data.completedAt) return false;
-      if (data.snoozedUntil && data.snoozedUntil.toDate() > new Date()) return false;
-      
-      const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-      return daysSinceCreated >= 1 && daysSinceCreated <= 14 && data.source === 'manual';
-    });
-
-    const past = eligibleTasks
-      .map((docSnap) => {
-        const data = docSnap.data();
-        const createdDate = data.createdAt.toDate();
-        const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-        
-        let ageLabel = '';
-        if (daysSinceCreated === 1) ageLabel = 'Yesterday';
-        else if (daysSinceCreated <= 7) ageLabel = `${daysSinceCreated} days ago`;
-        else ageLabel = 'Over a week ago';
-        
-        return {
-          id: docSnap.id,
-          ...data,
-          ageLabel,
-          daysSinceCreated
-        };
-      })
-      .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
-      .slice(0, 3);
-
-    setPastPromises(past);
-  }, [user, userPreferences, db]);
-
-  // Load today's tasks - SIMPLE VERSION THAT WORKED
+  // Load today's tasks
   const loadTasks = useCallback(async () => {
     if (!user || !db) return;
 
@@ -353,6 +124,16 @@ export default function DashboardClient() {
     const snapshot = await getDocs(q);
     const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
+    // Debug: Log all tasks with "house_002" or similar titles
+    const debugTasks = allTasks.filter(task => 
+      task.title?.toLowerCase().includes('kitchen') || 
+      task.title?.toLowerCase().includes('counter') ||
+      task.id.includes('house_002')
+    );
+    if (debugTasks.length > 0) {
+      console.log(`[Dashboard] DEBUG - Found ${debugTasks.length} kitchen/counter tasks:`, debugTasks);
+    }
+    
     // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -361,10 +142,7 @@ export default function DashboardClient() {
     
     const relevantTasks = allTasks
       .filter(task => {
-        if (task.deleted === true) return false;
-        if (task.dismissed === true) return false;
         if (!task.createdAt) return false;
-        
         const taskDate = task.createdAt.toDate();
         
         // Include today's incomplete tasks
@@ -385,10 +163,11 @@ export default function DashboardClient() {
         return bDate.getTime() - aDate.getTime();
       });
     
+    console.log(`[Dashboard] Loaded ${relevantTasks.length} relevant tasks from ${allTasks.length} total`);
     setTasks(relevantTasks);
   }, [user, db]);
 
-  // Load past promises - SIMPLE VERSION THAT WORKED
+  // Load past promises
   const loadPastPromises = useCallback(async () => {
     if (!user || !db) return;
 
@@ -402,7 +181,7 @@ export default function DashboardClient() {
       const data = docSnap.data();
       const createdDate = data.createdAt?.toDate();
       
-      // Exclude template task IDs that shouldn't be in past promises
+      // EXCLUDE TEMPLATE TASKS COMPLETELY
       const isTemplateId = (
         docSnap.id.startsWith('rel_') ||
         docSnap.id.startsWith('baby_') ||
@@ -411,19 +190,9 @@ export default function DashboardClient() {
         docSnap.id.startsWith('admin_') ||
         docSnap.id.startsWith('seas_')
       );
+      if (isTemplateId) return false;
       
-      if (isTemplateId) {
-        console.log(`[DEBUG LOAD] Excluding template task ${docSnap.id} from past promises`);
-        return false;
-      }
-      
-      if (process.env.NODE_ENV === 'development') {
-        if (data.title?.toLowerCase().includes('kitchen') || data.title?.toLowerCase().includes('counter')) {
-          console.log(`[DEBUG LOAD] Task ${docSnap.id}: dismissed=${data.dismissed}, deleted=${data.deleted}, title="${data.title}"`);
-        }
-      }
-      
-      if (data.deleted === true) return false;
+      // EXCLUDE DISMISSED TASKS
       if (data.dismissed === true) return false;
       
       if (data.lastRestored) {
@@ -465,25 +234,26 @@ export default function DashboardClient() {
   }, [user, db]);
 
   // Handle voice tasks added
-  const handleVoiceTasksAdded = useCallback(() => {
+  const handleVoiceTasksAdded = () => {
     setVoiceSuccess(true);
     setTimeout(() => setVoiceSuccess(false), 3000);
     refreshAllData();
-  }, [refreshAllData]);
+  };
 
   // Clear emergency mode
-  const clearEmergencyMode = useCallback(() => {
+  const clearEmergencyMode = () => {
     setEmergencyModeActive(false);
     setActiveModeTemplates([]);
-  }, []);
+    loadTasks();
+  };
 
   // Handle emergency mode selection
-  const handleEmergencyMode = useCallback((mode) => {
+  const handleEmergencyMode = (mode) => {
     setEmergencyModeActive(true);
     setActiveModeTemplates(mode.tasks || []);
     setShowEmergencyMode(false);
     refreshAllData();
-  }, [refreshAllData]);
+  };
 
   // Restore task to today
   const restoreToToday = async (taskId) => {
@@ -519,118 +289,32 @@ export default function DashboardClient() {
 
   // Snooze task
   const snoozeTask = async (taskId) => {
-    if (!db || !user || !user.uid) {
-      console.error('[Dashboard] No authenticated user or db for snooze operation', { user: !!user, db: !!db });
-      return;
-    }
-    
-    // Snoozing task
+    if (!db) return;
     
     const snoozeTime = new Date();
     snoozeTime.setHours(snoozeTime.getHours() + 1);
     
-    try {
-      // FIRST: Check if document exists
-      const taskRef = doc(db, 'tasks', taskId);
-      const taskDoc = await getDoc(taskRef);
-      
-      if (!taskDoc.exists()) {
-        // Document doesn't exist - removing from UI
-        setPastPromises(prev => prev.filter(t => t.id !== taskId));
-        return;
-      }
-      
-      await updateDoc(taskRef, {
-        snoozedUntil: Timestamp.fromDate(snoozeTime),
-      })
-        .catch(error => {
-          // Firestore update error
-          throw error;
-        });
-      
-      // Task snoozed successfully
-      setPastPromises(prev => prev.filter(t => t.id !== taskId));
-    } catch (error) {
-      // Failed to snooze task
-      // Optionally show user feedback here
-    }
+    await updateDoc(doc(db, 'tasks', taskId), {
+      snoozedUntil: Timestamp.fromDate(snoozeTime),
+    });
+    
+    setPastPromises(prev => prev.filter(t => t.id !== taskId));
   };
 
-  // Track dismissing tasks to prevent double-clicks
-  const [dismissingTasks, setDismissingTasks] = useState(new Set());
-  
   // Dismiss task
   const dismissTask = async (taskId) => {
-    if (!db || !user || !user.uid) {
-      return;
-    }
-    
-    // Prevent double-clicks
-    if (dismissingTasks.has(taskId)) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[DEBUG] Task ${taskId} already being dismissed - ignoring`);
-      }
-      return;
-    }
-    
-    setDismissingTasks(prev => new Set(prev).add(taskId));
-    
-    const isTemplateId = (
-      taskId.startsWith('rel_') ||
-      taskId.startsWith('baby_') ||
-      taskId.startsWith('house_') ||
-      taskId.startsWith('self_') ||
-      taskId.startsWith('admin_') ||
-      taskId.startsWith('seas_')
-    );
-    console.log(`[DEBUG] Dismissing task ${taskId} (isTemplate: ${isTemplateId})`);
+    if (!db) return;
     
     try {
-      // FIRST: Check if document exists and isn't already dismissed
-      const taskRef = doc(db, 'tasks', taskId);
-      const taskDoc = await getDoc(taskRef);
-      
-      if (!taskDoc.exists()) {
-        console.log(`[DEBUG] Task ${taskId} doesn't exist - removing from UI`);
-        setPastPromises(prev => prev.filter(t => t.id !== taskId));
-        return;
-      }
-      
-      const taskData = taskDoc.data();
-      if (taskData.dismissed === true) {
-        console.log(`[DEBUG] Task ${taskId} already dismissed - removing from UI`);
-        setPastPromises(prev => prev.filter(t => t.id !== taskId));
-        return;
-      }
-      
-      console.log(`[DEBUG] Updating task ${taskId} in Firestore with dismissed: true`);
-      
-      await updateDoc(taskRef, {
+      await updateDoc(doc(db, 'tasks', taskId), {
         dismissed: true,
         dismissedAt: Timestamp.now(),
       });
       
-      console.log(`[DEBUG] ✅ Task ${taskId} dismissed successfully in Firestore`);
-      
-      // Verify the update worked
-      const verifyDoc = await getDoc(taskRef);
-      if (verifyDoc.exists()) {
-        const verifyData = verifyDoc.data();
-        console.log(`[DEBUG] ✅ Verification - Task ${taskId} dismissed field is now: ${verifyData.dismissed}`);
-      }
-      
-      // Task dismissed successfully - refresh data to ensure it stays gone
-      await refreshAllData();
+      // Refresh data to ensure dismissed task doesn't reappear
+      await loadPastPromises();
     } catch (error) {
-      console.error(`[DEBUG] ❌ Failed to dismiss task ${taskId}:`, error);
-      // Don't remove from UI if there was an error
-    } finally {
-      // Always remove from dismissing set
-      setDismissingTasks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(taskId);
-        return newSet;
-      });
+      console.error('Error dismissing task:', error);
     }
   };
 
@@ -678,113 +362,82 @@ export default function DashboardClient() {
     else setGreeting(`Evening, ${name} 👋`);
   }, [user]);
 
-  // Improved auth state management with better race condition handling
+  // Auth state management
   useEffect(() => {
     if (!auth) {
       setAuthLoading(false);
       return;
     }
 
-    let mounted = true;
-    let stabilizationTimer;
+    let authStabilized = false;
+    const stabilizationTimer = setTimeout(() => {
+      authStabilized = true;
+      if (!user) {
+        router.push('/login');
+      }
+    }, 1500);
 
-    const handleAuthStateChange = (currentUser) => {
-      if (!mounted) return;
-      
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        setAuthLoading(false);
-        if (stabilizationTimer) {
-          clearTimeout(stabilizationTimer);
-          stabilizationTimer = null;
-        }
-      } else {
-        setUser(null);
-        // Only redirect if we've given auth time to initialize
-        stabilizationTimer = setTimeout(() => {
-          if (mounted && !currentUser) {
-            router.push('/login');
-          }
-        }, 1000);
-        setAuthLoading(false);
+        clearTimeout(stabilizationTimer);
+      } else if (authStabilized) {
+        router.push('/login');
       }
-    };
-
-    const unsubscribe = onAuthStateChanged(auth, handleAuthStateChange);
+      setAuthLoading(false);
+    });
 
     return () => {
-      mounted = false;
-      if (stabilizationTimer) {
-        clearTimeout(stabilizationTimer);
-      }
+      clearTimeout(stabilizationTimer);
       unsubscribe();
     };
-  }, [auth, router]);
+  }, [auth, router, user]);
 
-  // Load user data and tasks with proper error handling
+  // Load user data and tasks
   useEffect(() => {
-    if (!user?.uid || !db) return;
-
-    let mounted = true;
+    if (!user || !db) return;
 
     const loadUserData = async () => {
-      try {
-        const userRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userRef);
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const data = userDoc.data();
         
-        if (!mounted) return;
-        
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          
-          if (data.preferences?.hasSetup) {
-            setUserPreferences(data.preferences);
-          } else {
-            setShowPreferences(true);
-          }
+        if (data.preferences && data.preferences.hasSetup) {
+          setUserPreferences(data.preferences);
         } else {
-          await setDoc(userRef, {
-            streakCount: 0,
-            lastTaskCompletionDate: null,
-          });
-          if (mounted) {
-            setShowPreferences(true);
-          }
+          setShowPreferences(true);
         }
-      } catch (error) {
-        if (mounted && error.code === 'permission-denied') {
-          router.push('/login');
-        }
+      } else {
+        await setDoc(userRef, {
+          streakCount: 0,
+          lastTaskCompletionDate: null,
+        });
+        setShowPreferences(true);
       }
     };
 
-    loadUserData();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [user?.uid, db, router]);
+    loadUserData().catch(console.error);
+  }, [user, db]);
 
-  // Load tasks and promises when ready - SIMPLE VERSION
+  // Load tasks and promises when ready
   useEffect(() => {
     if (!user || showPreferences || !userPreferences || !db) return;
 
-    const initializeDashboard = async () => {
-      // Run field migration and ensure it completes
-      await runFieldMigrationOnce();
-      
-      // Clean up orphaned template tasks
-      await cleanupOrphanedTemplateTasks();
-      
-      // Load data using simple queries
-      await loadTasks();
-      await loadPastPromises();
-      
-      setLoading(false);
+    const run = async () => {
+      try {
+        await loadTasks();
+        await loadPastPromises();
+      } catch (err) {
+        console.error('[Dashboard] loadTasks error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-    
-    initializeDashboard();
-  }, [user, userPreferences, showPreferences, runFieldMigrationOnce, cleanupOrphanedTemplateTasks, db]);
+
+    run();
+  }, [user, userPreferences, showPreferences, loadTasks, loadPastPromises, db]);
 
   // Loading states
   if (!mounted) {
@@ -839,9 +492,6 @@ export default function DashboardClient() {
             onToggleMoreOptions={() => setShowMoreOptions(!showMoreOptions)}
           />
 
-          {/* Notification Permission Request - Temporarily Disabled */}
-          {/* Will re-enable after fixing Firebase messaging integration */}
-
           {/* Task Actions Component */}
           <TaskActions
             showMoreOptions={showMoreOptions}
@@ -864,6 +514,7 @@ export default function DashboardClient() {
                 setTasks(prev => prev.filter(t => t.id !== taskId));
               }}
               onTaskComplete={(taskId) => {
+                console.log(`[Dashboard] Optimistically completing task ${taskId}`);
                 // Optimistic update: immediately mark task as completed
                 setTasks(prev => {
                   const updated = prev.map(task => 
@@ -871,11 +522,12 @@ export default function DashboardClient() {
                       ? { ...task, completed: true, completedAt: Timestamp.now() }
                       : task
                   );
+                  console.log(`[Dashboard] Tasks after optimistic update:`, updated.filter(t => t.id === taskId));
                   return updated;
                 });
                 
-                // Refresh after a short delay to ensure changes are reflected
-                setTimeout(() => refreshAllData(), 1000);
+                // DON'T refresh immediately - let optimistic update show first
+                // setTimeout(() => refreshAllData(), 2000); // Wait 2 seconds instead of 500ms
               }}
               loading={loading}
             />
@@ -916,7 +568,7 @@ export default function DashboardClient() {
                   navigator.vibrate(10);
                 }
               } catch (error) {
-                // Add task error
+                console.error("❌ Add task error:", error);
                 setTasks(prev => prev.filter(t => !t.id.startsWith('temp-')));
                 throw error;
               }
@@ -927,26 +579,22 @@ export default function DashboardClient() {
             initialPriority={newTaskPriority}
           />
 
-          {/* Recurring Task Manager - Lazy Loaded */}
+          {/* Recurring Task Manager */}
           {showRecurringForm && (
-            <Suspense fallback={<DashboardLoading message="Loading recurring tasks..." />}>
-              <LazyRecurringTaskManager
-                isVisible={showRecurringForm}
-                onSave={saveRecurringTask}
-                onClose={() => setShowRecurringForm(false)}
-              />
-            </Suspense>
+            <RecurringTaskManager
+              isVisible={showRecurringForm}
+              onSave={saveRecurringTask}
+              onClose={() => setShowRecurringForm(false)}
+            />
           )}
 
-          {/* Emergency Mode Selector - Lazy Loaded */}
+          {/* Emergency Mode Selector */}
           {showEmergencyMode && (
-            <Suspense fallback={<DashboardLoading message="Loading emergency mode..." />}>
-              <LazyEmergencyModeSelector
-                isVisible={showEmergencyMode}
-                onModeSelect={handleEmergencyMode}
-                onClose={() => setShowEmergencyMode(false)}
-              />
-            </Suspense>
+            <EmergencyModeSelector
+              isVisible={showEmergencyMode}
+              onModeSelect={handleEmergencyMode}
+              onClose={() => setShowEmergencyMode(false)}
+            />
           )}
 
           {/* Relationship Tracker */}
