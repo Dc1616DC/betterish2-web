@@ -241,11 +241,89 @@ export default function DashboardClient() {
 
   // Helper to refresh all data
   const refreshAllData = useCallback(async () => {
-    if (!user || !userPreferences) return;
+    if (!user || !userPreferences || !db) return;
     
-    await loadTasks();
-    await loadPastPromises();
-  }, [user, userPreferences, loadTasks, loadPastPromises]);
+    // Inline the data loading to avoid circular dependencies
+    // Load tasks
+    const tasksQuery = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    const allTasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    
+    const relevantTasks = allTasks
+      .filter(task => {
+        if (task.deleted === true) return false;
+        if (task.dismissed === true) return false;
+        if (!task.createdAt) return false;
+        
+        const taskDate = task.createdAt.toDate();
+        
+        if (taskDate >= today && !task.completedAt && !task.completed) return true;
+        if (taskDate >= today && (task.completedAt || task.completed)) return true;
+        if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
+        
+        return false;
+      })
+      .sort((a, b) => {
+        const aDate = a.createdAt?.toDate?.() || new Date(0);
+        const bDate = b.createdAt?.toDate?.() || new Date(0);
+        return bDate.getTime() - aDate.getTime();
+      });
+    
+    setTasks(relevantTasks);
+    
+    // Load past promises
+    const pastPromisesQuery = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+    const pastPromisesSnapshot = await getDocs(pastPromisesQuery);
+
+    const eligibleTasks = pastPromisesSnapshot.docs.filter((docSnap) => {
+      const data = docSnap.data();
+      const createdDate = data.createdAt?.toDate();
+      
+      if (data.deleted === true) return false;
+      if (data.dismissed === true) return false;
+      
+      if (data.lastRestored) {
+        const restoredDate = data.lastRestored.toDate();
+        const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
+        if (restoredToday) return false;
+      }
+      
+      if (!createdDate) return false;
+      if (data.completedAt) return false;
+      if (data.snoozedUntil && data.snoozedUntil.toDate() > new Date()) return false;
+      
+      const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+      return daysSinceCreated >= 1 && daysSinceCreated <= 14 && data.source === 'manual';
+    });
+
+    const past = eligibleTasks
+      .map((docSnap) => {
+        const data = docSnap.data();
+        const createdDate = data.createdAt.toDate();
+        const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+        
+        let ageLabel = '';
+        if (daysSinceCreated === 1) ageLabel = 'Yesterday';
+        else if (daysSinceCreated <= 7) ageLabel = `${daysSinceCreated} days ago`;
+        else ageLabel = 'Over a week ago';
+        
+        return {
+          id: docSnap.id,
+          ...data,
+          ageLabel,
+          daysSinceCreated
+        };
+      })
+      .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
+      .slice(0, 3);
+
+    setPastPromises(past);
+  }, [user, userPreferences, db]);
 
   // Load today's tasks - SIMPLE VERSION THAT WORKED
   const loadTasks = useCallback(async () => {
@@ -675,7 +753,7 @@ export default function DashboardClient() {
     };
     
     initializeDashboard();
-  }, [user, userPreferences, showPreferences, loadTasks, loadPastPromises, runFieldMigrationOnce, cleanupOrphanedTemplateTasks, db]);
+  }, [user, userPreferences, showPreferences, runFieldMigrationOnce, cleanupOrphanedTemplateTasks, db]);
 
   // Loading states
   if (!mounted) {
