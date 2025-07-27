@@ -717,19 +717,71 @@ export default function DashboardClient() {
             onToggleMoreOptions={() => setShowMoreOptions(!showMoreOptions)}
           />
 
-          {/* Temporary Enhanced Cleanup Button */}
+          {/* NUCLEAR OPTION: Force delete rel_014 */}
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <h3 className="text-sm font-medium text-red-900 mb-2">
-              🧹 Enhanced Database Cleanup
+              🚨 NUCLEAR OPTION: Force Delete rel_014
             </h3>
             <p className="text-sm text-red-700 mb-3">
-              Template tasks found in database (70 total tasks). Enhanced cleanup with detailed logging.
+              Direct deletion of rel_014 from Firestore + immediate state cleanup.
             </p>
+            <button
+              onClick={async () => {
+                if (!db || !user?.uid) {
+                  alert('Not logged in or database unavailable');
+                  return;
+                }
+                
+                try {
+                  console.log('🚨 NUCLEAR: Force deleting rel_014...');
+                  
+                  // Try to delete from Firestore (might not exist)
+                  try {
+                    await deleteDoc(doc(db, 'tasks', 'rel_014'));
+                    console.log('✅ Deleted rel_014 from Firestore');
+                  } catch (error) {
+                    console.log('ℹ️ rel_014 was not in Firestore:', error.message);
+                  }
+                  
+                  // Force remove from all local state
+                  setPastPromises(prev => {
+                    const filtered = prev.filter(t => t.id !== 'rel_014');
+                    console.log(`🧹 Removed rel_014 from pastPromises: ${prev.length} -> ${filtered.length}`);
+                    return filtered;
+                  });
+                  
+                  setTasks(prev => {
+                    const filtered = prev.filter(t => t.id !== 'rel_014');
+                    if (prev.length !== filtered.length) {
+                      console.log(`🧹 Removed rel_014 from tasks: ${prev.length} -> ${filtered.length}`);
+                    }
+                    return filtered;
+                  });
+                  
+                  // Clear browser cache
+                  if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    console.log('🧹 Cleared browser caches');
+                  }
+                  
+                  console.log('🎉 NUCLEAR CLEANUP COMPLETE');
+                  alert('🎉 Nuclear cleanup complete! rel_014 should be gone.');
+                  
+                } catch (error) {
+                  console.error('❌ Nuclear cleanup failed:', error);
+                  alert('❌ Nuclear cleanup failed. Check console.');
+                }
+              }}
+              className="text-sm bg-red-800 text-white px-3 py-1.5 rounded hover:bg-red-900 transition-colors mr-2"
+            >
+              🚨 NUCLEAR DELETE
+            </button>
             <button
               onClick={cleanupTemplateTasks}
               className="text-sm bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition-colors"
             >
-              Run Enhanced Cleanup
+              Standard Cleanup
             </button>
           </div>
 
