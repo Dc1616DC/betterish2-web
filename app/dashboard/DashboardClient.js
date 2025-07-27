@@ -305,7 +305,24 @@ export default function DashboardClient() {
       }
     }
 
-    setPastPromises(past);
+    // FINAL SAFETY NET: Filter out any template tasks that somehow made it through
+    const safePastPromises = past.filter(task => {
+      const isTemplateId = (
+        task.id.startsWith('rel_') ||
+        task.id.startsWith('baby_') ||
+        task.id.startsWith('house_') ||
+        task.id.startsWith('self_') ||
+        task.id.startsWith('admin_') ||
+        task.id.startsWith('seas_')
+      );
+      if (isTemplateId) {
+        console.log(`[SAFETY NET] Filtered out template task ${task.id} from past promises`);
+        return false;
+      }
+      return true;
+    });
+    
+    setPastPromises(safePastPromises);
   }, [user, db]);
 
   // Handle voice tasks added
