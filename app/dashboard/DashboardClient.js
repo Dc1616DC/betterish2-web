@@ -76,6 +76,19 @@ export default function DashboardClient() {
 
   // Sort tasks with 3+ day old incomplete tasks first (nudged), then show completed tasks at bottom
   const sortedTasks = useMemo(() => {
+    // Debug: Check for template tasks in the tasks array
+    const templateTasksInArray = tasks.filter(t => 
+      t.id?.startsWith('rel_') || 
+      t.id?.startsWith('house_') || 
+      t.id?.startsWith('baby_')
+    );
+    
+    if (templateTasksInArray.length > 0) {
+      console.log(`[SORTED TASKS] Found ${templateTasksInArray.length} template tasks in tasks array:`, 
+        templateTasksInArray.map(t => ({ id: t.id, title: t.title }))
+      );
+    }
+    
     const incomplete = tasks
       .filter((t) => !t.completedAt && !t.completed)
       .map(task => ({
