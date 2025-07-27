@@ -368,13 +368,32 @@ export default function DashboardClient() {
       const templateTasks = [];
       const templatePrefixes = ['rel_', 'baby_', 'house_', 'self_', 'admin_', 'seas_'];
       
+      // Template task titles to search for
+      const templateTitles = [
+        'Ask how her day was',
+        'Put your phone away at dinner',
+        'Text her something appreciative',
+        'Clean up after dinner',
+        'Sit and talk for 5 mins',
+        'Tell her one thing she\'s great at',
+        'Wipe kitchen counters',
+        'Quick toy pickup',
+        'Take out trash',
+        'Ask how she slept'
+      ];
+      
       snapshot.docs.forEach((docSnap) => {
         const taskId = docSnap.id;
         const taskData = docSnap.data();
-        const isTemplate = templatePrefixes.some(prefix => taskId.startsWith(prefix));
         
-        if (isTemplate) {
-          console.log(`🎯 Found template task: ${taskId} - ${taskData.title}`);
+        // Check by ID prefix OR by matching template content
+        const isTemplateById = templatePrefixes.some(prefix => taskId.startsWith(prefix));
+        const isTemplateByTitle = templateTitles.some(title => 
+          taskData.title && taskData.title.toLowerCase().includes(title.toLowerCase())
+        );
+        
+        if (isTemplateById || isTemplateByTitle) {
+          console.log(`🎯 Found template task: ${taskId} - ${taskData.title} (byId: ${isTemplateById}, byTitle: ${isTemplateByTitle})`);
           templateTasks.push({
             id: taskId,
             title: taskData.title,
