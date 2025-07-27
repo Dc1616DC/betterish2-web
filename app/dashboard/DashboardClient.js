@@ -602,21 +602,6 @@ export default function DashboardClient() {
             onToggleMoreOptions={() => setShowMoreOptions(!showMoreOptions)}
           />
 
-          {/* Temporary Cleanup Button */}
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <h3 className="text-sm font-medium text-red-900 mb-2">
-              🧹 Database Cleanup Required
-            </h3>
-            <p className="text-sm text-red-700 mb-3">
-              Template tasks are causing dismiss errors. Click to clean them up.
-            </p>
-            <button
-              onClick={cleanupTemplateTasks}
-              className="text-sm bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition-colors"
-            >
-              Clean Up Template Tasks
-            </button>
-          </div>
 
           {/* Task Actions Component */}
           <TaskActions
@@ -666,6 +651,16 @@ export default function DashboardClient() {
             onSnoozeTask={snoozeTask}
             onDismissTask={dismissTask}
           />
+          
+          {/* Debug: Show what's in pastPromises */}
+          {process.env.NODE_ENV === 'development' && pastPromises.length > 0 && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
+              <strong>DEBUG - Past Promises ({pastPromises.length}):</strong>
+              <pre className="mt-2 text-xs overflow-auto">
+                {JSON.stringify(pastPromises.map(p => ({ id: p.id, title: p.title })), null, 2)}
+              </pre>
+            </div>
+          )}
 
           {/* Task Form Modal */}
           <TaskForm
