@@ -493,7 +493,11 @@ export default function DashboardClient() {
       if (error.code === 'not-found') {
         console.error(`[DISMISS] Task ${taskId} not found - removing from local state`);
         // Remove from pastPromises state since it doesn't exist in database
-        setPastPromises(prev => prev.filter(t => t.id !== taskId));
+        setPastPromises(prev => {
+          const filtered = prev.filter(t => t.id !== taskId);
+          console.log(`[DISMISS] Removed ${taskId} from pastPromises. Before: ${prev.length}, After: ${filtered.length}`);
+          return filtered;
+        });
       } else if (error.code === 'permission-denied') {
         console.error('[DISMISS] Permission denied - user may not be authenticated');
         router.push('/login');
