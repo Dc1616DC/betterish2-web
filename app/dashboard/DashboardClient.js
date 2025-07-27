@@ -363,15 +363,21 @@ export default function DashboardClient() {
       const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
       
+      console.log(`📊 Checking ${snapshot.docs.length} total tasks for templates...`);
+      
       const templateTasks = [];
       const templatePrefixes = ['rel_', 'baby_', 'house_', 'self_', 'admin_', 'seas_'];
       
       snapshot.docs.forEach((docSnap) => {
-        const isTemplate = templatePrefixes.some(prefix => docSnap.id.startsWith(prefix));
+        const taskId = docSnap.id;
+        const taskData = docSnap.data();
+        const isTemplate = templatePrefixes.some(prefix => taskId.startsWith(prefix));
+        
         if (isTemplate) {
+          console.log(`🎯 Found template task: ${taskId} - ${taskData.title}`);
           templateTasks.push({
-            id: docSnap.id,
-            title: docSnap.data().title,
+            id: taskId,
+            title: taskData.title,
             ref: docSnap.ref
           });
         }
@@ -384,10 +390,14 @@ export default function DashboardClient() {
         return;
       }
       
-      const confirmed = confirm(`⚠️ Delete ${templateTasks.length} template tasks from database?`);
+      const confirmed = confirm(`⚠️ Delete ${templateTasks.length} template tasks from database?\n\nTasks to delete:\n${templateTasks.map(t => `- ${t.id}: ${t.title}`).join('\n')}`);
       if (!confirmed) return;
       
-      await Promise.all(templateTasks.map(task => deleteDoc(task.ref)));
+      console.log('🗑️ Deleting template tasks...');
+      await Promise.all(templateTasks.map(task => {
+        console.log(`   Deleting: ${task.id}`);
+        return deleteDoc(task.ref);
+      }));
       
       console.log('✅ Deleted all template tasks!');
       alert('✅ Template tasks deleted! Refreshing dashboard...');
@@ -602,6 +612,21 @@ export default function DashboardClient() {
             onToggleMoreOptions={() => setShowMoreOptions(!showMoreOptions)}
           />
 
+          {/* Temporary Enhanced Cleanup Button */}
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <h3 className="text-sm font-medium text-red-900 mb-2">
+              🧹 Enhanced Database Cleanup
+            </h3>
+            <p className="text-sm text-red-700 mb-3">
+              Template tasks found in database (70 total tasks). Enhanced cleanup with detailed logging.
+            </p>
+            <button
+              onClick={cleanupTemplateTasks}
+              className="text-sm bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 transition-colors"
+            >
+              Run Enhanced Cleanup
+            </button>
+          </div>
 
           {/* Task Actions Component */}
           <TaskActions
