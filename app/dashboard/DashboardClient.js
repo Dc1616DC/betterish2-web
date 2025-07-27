@@ -124,8 +124,8 @@ export default function DashboardClient() {
   
   const runFieldMigrationOnce = useCallback(async () => {
     if (!user || !db) return;
-    // In development, always run migration to catch issues
-    if (process.env.NODE_ENV === 'production' && hasRunFieldMigration) return;
+    // Always run migration if it hasn't been run yet
+    if (hasRunFieldMigration) return;
     
     setHasRunFieldMigration(true);
     
@@ -153,20 +153,14 @@ export default function DashboardClient() {
       
       // Batch update all tasks that need field migration
       if (tasksToUpdate.length > 0) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[MIGRATION] Updating ${tasksToUpdate.length} tasks with missing fields:`, tasksToUpdate.map(t => t.id));
-        }
+        console.log(`[MIGRATION] Updating ${tasksToUpdate.length} tasks with missing fields:`, tasksToUpdate.map(t => t.id));
         await Promise.all(
           tasksToUpdate.map(({ id, updates }) => {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`[MIGRATION] Updating task ${id} with:`, updates);
-            }
+            console.log(`[MIGRATION] Updating task ${id} with:`, updates);
             return updateDoc(doc(db, 'tasks', id), updates);
           })
         );
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[MIGRATION] Field migration completed successfully`);
-        }
+        console.log(`[MIGRATION] Field migration completed successfully`);
       }
     } catch (error) {
       // Field migration failed - will retry on next session
@@ -180,8 +174,8 @@ export default function DashboardClient() {
   // One-time cleanup of orphaned template tasks
   const cleanupOrphanedTemplateTasks = useCallback(async () => {
     if (!user || !db) return;
-    // In development, always run cleanup to ensure it works
-    if (process.env.NODE_ENV === 'production' && hasRunTemplateCleanup) return;
+    // Always run cleanup if it hasn't been run yet
+    if (hasRunTemplateCleanup) return;
     
     setHasRunTemplateCleanup(true);
     
@@ -283,6 +277,12 @@ export default function DashboardClient() {
     const eligibleTasks = pastPromisesSnapshot.docs.filter((docSnap) => {
       const data = docSnap.data();
       const createdDate = data.createdAt?.toDate();
+      
+      if (process.env.NODE_ENV === 'development') {
+        if (data.title?.toLowerCase().includes('kitchen') || data.title?.toLowerCase().includes('counter')) {
+          console.log(`[DEBUG REFRESH] Task ${docSnap.id}: dismissed=${data.dismissed}, deleted=${data.deleted}, title="${data.title}"`);
+        }
+      }
       
       if (data.deleted === true) return false;
       if (data.dismissed === true) return false;
@@ -386,6 +386,12 @@ export default function DashboardClient() {
     const eligibleTasks = snapshot.docs.filter((docSnap) => {
       const data = docSnap.data();
       const createdDate = data.createdAt?.toDate();
+      
+      if (process.env.NODE_ENV === 'development') {
+        if (data.title?.toLowerCase().includes('kitchen') || data.title?.toLowerCase().includes('counter')) {
+          console.log(`[DEBUG LOAD] Task ${docSnap.id}: dismissed=${data.dismissed}, deleted=${data.deleted}, title="${data.title}"`);
+        }
+      }
       
       if (data.deleted === true) return false;
       if (data.dismissed === true) return false;
@@ -539,17 +545,15 @@ export default function DashboardClient() {
     
     setDismissingTasks(prev => new Set(prev).add(taskId));
     
-    if (process.env.NODE_ENV === 'development') {
-      const isTemplateId = (
-        taskId.startsWith('rel_') ||
-        taskId.startsWith('baby_') ||
-        taskId.startsWith('house_') ||
-        taskId.startsWith('self_') ||
-        taskId.startsWith('admin_') ||
-        taskId.startsWith('seas_')
-      );
-      console.log(`[DEBUG] Dismissing task ${taskId} (isTemplate: ${isTemplateId})`);
-    }
+    const isTemplateId = (
+      taskId.startsWith('rel_') ||
+      taskId.startsWith('baby_') ||
+      taskId.startsWith('house_') ||
+      taskId.startsWith('self_') ||
+      taskId.startsWith('admin_') ||
+      taskId.startsWith('seas_')
+    );
+    console.log(`[DEBUG] Dismissing task ${taskId} (isTemplate: ${isTemplateId})`);
     
     try {
       // FIRST: Check if document exists and isn't already dismissed
@@ -557,41 +561,38 @@ export default function DashboardClient() {
       const taskDoc = await getDoc(taskRef);
       
       if (!taskDoc.exists()) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[DEBUG] Task ${taskId} doesn't exist - removing from UI`);
-        }
+        console.log(`[DEBUG] Task ${taskId} doesn't exist - removing from UI`);
         setPastPromises(prev => prev.filter(t => t.id !== taskId));
         return;
       }
       
       const taskData = taskDoc.data();
       if (taskData.dismissed === true) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[DEBUG] Task ${taskId} already dismissed - removing from UI`);
-        }
+        console.log(`[DEBUG] Task ${taskId} already dismissed - removing from UI`);
         setPastPromises(prev => prev.filter(t => t.id !== taskId));
         return;
       }
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[DEBUG] Updating task ${taskId} in Firestore with dismissed: true`);
-      }
+      console.log(`[DEBUG] Updating task ${taskId} in Firestore with dismissed: true`);
       
       await updateDoc(taskRef, {
         dismissed: true,
         dismissedAt: Timestamp.now(),
       });
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[DEBUG] ✅ Task ${taskId} dismissed successfully in Firestore`);
+      console.log(`[DEBUG] ✅ Task ${taskId} dismissed successfully in Firestore`);
+      
+      // Verify the update worked
+      const verifyDoc = await getDoc(taskRef);
+      if (verifyDoc.exists()) {
+        const verifyData = verifyDoc.data();
+        console.log(`[DEBUG] ✅ Verification - Task ${taskId} dismissed field is now: ${verifyData.dismissed}`);
       }
       
       // Task dismissed successfully - refresh data to ensure it stays gone
       await refreshAllData();
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(`[DEBUG] ❌ Failed to dismiss task ${taskId}:`, error);
-      }
+      console.error(`[DEBUG] ❌ Failed to dismiss task ${taskId}:`, error);
       // Don't remove from UI if there was an error
     } finally {
       // Always remove from dismissing set
