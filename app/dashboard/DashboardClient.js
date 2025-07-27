@@ -208,6 +208,19 @@ export default function DashboardClient() {
     const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
     const snapshot = await getDocs(q);
 
+    console.log(`[PAST PROMISES] Found ${snapshot.docs.length} total user tasks in database`);
+    
+    // Debug: Log all rel_014 tasks found
+    const rel014Tasks = snapshot.docs.filter(doc => doc.id === 'rel_014' || doc.data().title?.includes('Tell her one thing she\'s great at'));
+    if (rel014Tasks.length > 0) {
+      console.log(`[PAST PROMISES] Found ${rel014Tasks.length} rel_014 tasks:`, rel014Tasks.map(doc => ({
+        id: doc.id,
+        title: doc.data().title,
+        dismissed: doc.data().dismissed,
+        deleted: doc.data().deleted
+      })));
+    }
+
     // Clean up legacy data that might be missing fields
     const cleanupPromises = [];
     
@@ -451,7 +464,20 @@ export default function DashboardClient() {
     try {
       console.log(`[DISMISS] Starting dismiss of task ${taskId} for user ${user.uid}`);
       
-      await updateDoc(doc(db, 'tasks', taskId), {
+      // First, check if the document exists
+      const docRef = doc(db, 'tasks', taskId);
+      const docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) {
+        console.error(`[DISMISS] Task ${taskId} does not exist in Firestore - removing from local state`);
+        // Remove from pastPromises state since it doesn't exist in database
+        setPastPromises(prev => prev.filter(t => t.id !== taskId));
+        return;
+      }
+      
+      console.log(`[DISMISS] Task ${taskId} exists in database, proceeding with dismiss`);
+      
+      await updateDoc(docRef, {
         dismissed: true,
         dismissedAt: Timestamp.now(),
       });
@@ -463,7 +489,12 @@ export default function DashboardClient() {
       console.log(`[DISMISS] Refreshed past promises after dismissing ${taskId}`);
     } catch (error) {
       console.error(`[DISMISS] Error dismissing task ${taskId}:`, error.code, error.message);
-      if (error.code === 'permission-denied') {
+      
+      if (error.code === 'not-found') {
+        console.error(`[DISMISS] Task ${taskId} not found - removing from local state`);
+        // Remove from pastPromises state since it doesn't exist in database
+        setPastPromises(prev => prev.filter(t => t.id !== taskId));
+      } else if (error.code === 'permission-denied') {
         console.error('[DISMISS] Permission denied - user may not be authenticated');
         router.push('/login');
       }
