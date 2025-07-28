@@ -18,15 +18,6 @@ export default function RelationshipSuggestionOptions({
     const partner = partnerName || 'your partner';
     
     switch (suggestion.type) {
-      case 'appreciation':
-        return [
-          { title: `Tell ${partner} one thing she&apos;s great at`, detail: 'Be specific and genuine' },
-          { title: `Thank ${partner} for something she did today`, detail: 'Notice the small things' },
-          { title: `Text ${partner} why you&apos;re grateful for her`, detail: 'Send during her busy day' },
-          { title: `Compliment ${partner} on something non-physical`, detail: 'Her mind, heart, or skills' },
-          { title: `Send ${partner} a photo that reminds you of her`, detail: 'Something meaningful' }
-        ];
-        
       case 'date':
         return [
           { title: 'Schedule a proper date night this weekend', detail: 'Plan something she&apos;d enjoy' },
@@ -101,7 +92,6 @@ export default function RelationshipSuggestionOptions({
   const options = getOptionsForSuggestion();
   const getSuggestionTitle = () => {
     switch (suggestion.type) {
-      case 'appreciation': return `💕 Show ${partnerName} Appreciation`;
       case 'date': return `❤️ Quality Time Ideas`;
       case 'service': return `🤲 Acts of Service`;
       default: return 'Relationship Tasks';

@@ -98,15 +98,6 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
     const suggestions = [];
     const partnerName = prefs?.partnerName || 'your partner';
 
-    // Text suggestions
-    if (!lastText || (now - lastText) / (1000 * 60 * 60 * 24) >= 2) {
-      suggestions.push({
-        type: 'appreciation',
-        title: `Text ${partnerName} something specific`,
-        urgency: 'medium',
-        icon: ChatBubbleLeftIcon
-      });
-    }
 
     // Date suggestions
     if (!lastDate || (now - lastDate) / (1000 * 60 * 60 * 24) >= 14) {
