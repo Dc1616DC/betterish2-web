@@ -160,7 +160,7 @@ export default function DailyTaskSuggestions({
           onClick={handleDismiss}
           className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
-          I'm good for today
+          I&apos;m good for today
         </button>
       </div>
     </div>
