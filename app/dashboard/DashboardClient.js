@@ -742,7 +742,20 @@ export default function DashboardClient() {
 
           {/* Relationship Tracker */}
           {user?.uid && userPreferences && (
-            <RelationshipTracker userId={user.uid} />
+            <RelationshipTracker 
+              userId={user.uid} 
+              tasks={tasks}
+              completionHistory={tasks.filter(t => t.completedAt || t.completed)}
+              preferences={userPreferences}
+              onSuggestionClick={(suggestion) => {
+                // Pre-fill task form with relationship suggestion
+                setNewTaskTitle(suggestion.title);
+                setNewTaskDetail('From relationship tracker');
+                setNewTaskCategory('relationship');
+                setNewTaskPriority(suggestion.urgency === 'high' ? 'high' : 'medium');
+                setShowTaskForm(true);
+              }}
+            />
           )}
 
           {/* Success Messages */}

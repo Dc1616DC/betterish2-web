@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { HeartIcon, ChatBubbleLeftIcon, GiftIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 
-export default function RelationshipTracker({ userId, tasks, completionHistory, preferences, compact = false }) {
+export default function RelationshipTracker({ userId, tasks, completionHistory, preferences, compact = false, onSuggestionClick }) {
   const [relationshipStats, setRelationshipStats] = useState({
     lastAppreciationText: null,
     lastDateNight: null,
@@ -210,23 +210,36 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
       {/* Suggestions */}
       {relationshipStats.suggestions.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-pink-700 mb-2">Suggestions:</h4>
+          <h4 className="text-xs font-semibold text-pink-700 mb-2">Quick Actions:</h4>
           <div className="space-y-2">
             {relationshipStats.suggestions.map((suggestion, index) => {
               const IconComponent = suggestion.icon;
               return (
-                <div 
+                <button
                   key={index}
-                  className={`flex items-center gap-2 text-sm p-2 rounded-lg ${
-                    suggestion.urgency === 'high' ? 'bg-red-100 text-red-700' : 'bg-white bg-opacity-50 text-pink-700'
+                  onClick={() => onSuggestionClick && onSuggestionClick(suggestion)}
+                  className={`flex items-center gap-2 text-sm p-2 rounded-lg w-full text-left transition-colors hover:opacity-80 ${
+                    suggestion.urgency === 'high' 
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                      : 'bg-white bg-opacity-50 text-pink-700 hover:bg-white hover:bg-opacity-70'
                   }`}
                 >
                   <IconComponent className="w-4 h-4" />
                   <span>{suggestion.title}</span>
-                </div>
+                  <span className="ml-auto text-xs opacity-70">+</span>
+                </button>
               );
             })}
           </div>
+        </div>
+      )}
+      
+      {/* Empty State */}
+      {relationshipStats.suggestions.length === 0 && relationshipStats.weeklyScore === 0 && (
+        <div className="text-center py-4">
+          <HeartIcon className="w-8 h-8 text-pink-400 mx-auto mb-2" />
+          <p className="text-sm text-pink-600 mb-2">No relationship tasks completed yet</p>
+          <p className="text-xs text-pink-500">Complete some relationship tasks to see your stats!</p>
         </div>
       )}
     </div>
