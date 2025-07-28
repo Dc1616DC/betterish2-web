@@ -35,6 +35,7 @@ import PastPromises from '@/components/PastPromises';
 import TaskForm from '@/components/TaskForm';
 import TaskErrorBoundary from '@/components/TaskErrorBoundary';
 import DashboardLoading from '@/components/DashboardLoading';
+import DailyTaskSuggestions from '@/components/DailyTaskSuggestions';
 
 export default function DashboardClient() {
   // State variables
@@ -630,6 +631,15 @@ export default function DashboardClient() {
             onToggleMoreOptions={() => setShowMoreOptions(!showMoreOptions)}
           />
 
+
+          {/* Daily Task Suggestions */}
+          <DailyTaskSuggestions
+            user={user}
+            db={db}
+            userHistory={tasks}
+            userPreferences={userPreferences}
+            onTaskAdded={refreshAllData}
+          />
 
           {/* Task Actions Component */}
           <TaskActions
