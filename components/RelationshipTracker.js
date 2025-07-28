@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { HeartIcon, ChatBubbleLeftIcon, GiftIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
+import RelationshipSuggestionOptions from './RelationshipSuggestionOptions';
 
-export default function RelationshipTracker({ userId, tasks, completionHistory, preferences, compact = false, onSuggestionClick }) {
+export default function RelationshipTracker({ userId, tasks, completionHistory, preferences, compact = false, onSuggestionClick, user, db, onTaskAdded }) {
   const [relationshipStats, setRelationshipStats] = useState({
     lastAppreciationText: null,
     lastDateNight: null,
@@ -13,6 +14,7 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
     streak: 0,
     suggestions: []
   });
+  const [showSuggestionModal, setShowSuggestionModal] = useState(null);
 
   useEffect(() => {
     if (!completionHistory || !userId) return;
@@ -217,7 +219,7 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
               return (
                 <button
                   key={index}
-                  onClick={() => onSuggestionClick && onSuggestionClick(suggestion)}
+                  onClick={() => setShowSuggestionModal(suggestion)}
                   className={`flex items-center gap-2 text-sm p-2 rounded-lg w-full text-left transition-colors hover:opacity-80 ${
                     suggestion.urgency === 'high' 
                       ? 'bg-red-100 text-red-700 hover:bg-red-200' 
@@ -226,7 +228,7 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
                 >
                   <IconComponent className="w-4 h-4" />
                   <span>{suggestion.title}</span>
-                  <span className="ml-auto text-xs opacity-70">+</span>
+                  <span className="ml-auto text-xs opacity-70">⚡</span>
                 </button>
               );
             })}
@@ -241,6 +243,32 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
           <p className="text-sm text-pink-600 mb-2">No relationship tasks completed yet</p>
           <p className="text-xs text-pink-500">Complete some relationship tasks to see your stats!</p>
         </div>
+      )}
+
+      {/* Suggestion Options Modal */}
+      {showSuggestionModal && (
+        <RelationshipSuggestionOptions
+          suggestion={showSuggestionModal}
+          user={user}
+          db={db}
+          partnerName={preferences?.partnerName}
+          onClose={() => setShowSuggestionModal(null)}
+          onTaskAdded={(customData) => {
+            if (customData?.type === 'custom') {
+              // Handle custom task addition through parent
+              if (onSuggestionClick) {
+                onSuggestionClick({
+                  title: customData.title,
+                  category: customData.category,
+                  priority: customData.priority
+                });
+              }
+            } else {
+              // Handle quick-add task refresh
+              if (onTaskAdded) onTaskAdded();
+            }
+          }}
+        />
       )}
     </div>
   );
