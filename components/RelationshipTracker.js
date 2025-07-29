@@ -21,37 +21,65 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
     
     const calculateRelationshipStats = () => {
       const now = new Date();
-      const relationshipTasks = completionHistory.filter(task => 
-        task.category === 'relationship' && task.completedAt
-      );
+      
+      // Debug: Log all completion data
+      console.log('[RelationshipTracker] All completion history:', completionHistory);
+      console.log('[RelationshipTracker] Filtering for relationship tasks...');
+      
+      const relationshipTasks = completionHistory.filter(task => {
+        const isRelationship = task.category === 'relationship';
+        const hasCompletion = task.completedAt || task.completed;
+        
+        console.log(`[RelationshipTracker] Task "${task.title}": category=${task.category}, completedAt=${!!task.completedAt}, completed=${!!task.completed}, isRelationship=${isRelationship}, hasCompletion=${hasCompletion}`);
+        
+        return isRelationship && hasCompletion;
+      });
+      
+      console.log('[RelationshipTracker] Found relationship tasks:', relationshipTasks);
 
-      // Find last appreciation text
+      // Find last appreciation text (not used anymore but kept for stats)
       const appreciationTasks = relationshipTasks.filter(task => 
         task.title.toLowerCase().includes('text') || 
-        task.title.toLowerCase().includes('appreciation')
+        task.title.toLowerCase().includes('appreciation') ||
+        task.title.toLowerCase().includes('tell') ||
+        task.title.toLowerCase().includes('compliment')
       );
-      const lastAppreciation = appreciationTasks[0]?.completedAt?.toDate();
+      const lastAppreciation = appreciationTasks.length > 0 ? 
+        (appreciationTasks[0]?.completedAt?.toDate?.() || new Date(appreciationTasks[0]?.completedAt) || new Date()) : null;
 
       // Find last date-related task
       const dateTasks = relationshipTasks.filter(task => 
         task.title.toLowerCase().includes('date') || 
-        task.title.toLowerCase().includes('plan')
+        task.title.toLowerCase().includes('plan') ||
+        task.title.toLowerCase().includes('time') ||
+        task.title.toLowerCase().includes('together') ||
+        task.title.toLowerCase().includes('walk')
       );
-      const lastDate = dateTasks[0]?.completedAt?.toDate();
+      const lastDate = dateTasks.length > 0 ? 
+        (dateTasks[0]?.completedAt?.toDate?.() || new Date(dateTasks[0]?.completedAt) || new Date()) : null;
 
       // Find last act of service
       const serviceTasks = relationshipTasks.filter(task => 
         task.title.toLowerCase().includes('clean') || 
         task.title.toLowerCase().includes('help') ||
-        task.title.toLowerCase().includes('handle')
+        task.title.toLowerCase().includes('handle') ||
+        task.title.toLowerCase().includes('coffee') ||
+        task.title.toLowerCase().includes('dishes') ||
+        task.title.toLowerCase().includes('dinner')
       );
-      const lastService = serviceTasks[0]?.completedAt?.toDate();
+      const lastService = serviceTasks.length > 0 ? 
+        (serviceTasks[0]?.completedAt?.toDate?.() || new Date(serviceTasks[0]?.completedAt) || new Date()) : null;
+      
+      console.log('[RelationshipTracker] Last dates:', { lastAppreciation, lastDate, lastService });
 
       // Calculate weekly score (last 7 days)
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const weeklyRelationshipTasks = relationshipTasks.filter(task => 
-        task.completedAt.toDate() >= weekAgo
-      );
+      const weeklyRelationshipTasks = relationshipTasks.filter(task => {
+        const taskDate = task.completedAt?.toDate?.() || new Date(task.completedAt) || null;
+        return taskDate && taskDate >= weekAgo;
+      });
+      
+      console.log('[RelationshipTracker] Weekly tasks:', weeklyRelationshipTasks.length, 'tasks since', weekAgo);
 
       // Calculate streak (consecutive days with relationship tasks)
       let streak = 0;
@@ -61,8 +89,8 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
         const nextDay = new Date(checkDate.getTime() + 24 * 60 * 60 * 1000);
         
         const dayTasks = relationshipTasks.filter(task => {
-          const completedDate = task.completedAt.toDate();
-          return completedDate >= checkDate && completedDate < nextDay;
+          const completedDate = task.completedAt?.toDate?.() || new Date(task.completedAt) || null;
+          return completedDate && completedDate >= checkDate && completedDate < nextDay;
         });
         
         if (dayTasks.length > 0) {
