@@ -22,20 +22,11 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
     const calculateRelationshipStats = () => {
       const now = new Date();
       
-      // Debug: Log all completion data
-      console.log('[RelationshipTracker] All completion history:', completionHistory);
-      console.log('[RelationshipTracker] Filtering for relationship tasks...');
-      
       const relationshipTasks = completionHistory.filter(task => {
         const isRelationship = task.category === 'relationship';
         const hasCompletion = task.completedAt || task.completed;
-        
-        console.log(`[RelationshipTracker] Task "${task.title}": category=${task.category}, completedAt=${!!task.completedAt}, completed=${!!task.completed}, isRelationship=${isRelationship}, hasCompletion=${hasCompletion}`);
-        
         return isRelationship && hasCompletion;
       });
-      
-      console.log('[RelationshipTracker] Found relationship tasks:', relationshipTasks);
 
       // Find last appreciation text (not used anymore but kept for stats)
       const appreciationTasks = relationshipTasks.filter(task => 
@@ -69,8 +60,6 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
       );
       const lastService = serviceTasks.length > 0 ? 
         (serviceTasks[0]?.completedAt?.toDate?.() || new Date(serviceTasks[0]?.completedAt) || new Date()) : null;
-      
-      console.log('[RelationshipTracker] Last dates:', { lastAppreciation, lastDate, lastService });
 
       // Calculate weekly score (last 7 days)
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -78,8 +67,6 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
         const taskDate = task.completedAt?.toDate?.() || new Date(task.completedAt) || null;
         return taskDate && taskDate >= weekAgo;
       });
-      
-      console.log('[RelationshipTracker] Weekly tasks:', weeklyRelationshipTasks.length, 'tasks since', weekAgo);
 
       // Calculate streak (consecutive days with relationship tasks)
       let streak = 0;
@@ -206,27 +193,6 @@ export default function RelationshipTracker({ userId, tasks, completionHistory, 
         </p>
       </div>
 
-      {/* Last Actions */}
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-pink-700">Last appreciation text:</span>
-          <span className="text-pink-600 font-medium">
-            {formatTimeAgo(relationshipStats.lastAppreciationText)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-pink-700">Last quality time:</span>
-          <span className="text-pink-600 font-medium">
-            {formatTimeAgo(relationshipStats.lastDateNight)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-pink-700">Last act of service:</span>
-          <span className="text-pink-600 font-medium">
-            {formatTimeAgo(relationshipStats.lastActOfService)}
-          </span>
-        </div>
-      </div>
 
       {/* Suggestions */}
       {relationshipStats.suggestions.length > 0 && (
