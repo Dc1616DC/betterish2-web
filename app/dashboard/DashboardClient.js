@@ -42,6 +42,10 @@ import EventReminder from '@/components/EventReminder';
 import MobileDashboard from '@/components/MobileDashboard';
 import MobileTaskForm from '@/components/MobileTaskForm';
 
+// Project components
+import ProjectCard from '@/components/ProjectCard';
+import ProjectBreakdown from '@/components/ProjectBreakdown';
+
 export default function DashboardClient() {
   // State variables
   const [user, setUser] = useState(null);
@@ -74,6 +78,8 @@ export default function DashboardClient() {
   const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
   const [showSuggestionsSection, setShowSuggestionsSection] = useState(false);
   const [showPlanningSection, setShowPlanningSection] = useState(false);
+  const [showProjectBreakdown, setShowProjectBreakdown] = useState(false);
+  const [projectBreakdownTask, setProjectBreakdownTask] = useState('');
 
   // Initialize Firebase on client side only
   useEffect(() => {
@@ -93,9 +99,21 @@ export default function DashboardClient() {
   // Extract auth and db for easier access
   const { auth, db } = firebaseInstances;
 
-  // Sort tasks with 3+ day old incomplete tasks first (nudged), then show completed tasks at bottom
-  const sortedTasks = useMemo(() => {
-    const incomplete = tasks
+  // Separate tasks from projects and sort them
+  const { regularTasks, projects } = useMemo(() => {
+    const regular = [];
+    const proj = [];
+    
+    tasks.forEach(task => {
+      if (task.isProject) {
+        proj.push(task);
+      } else {
+        regular.push(task);
+      }
+    });
+    
+    // Sort regular tasks
+    const incompleteRegular = regular
       .filter((t) => !t.completedAt && !t.completed)
       .map(task => ({
         ...task,
@@ -103,7 +121,7 @@ export default function DashboardClient() {
       }))
       .sort((a, b) => (b.ageInDays >= 3 ? 1 : 0) - (a.ageInDays >= 3 ? 1 : 0));
     
-    const completed = tasks
+    const completedRegular = regular
       .filter((t) => t.completedAt || t.completed)
       .sort((a, b) => {
         const aTime = a.completedAt ? (a.completedAt.toDate ? a.completedAt.toDate().getTime() : a.completedAt.getTime()) : Date.now();
@@ -111,10 +129,113 @@ export default function DashboardClient() {
         return bTime - aTime;
       });
     
-    return [...incomplete, ...completed];
+    const sortedRegular = [...incompleteRegular, ...completedRegular];
+    
+    // Sort projects by last activity
+    const sortedProjects = proj
+      .filter(p => !p.completedAt && !p.completed) // Only show active projects
+      .sort((a, b) => {
+        const aActivity = a.lastActivityAt?.toDate() || a.createdAt?.toDate() || new Date(0);
+        const bActivity = b.lastActivityAt?.toDate() || b.createdAt?.toDate() || new Date(0);
+        return bActivity - aActivity;
+      });
+    
+    return {
+      regularTasks: sortedRegular,
+      projects: sortedProjects
+    };
   }, [tasks]);
 
+  const sortedTasks = regularTasks; // Keep this for backward compatibility
+
   const completedTaskCount = useMemo(() => tasks.filter((t) => t.completedAt).length, [tasks]);
+
+  // Project detection keywords
+  const PROJECT_KEYWORDS = [
+    'organize', 'clean', 'build', 'plan', 'prepare', 'renovate', 'setup', 'create',
+    'install', 'design', 'research', 'develop', 'implement', 'fix', 'repair'
+  ];
+
+  const mightBeProject = (title) => {
+    return PROJECT_KEYWORDS.some(word => 
+      title.toLowerCase().includes(word)
+    );
+  };
+
+  const handleProjectComplete = async (projectId) => {
+    if (!db) return;
+    
+    const confirmComplete = confirm('Mark this entire project as complete?');
+    if (!confirmComplete) return;
+
+    try {
+      await updateDoc(doc(db, 'tasks', projectId), {
+        completed: true,
+        completedAt: Timestamp.now(),
+        projectStatus: 'completed'
+      });
+      
+      await refreshAllData();
+    } catch (error) {
+      console.error('Error completing project:', error);
+    }
+  };
+
+  const handleCreateProject = async (projectData) => {
+    if (!user || !db) return;
+
+    try {
+      const newProject = {
+        title: projectData.title,
+        isProject: true,
+        subtasks: projectData.subtasks,
+        userId: user.uid,
+        createdAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+        projectStatus: 'active',
+        source: 'manual',
+        dismissed: false,
+        deleted: false,
+      };
+
+      await addDoc(collection(db, 'tasks'), newProject);
+      await refreshAllData();
+      
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10);
+      }
+    } catch (error) {
+      console.error('Error creating project:', error);
+    }
+  };
+
+  const handleCreateSimpleTask = async (taskData) => {
+    if (!user || !db) return;
+
+    try {
+      const newTask = {
+        title: taskData.title,
+        detail: taskData.detail || '',
+        category: taskData.category || 'household',
+        priority: taskData.priority || 'medium',
+        isProject: false,
+        userId: user.uid,
+        createdAt: Timestamp.now(),
+        source: 'manual',
+        dismissed: false,
+        deleted: false,
+      };
+
+      await addDoc(collection(db, 'tasks'), newTask);
+      await refreshAllData();
+      
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10);
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
+  };
 
   // Helper to refresh all data
   const refreshAllData = async () => {
@@ -706,28 +827,64 @@ export default function DashboardClient() {
               </button>
             </div>
             
-            {/* Main Task List - PROMINENT */}
-            {!loading && (
-              <TaskList
-                tasks={sortedTasks}
-                db={db}
-                user={user}
-                onTaskUpdate={refreshAllData}
-                onTaskDelete={(taskId) => {
-                  setTasks(prev => prev.filter(t => t.id !== taskId));
-                }}
-                onTaskComplete={(taskId) => {
-                  // Optimistic update: immediately mark task as completed
-                  setTasks(prev => 
-                    prev.map(task => 
-                      task.id === taskId 
-                        ? { ...task, completed: true, completedAt: Timestamp.now() }
-                        : task
-                    )
-                  );
-                }}
-                loading={loading}
-              />
+            {/* Projects Section */}
+            {!loading && projects.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-gray-600 mb-3 flex items-center gap-2">
+                  🎯 Active Projects ({projects.length})
+                </h3>
+                {projects.map(project => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    db={db}
+                    onUpdate={refreshAllData}
+                    onComplete={handleProjectComplete}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Regular Tasks Section */}
+            {!loading && regularTasks.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-600 mb-3 flex items-center gap-2">
+                  ✓ Quick Tasks ({regularTasks.filter(t => !t.completed && !t.completedAt).length})
+                </h3>
+                <TaskList
+                  tasks={regularTasks}
+                  db={db}
+                  user={user}
+                  onTaskUpdate={refreshAllData}
+                  onTaskDelete={(taskId) => {
+                    setTasks(prev => prev.filter(t => t.id !== taskId));
+                  }}
+                  onTaskComplete={(taskId) => {
+                    // Optimistic update: immediately mark task as completed
+                    setTasks(prev => 
+                      prev.map(task => 
+                        task.id === taskId 
+                          ? { ...task, completed: true, completedAt: Timestamp.now() }
+                          : task
+                      )
+                    );
+                  }}
+                  loading={loading}
+                />
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!loading && projects.length === 0 && regularTasks.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p className="mb-4">No tasks yet today!</p>
+                <button
+                  onClick={() => setShowTaskForm(true)}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Add Your First Task
+                </button>
+              </div>
             )}
           </div>
 
@@ -846,37 +1003,34 @@ export default function DashboardClient() {
             isOpen={showTaskForm}
             onClose={() => setShowTaskForm(false)}
             onSubmit={async (taskData) => {
-              const newTask = {
-                ...taskData,
-                userId: user.uid,
-                createdAt: Timestamp.now(),
-                source: 'manual',
-                dismissed: false,
-                deleted: false,
-              };
-
-              // Optimistic update
-              const tempId = 'temp-' + Date.now();
-              setTasks(prev => [...prev, { ...newTask, id: tempId }]);
-
-              try {
-                const docRef = await addDoc(collection(db, 'tasks'), newTask);
-                setTasks(prev => prev.map(t => t.id === tempId ? { ...newTask, id: docRef.id } : t));
-                
-                // Haptic feedback
-                if ('vibrate' in navigator) {
-                  navigator.vibrate(10);
-                }
-              } catch (error) {
-                console.error("❌ Add task error:", error);
-                setTasks(prev => prev.filter(t => !t.id.startsWith('temp-')));
-                throw error;
+              setShowTaskForm(false);
+              
+              // Check if this might be a project
+              if (mightBeProject(taskData.title)) {
+                setProjectBreakdownTask(taskData.title);
+                setShowProjectBreakdown(true);
+                return;
               }
+
+              // Create simple task
+              await handleCreateSimpleTask({
+                ...taskData,
+                isProject: false
+              });
             }}
             initialTitle={newTaskTitle}
             initialDetail={newTaskDetail}
             initialCategory={newTaskCategory}
             initialPriority={newTaskPriority}
+          />
+
+          {/* Project Breakdown Modal */}
+          <ProjectBreakdown
+            isOpen={showProjectBreakdown}
+            onClose={() => setShowProjectBreakdown(false)}
+            taskTitle={projectBreakdownTask}
+            onCreateProject={handleCreateProject}
+            onCreateSimpleTask={handleCreateSimpleTask}
           />
 
           {/* Recurring Task Manager */}
