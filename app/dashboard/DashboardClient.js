@@ -23,7 +23,6 @@ import UserPreferences from '@/components/UserPreferences';
 import PullToRefresh from '@/components/PullToRefresh';
 import RecurringTaskManager from '@/components/RecurringTaskManager';
 import EmergencyModeSelector from '@/components/EmergencyModeSelector';
-import RelationshipTracker from '@/components/RelationshipTracker';
 import { shouldCreateToday } from '@/lib/recurringTasks';
 import { generateSmartContextualTasks } from '@/lib/contextualTasks';
 
@@ -36,6 +35,11 @@ import TaskForm from '@/components/TaskForm';
 import TaskErrorBoundary from '@/components/TaskErrorBoundary';
 import DashboardLoading from '@/components/DashboardLoading';
 import DailyTaskSuggestions from '@/components/DailyTaskSuggestions';
+import EventReminder from '@/components/EventReminder';
+
+// Mobile components
+import MobileDashboard from '@/components/MobileDashboard';
+import MobileTaskForm from '@/components/MobileTaskForm';
 
 export default function DashboardClient() {
   // State variables
@@ -65,11 +69,22 @@ export default function DashboardClient() {
   const [dateStr, setDateStr] = useState("");
   const [greeting, setGreeting] = useState("Hello 👋");
   const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null });
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
 
   // Initialize Firebase on client side only
   useEffect(() => {
     const { auth, db } = initializeFirebaseClient();
     setFirebaseInstances({ auth, db });
+    
+    // Detect mobile device
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Extract auth and db for easier access
@@ -596,11 +611,71 @@ export default function DashboardClient() {
     );
   }
 
+  // Mobile-optimized dashboard - check EARLY before any other rendering
+  if (isMobile) {
+    // Create mobile-specific handlers
+    const handleMobileTaskComplete = async (taskId) => {
+      if (!user || !db) return;
+      try {
+        await updateDoc(doc(db, 'tasks', taskId), {
+          completed: true,
+          completedAt: Timestamp.now()
+        });
+        await refreshAllData();
+      } catch (error) {
+        console.error('Error completing task:', error);
+      }
+    };
+
+    const handleMobileTaskAdd = async (taskData) => {
+      if (!user || !db) return;
+      try {
+        const newTask = {
+          ...taskData,
+          userId: user.uid,
+          createdAt: Timestamp.now(),
+          dismissed: false,
+          deleted: false
+        };
+        await addDoc(collection(db, 'tasks'), newTask);
+        await refreshAllData();
+      } catch (error) {
+        console.error('Error adding task:', error);
+      }
+    };
+
+    // Show mobile loading state
+    if (loading && !tasks.length) {
+      return <DashboardLoading showSkeleton={true} />;
+    }
+
+    return (
+      <TaskErrorBoundary>
+        <MobileDashboard
+          tasks={sortedTasks}
+          suggestions={generateSmartDailyTasks(userPreferences, user?.homeId)}
+          onTaskComplete={handleMobileTaskComplete}
+          onTaskAdd={handleMobileTaskAdd}
+          onShowTaskForm={() => setShowMobileTaskForm(true)}
+          streak={streakCount}
+          upcomingEvents={[]} // You can integrate personal events here
+        />
+        
+        <MobileTaskForm
+          isOpen={showMobileTaskForm}
+          onClose={() => setShowMobileTaskForm(false)}
+          onSubmit={handleMobileTaskAdd}
+        />
+      </TaskErrorBoundary>
+    );
+  }
+
+  // Desktop loading check
   if (loading && !tasks.length) {
     return <DashboardLoading showSkeleton={true} />;
   }
 
-  // Main dashboard render
+  // Desktop dashboard (existing)
   return (
     <TaskErrorBoundary>
       <PullToRefresh onRefresh={refreshAllData}>
@@ -638,6 +713,13 @@ export default function DashboardClient() {
             db={db}
             userHistory={tasks}
             userPreferences={userPreferences}
+            onTaskAdded={refreshAllData}
+          />
+
+          {/* Planning Reminders */}
+          <EventReminder
+            user={user}
+            db={db}
             onTaskAdded={refreshAllData}
           />
 
@@ -740,26 +822,6 @@ export default function DashboardClient() {
             />
           )}
 
-          {/* Relationship Tracker */}
-          {user?.uid && userPreferences && (
-            <RelationshipTracker 
-              userId={user.uid} 
-              user={user}
-              db={db}
-              tasks={tasks}
-              completionHistory={tasks.filter(t => t.completedAt || t.completed)}
-              preferences={userPreferences}
-              onTaskAdded={refreshAllData}
-              onSuggestionClick={(suggestion) => {
-                // Pre-fill task form with relationship suggestion (for custom tasks)
-                setNewTaskTitle(suggestion.title);
-                setNewTaskDetail('From relationship tracker');
-                setNewTaskCategory(suggestion.category || 'relationship');
-                setNewTaskPriority(suggestion.priority || 'medium');
-                setShowTaskForm(true);
-              }}
-            />
-          )}
 
           {/* Success Messages */}
           {voiceSuccess && (

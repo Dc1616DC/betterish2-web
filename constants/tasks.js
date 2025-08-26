@@ -67,6 +67,96 @@ export const coreAutoTasks = [
   { id: 'house_018', title: 'Wipe remote controls/handles', detail: 'Germ hotspots', category: 'household', simplicity: 'low' },
   { id: 'house_019', title: 'Check and sort mail pile', detail: 'Recycle junk now', category: 'household', simplicity: 'medium' },
   { id: 'house_020', title: 'Organize one drawer', detail: 'Pick your messiest', category: 'household', simplicity: 'medium' },
+
+  // HOME PROJECTS (20)
+  { id: 'home_001', title: 'Fix squeaky door hinge', detail: 'Apply WD-40 or oil', category: 'home_projects', simplicity: 'low' },
+  { id: 'home_002', title: 'Replace burnt out light bulb', detail: 'Check wattage first', category: 'home_projects', simplicity: 'low' },
+  { id: 'home_003', title: 'Touch up paint on scuffed wall', detail: 'Small spot repair', category: 'home_projects', simplicity: 'medium' },
+  { id: 'home_004', title: 'Tighten loose cabinet handles', detail: 'Just need a screwdriver', category: 'home_projects', simplicity: 'low' },
+  { id: 'home_005', title: 'Caulk around bathtub edge', detail: 'Prevent water damage', category: 'home_projects', simplicity: 'medium' },
+  { id: 'home_006', title: 'Install new shower head', detail: 'Upgrade the experience', category: 'home_projects', simplicity: 'medium' },
+  { id: 'home_007', title: 'Fix loose toilet seat', detail: 'Tighten or replace bolts', category: 'home_projects', simplicity: 'low' },
+  { id: 'home_008', title: 'Replace weather stripping', detail: 'Around doors/windows', category: 'home_projects', simplicity: 'medium' },
+  { id: 'home_009', title: 'Unclog bathroom drain', detail: 'Hair catcher or snake', category: 'home_projects', simplicity: 'medium' },
+  { id: 'home_010', title: 'Mount that picture frame', detail: 'Finally get it on the wall', category: 'home_projects', simplicity: 'medium' },
+  { id: 'home_011', title: 'Fix running toilet', detail: 'Adjust flapper chain', category: 'home_projects', simplicity: 'medium' },
+  { id: 'home_012', title: 'Install baby gates', detail: 'Safety first', category: 'home_projects', simplicity: 'high' },
+  { id: 'home_013', title: 'Organize garage/basement', detail: '1 hour declutter session', category: 'home_projects', simplicity: 'high' },
+  { id: 'home_014', title: 'Fix loose deck railing', detail: 'Safety check and repair', category: 'home_projects', simplicity: 'high' },
+  { id: 'home_015', title: 'Install outlet covers', detail: 'Childproof the house', category: 'home_projects', simplicity: 'low' },
+  { id: 'home_016', title: 'Patch hole in drywall', detail: 'Small repair kit', category: 'home_projects', simplicity: 'medium' },
+  { id: 'home_017', title: 'Replace furnace filter', detail: 'Check size first', category: 'home_projects', simplicity: 'low' },
+  { id: 'home_018', title: 'Insulate basement windows', detail: 'Winter prep', category: 'home_projects', simplicity: 'medium' },
+  { id: 'home_019', title: 'Install smoke detector batteries', detail: 'Test while you\'re at it', category: 'home_projects', simplicity: 'low' },
+  { id: 'home_020', title: 'Repair fence gate latch', detail: 'Keep it secure', category: 'home_projects', simplicity: 'medium' },
+
+  // HEALTH & APPOINTMENTS (15)
+  { id: 'health_001', title: 'Schedule annual physical', detail: 'Due for checkup?', category: 'health', simplicity: 'low' },
+  { id: 'health_002', title: 'Book dentist appointment', detail: 'Every 6 months', category: 'health', simplicity: 'low' },
+  { id: 'health_003', title: 'Schedule eye exam', detail: 'Vision check', category: 'health', simplicity: 'low' },
+  { id: 'health_004', title: 'Refill prescription medications', detail: 'Check dates', category: 'health', simplicity: 'low' },
+  { id: 'health_005', title: 'Schedule baby wellness visit', detail: 'Keep up with checkups', category: 'health', simplicity: 'low' },
+  { id: 'health_006', title: 'Update emergency contacts', detail: 'Medical forms', category: 'health', simplicity: 'medium' },
+  { id: 'health_007', title: 'Get flu shot', detail: 'Seasonal protection', category: 'health', simplicity: 'low' },
+  { id: 'health_008', title: 'Schedule partner mammogram/gyn', detail: 'Annual check', category: 'health', simplicity: 'low' },
+  { id: 'health_009', title: 'Update insurance beneficiaries', detail: 'Life changes matter', category: 'health', simplicity: 'medium' },
+  { id: 'health_010', title: 'Organize medicine cabinet', detail: 'Check expiration dates', category: 'health', simplicity: 'medium' },
+  { id: 'health_011', title: 'Schedule therapy session', detail: 'Mental health check', category: 'health', simplicity: 'low' },
+  { id: 'health_012', title: 'Book kids sports physical', detail: 'Required for activities', category: 'health', simplicity: 'low' },
+  { id: 'health_013', title: 'Update family medical history', detail: 'For doctor visits', category: 'health', simplicity: 'medium' },
+  { id: 'health_014', title: 'Schedule specialist referral', detail: 'Follow up needed?', category: 'health', simplicity: 'medium' },
+  { id: 'health_015', title: 'Book couples counseling', detail: 'Relationship maintenance', category: 'health', simplicity: 'low' },
+
+  // EVENTS & CELEBRATIONS (15)
+  { id: 'event_001', title: 'Plan birthday celebration', detail: 'Family member coming up', category: 'events', simplicity: 'high' },
+  { id: 'event_002', title: 'Buy anniversary gift', detail: 'Mark calendar first', category: 'events', simplicity: 'medium' },
+  { id: 'event_003', title: 'Book holiday travel', detail: 'Before prices go up', category: 'events', simplicity: 'high' },
+  { id: 'event_004', title: 'Send thank you cards', detail: 'From recent event', category: 'events', simplicity: 'medium' },
+  { id: 'event_005', title: 'Plan date night', detail: 'Babysitter and reservations', category: 'events', simplicity: 'medium' },
+  { id: 'event_006', title: 'Schedule family photos', detail: 'Annual tradition', category: 'events', simplicity: 'medium' },
+  { id: 'event_007', title: 'Plan kids birthday party', detail: 'Theme and guest list', category: 'events', simplicity: 'high' },
+  { id: 'event_008', title: 'Buy holiday decorations', detail: 'Before they sell out', category: 'events', simplicity: 'medium' },
+  { id: 'event_009', title: 'Plan weekend family outing', detail: 'Something fun together', category: 'events', simplicity: 'medium' },
+  { id: 'event_010', title: 'RSVP to wedding invitation', detail: 'Do not forget the deadline', category: 'events', simplicity: 'low' },
+  { id: 'event_011', title: 'Plan graduation celebration', detail: 'School milestone', category: 'events', simplicity: 'high' },
+  { id: 'event_012', title: 'Book vacation rental', detail: 'Summer trip planning', category: 'events', simplicity: 'high' },
+  { id: 'event_013', title: 'Plan surprise for partner', detail: 'Just because', category: 'events', simplicity: 'medium' },
+  { id: 'event_014', title: 'Organize playdate', detail: 'Kids social time', category: 'events', simplicity: 'medium' },
+  { id: 'event_015', title: 'Plan family game night', detail: 'Quality time at home', category: 'events', simplicity: 'low' },
+
+  // MAINTENANCE & ANNUAL TASKS (15)
+  { id: 'maint_001', title: 'Schedule HVAC service', detail: 'Annual maintenance', category: 'maintenance', simplicity: 'medium' },
+  { id: 'maint_002', title: 'Clean gutters', detail: 'Twice yearly', category: 'maintenance', simplicity: 'high' },
+  { id: 'maint_003', title: 'Service lawn mower', detail: 'Sharpen blades, oil change', category: 'maintenance', simplicity: 'medium' },
+  { id: 'maint_004', title: 'Inspect roof for damage', detail: 'After storm season', category: 'maintenance', simplicity: 'high' },
+  { id: 'maint_005', title: 'Drain water heater', detail: 'Annual flush', category: 'maintenance', simplicity: 'high' },
+  { id: 'maint_006', title: 'Test smoke detectors', detail: 'Monthly check', category: 'maintenance', simplicity: 'low' },
+  { id: 'maint_007', title: 'Schedule car oil change', detail: 'Every 3-6 months', category: 'maintenance', simplicity: 'low' },
+  { id: 'maint_008', title: 'Winterize outdoor faucets', detail: 'Prevent pipe freeze', category: 'maintenance', simplicity: 'medium' },
+  { id: 'maint_009', title: 'Clean dryer vent', detail: 'Fire prevention', category: 'maintenance', simplicity: 'medium' },
+  { id: 'maint_010', title: 'Inspect deck/patio safety', detail: 'Loose boards or rails', category: 'maintenance', simplicity: 'medium' },
+  { id: 'maint_011', title: 'Service garage door opener', detail: 'Lubricate and test', category: 'maintenance', simplicity: 'medium' },
+  { id: 'maint_012', title: 'Check home security system', detail: 'Test alarms and cameras', category: 'maintenance', simplicity: 'low' },
+  { id: 'maint_013', title: 'Rotate car tires', detail: 'Even wear pattern', category: 'maintenance', simplicity: 'medium' },
+  { id: 'maint_014', title: 'Schedule pest control', detail: 'Seasonal treatment', category: 'maintenance', simplicity: 'medium' },
+  { id: 'maint_015', title: 'Organize important documents', detail: 'Insurance, warranties, etc', category: 'maintenance', simplicity: 'high' },
+
+  // PERSONAL TIME & INTERESTS (15)
+  { id: 'personal_001', title: 'Block 30 minutes for yourself', detail: 'Read, hobby, or just think', category: 'personal', simplicity: 'low' },
+  { id: 'personal_002', title: 'Plan your weekend activity', detail: 'Something you actually want to do', category: 'personal', simplicity: 'medium' },
+  { id: 'personal_003', title: 'Call a friend', detail: '10 minute catch-up', category: 'personal', simplicity: 'low' },
+  { id: 'personal_004', title: 'Watch that show you want to see', detail: 'Actually relax for once', category: 'personal', simplicity: 'low' },
+  { id: 'personal_005', title: 'Take a walk alone', detail: '15 minutes of peace', category: 'personal', simplicity: 'low' },
+  { id: 'personal_006', title: 'Work on your hobby', detail: 'Even if just 20 minutes', category: 'personal', simplicity: 'medium' },
+  { id: 'personal_007', title: 'Listen to your music', detail: 'Headphones and zone out', category: 'personal', simplicity: 'low' },
+  { id: 'personal_008', title: 'Read something interesting', detail: 'Not work or parent related', category: 'personal', simplicity: 'low' },
+  { id: 'personal_009', title: 'Plan a solo errand run', detail: 'Coffee shop, bookstore, whatever', category: 'personal', simplicity: 'medium' },
+  { id: 'personal_010', title: 'Exercise for 15 minutes', detail: 'Even a quick workout counts', category: 'personal', simplicity: 'medium' },
+  { id: 'personal_011', title: 'Sit in car and do nothing', detail: 'Before going inside', category: 'personal', simplicity: 'low' },
+  { id: 'personal_012', title: 'Check out that podcast', detail: 'You bookmarked 3 months ago', category: 'personal', simplicity: 'low' },
+  { id: 'personal_013', title: 'Plan a guys night', detail: 'Text the group', category: 'personal', simplicity: 'medium' },
+  { id: 'personal_014', title: 'Buy something small for yourself', detail: 'You deserve it', category: 'personal', simplicity: 'low' },
+  { id: 'personal_015', title: 'Take a proper lunch break', detail: 'Not at your desk', category: 'personal', simplicity: 'low' },
 ];
 // Add this to your constants/tasks.js file
 
@@ -84,7 +174,7 @@ export const babyTasksByAge = {
   
   '6-12m': [
     { title: 'Prep finger foods', detail: 'Cut up soft fruits', category: 'baby', simplicity: 'medium' },
-    { title: 'Baby-proof outlets', detail: 'They\'re crawling!', category: 'baby', simplicity: 'medium' },
+    { title: 'Baby-proof outlets', detail: 'They are crawling!', category: 'baby', simplicity: 'medium' },
     { title: 'Check shoe size', detail: 'First shoes?', category: 'baby', simplicity: 'low' },
     { title: 'Stock baby food', detail: 'New flavors to try', category: 'baby', simplicity: 'low' },
     { title: 'Schedule 9-month checkup', detail: 'If due', category: 'baby', simplicity: 'low' },
@@ -158,11 +248,26 @@ export function generateSmartDailyTasks(preferences = {}) {
   // Get general household tasks
   const generalHouseTasks = coreAutoTasks.filter(t => t.category === 'household');
   
+  // Get other useful categories
+  const homeProjectTasks = coreAutoTasks.filter(t => t.category === 'home_projects');
+  const maintenanceTasks = coreAutoTasks.filter(t => t.category === 'maintenance');
+  const healthTasks = coreAutoTasks.filter(t => t.category === 'health');
+  const eventTasks = coreAutoTasks.filter(t => t.category === 'events');
+  
   // Mix home-specific and general household tasks
   const allHouseholdTasks = [...homeTasks, ...generalHouseTasks];
   
   // Pick random tasks
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  
+  // Create a more diverse selection
+  const taskPools = [
+    relationshipTasks,
+    babyTasks,
+    allHouseholdTasks,
+    [...homeProjectTasks, ...maintenanceTasks], // Home improvement
+    [...healthTasks, ...eventTasks] // Planning ahead
+  ];
   
   const selected = [
     pick(relationshipTasks),
@@ -203,14 +308,36 @@ export function getTimeBasedTasks(hour, preferences = {}) {
 }
 // ✅ Generator for dashboard daily suggestions
 export function generateDailyTasks() {
+  const personal = coreAutoTasks.filter(t => t.category === 'personal');
   const relationship = coreAutoTasks.filter(t => t.category === 'relationship');
   const baby = coreAutoTasks.filter(t => t.category === 'baby');
   const household = coreAutoTasks.filter(t => t.category === 'household');
+  const homeProjects = coreAutoTasks.filter(t => t.category === 'home_projects');
+  const health = coreAutoTasks.filter(t => t.category === 'health');
+  const events = coreAutoTasks.filter(t => t.category === 'events');
+  const maintenance = coreAutoTasks.filter(t => t.category === 'maintenance');
 
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   
-  const selected = [pick(relationship), pick(baby), pick(household)];
+  // Mix of different types of tasks for variety - always include one personal task
+  const selected = [
+    pick(personal), // Always include personal time
+    pick([...relationship, ...baby]), // Family focused
+    pick([...household, ...homeProjects, ...maintenance, ...health, ...events]) // Everything else
+  ];
   
   // Remove id field from each task
   return selected.map(({ id, ...task }) => task);
 }
+
+// Category definitions for UI components
+export const TASK_CATEGORIES = {
+  personal: 'Personal Time',
+  relationship: 'Relationship',
+  baby: 'Kids & Baby',
+  household: 'Household',
+  home_projects: 'Home Projects',
+  health: 'Health & Medical',
+  events: 'Events & Celebrations', 
+  maintenance: 'Maintenance & Annual'
+};

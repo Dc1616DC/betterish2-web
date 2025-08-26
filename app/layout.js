@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Betterish",
-  description: "Dad-mode task app",
+  description: "Stay on top of life's important things without the nagging. Get time back for what you actually love.",
 };
 
 export default function RootLayout({ children }) {

@@ -142,12 +142,15 @@ export default function TaskForm({
                 onChange={(e) => setCategory(e.target.value)}
                 disabled={isPending}
               >
+                <option value="personal">🧘 Personal Time</option>
                 <option value="household">🏠 Household</option>
+                <option value="home_projects">🔨 Home Projects</option>
+                <option value="baby">👶 Kids & Baby</option>
                 <option value="relationship">❤️ Relationship</option>
-                <option value="kids">👶 Kids</option>
-                <option value="personal">🧘 Personal</option>
+                <option value="health">🏥 Health & Medical</option>
+                <option value="events">🎉 Events & Celebrations</option>
+                <option value="maintenance">⚙️ Maintenance & Annual</option>
                 <option value="work">💼 Work</option>
-                <option value="health">🏃 Health</option>
               </select>
             </div>
             

@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo, useCallback, memo } from 'react';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { useDebounceCallback } from '@/hooks/useDebounce';
 import { updateDoc, doc, Timestamp, getDoc } from 'firebase/firestore';
+import TaskBreakdown from './TaskBreakdown';
 
 const TaskList = memo(function TaskList({ 
   tasks, 
@@ -16,6 +17,7 @@ const TaskList = memo(function TaskList({
 }) {
   const [isPending, startTransition] = useTransition();
   const [processingTasks, setProcessingTasks] = useState(new Set());
+  const [breakdownTask, setBreakdownTask] = useState(null);
 
   const handleTaskAction = useCallback(async (taskId, action, taskData = null) => {
     if (processingTasks.has(taskId)) return; // Prevent double-clicks
@@ -179,20 +181,35 @@ const TaskList = memo(function TaskList({
   }
 
   return (
-    <div className="space-y-4">
-      {tasks.map(task => (
-        <TaskItem 
-          key={task.id}
-          task={task}
-          onAction={(taskId, action) => debouncedHandleTaskAction(taskId, action, task)}
-          isProcessing={processingTasks.has(task.id)}
+    <>
+      <div className="space-y-4">
+        {tasks.map(task => (
+          <TaskItem 
+            key={task.id}
+            task={task}
+            onAction={(taskId, action) => debouncedHandleTaskAction(taskId, action, task)}
+            onBreakdown={(task) => setBreakdownTask(task)}
+            isProcessing={processingTasks.has(task.id)}
+          />
+        ))}
+      </div>
+      
+      {/* Task Breakdown Modal */}
+      {breakdownTask && (
+        <TaskBreakdown
+          task={breakdownTask}
+          onSubtaskComplete={(taskId) => {
+            setBreakdownTask(null);
+            debouncedHandleTaskAction(taskId, 'complete', breakdownTask);
+          }}
+          onClose={() => setBreakdownTask(null)}
         />
-      ))}
-    </div>
+      )}
+    </>
   );
 });
 
-const TaskItem = memo(function TaskItem({ task, onAction, isProcessing }) {
+const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, isProcessing }) {
   const [swipeRevealed, setSwipeRevealed] = useState('');
 
   const swipeGesture = useSwipeGesture({
@@ -294,6 +311,14 @@ const TaskItem = memo(function TaskItem({ task, onAction, isProcessing }) {
           
           {!isCompleted && (
             <div className="flex space-x-2">
+              <button
+                onClick={() => onBreakdown(task)}
+                disabled={isProcessing}
+                className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+                title="Break down task into steps"
+              >
+                📋
+              </button>
               <button
                 onClick={() => onAction(task.id, 'complete')}
                 disabled={isProcessing}

@@ -115,7 +115,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-4">
-      <h1 className="text-2xl font-bold mb-4">{isRegistering ? 'Create Account' : 'Log In'}</h1>
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Betterish</h1>
+        <p className="text-gray-600 mb-4">Stay on top of life without the nagging.<br/>Get time back for what you love.</p>
+        <h2 className="text-xl font-semibold">{isRegistering ? 'Create Account' : 'Log In'}</h2>
+      </div>
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <input
           type="email"
