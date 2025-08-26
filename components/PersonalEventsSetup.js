@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CalendarIcon, PlusIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 
@@ -39,13 +39,7 @@ export default function PersonalEventsSetup({ user, db, onComplete, isOpen = fal
   const [loading, setLoading] = useState(false);
   const [savedEvents, setSavedEvents] = useState(null);
 
-  useEffect(() => {
-    if (user && db) {
-      loadExistingEvents();
-    }
-  }, [user, db]);
-
-  const loadExistingEvents = async () => {
+  const loadExistingEvents = useCallback(async () => {
     try {
       const eventsDoc = await getDoc(doc(db, 'personalEvents', user.uid));
       if (eventsDoc.exists()) {
@@ -58,7 +52,13 @@ export default function PersonalEventsSetup({ user, db, onComplete, isOpen = fal
     } catch (error) {
       console.error('Error loading personal events:', error);
     }
-  };
+  }, [user, db]);
+
+  useEffect(() => {
+    if (user && db) {
+      loadExistingEvents();
+    }
+  }, [user, db, loadExistingEvents]);
 
   const toggleHoliday = (holidayId) => {
     setSelectedHolidays(prev => 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CalendarIcon, GiftIcon, CakeIcon, HeartIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { collection, addDoc, doc, getDoc, Timestamp } from 'firebase/firestore';
 import PersonalEventsSetup from './PersonalEventsSetup';
@@ -111,7 +111,7 @@ export default function EventReminder({ user, db, onTaskAdded, compact = false }
     if (user && db) {
       loadPersonalEvents();
     }
-  }, [user, db]);
+  }, [user, db, loadPersonalEvents]);
 
   const loadPersonalEvents = async () => {
     try {

@@ -204,7 +204,7 @@ export default function MobileDashboard({
         {/* Today's Tasks */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Today's focus</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Today&apos;s focus</h2>
             {completedToday > 0 && (
               <span className="text-sm text-green-600 font-medium">
                 {completedToday} done ✓
