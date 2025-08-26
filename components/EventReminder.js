@@ -107,13 +107,7 @@ export default function EventReminder({ user, db, onTaskAdded, compact = false }
   const [showSetup, setShowSetup] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user && db) {
-      loadPersonalEvents();
-    }
-  }, [user, db, loadPersonalEvents]);
-
-  const loadPersonalEvents = async () => {
+  const loadPersonalEvents = useCallback(async () => {
     try {
       const eventsDoc = await getDoc(doc(db, 'personalEvents', user.uid));
       if (eventsDoc.exists()) {
@@ -128,9 +122,15 @@ export default function EventReminder({ user, db, onTaskAdded, compact = false }
       console.error('Error loading personal events:', error);
     }
     setLoading(false);
-  };
+  }, [user, db, compact, calculateUpcomingEvents]);
 
-  const calculateUpcomingEvents = (eventsData) => {
+  useEffect(() => {
+    if (user && db) {
+      loadPersonalEvents();
+    }
+  }, [user, db, loadPersonalEvents]);
+
+  const calculateUpcomingEvents = useCallback((eventsData) => {
     const today = new Date();
     const upcoming = [];
     
@@ -171,7 +171,7 @@ export default function EventReminder({ user, db, onTaskAdded, compact = false }
       }];
       setPlanningReminders(appointmentReminders);
     }
-  };
+  }, [compact]);
 
   const handleAddPlanningTask = async (task) => {
     if (!user || !db) return;
