@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { PlusIcon, SparklesIcon, CalendarIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import {
   collection,
   query,
@@ -71,6 +72,8 @@ export default function DashboardClient() {
   const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null });
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
+  const [showSuggestionsSection, setShowSuggestionsSection] = useState(false);
+  const [showPlanningSection, setShowPlanningSection] = useState(false);
 
   // Initialize Firebase on client side only
   useEffect(() => {
@@ -675,96 +678,125 @@ export default function DashboardClient() {
     return <DashboardLoading showSkeleton={true} />;
   }
 
-  // Desktop dashboard (existing)
+  // Desktop dashboard with mobile-first design principles
   return (
     <TaskErrorBoundary>
       <PullToRefresh onRefresh={refreshAllData}>
         <main className="max-w-2xl mx-auto p-4">
           
-          {/* Dashboard Header Component */}
-          <DashboardHeader
-            dateStr={dateStr}
-            greeting={greeting}
-            user={user}
-            emergencyModeActive={emergencyModeActive}
-            onClearEmergencyMode={clearEmergencyMode}
-            tasks={tasks}
-            completionHistory={completionHistory}
-            onReminderAction={(action, data) => {
-              if (action === 'add_relationship_task') {
-                setNewTaskTitle(data.title);
-                setNewTaskDetail(data.detail);
-                setNewTaskCategory('relationship');
-                setShowTaskForm(true);
-              }
-            }}
-            loading={loading}
-            onRefresh={refreshAllData}
-            onAddTask={() => setShowTaskForm(!showTaskForm)}
-            onVoiceTasksAdded={handleVoiceTasksAdded}
-            showMoreOptions={showMoreOptions}
-            onToggleMoreOptions={() => setShowMoreOptions(!showMoreOptions)}
-          />
+          {/* Simplified Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">{greeting}</h1>
+            <p className="text-gray-600">{dateStr}</p>
+            {streakCount > 0 && (
+              <p className="text-sm text-green-600 mt-1">🔥 {streakCount} day streak</p>
+            )}
+          </div>
 
+          {/* TODAY'S TASKS - PRIMARY FOCUS (70% of visual importance) */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Today's Focus</h2>
+              <button
+                onClick={() => setShowTaskForm(!showTaskForm)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <PlusIcon className="w-5 h-5" />
+                Add Task
+              </button>
+            </div>
+            
+            {/* Main Task List - PROMINENT */}
+            {!loading && (
+              <TaskList
+                tasks={sortedTasks}
+                db={db}
+                user={user}
+                onTaskUpdate={refreshAllData}
+                onTaskDelete={(taskId) => {
+                  setTasks(prev => prev.filter(t => t.id !== taskId));
+                }}
+                onTaskComplete={(taskId) => {
+                  // Optimistic update: immediately mark task as completed
+                  setTasks(prev => 
+                    prev.map(task => 
+                      task.id === taskId 
+                        ? { ...task, completed: true, completedAt: Timestamp.now() }
+                        : task
+                    )
+                  );
+                }}
+                loading={loading}
+              />
+            )}
+          </div>
 
-          {/* Daily Task Suggestions */}
-          <DailyTaskSuggestions
-            user={user}
-            db={db}
-            userHistory={tasks}
-            userPreferences={userPreferences}
-            onTaskAdded={refreshAllData}
-          />
+          {/* COLLAPSIBLE SECTIONS - Secondary */}
+          <div className="space-y-4">
+            {/* Suggestions Dropdown */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <button
+                onClick={() => setShowSuggestionsSection(!showSuggestionsSection)}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <SparklesIcon className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium text-gray-800">Get Suggestions</span>
+                  {tasks.length < 3 && (
+                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Add more tasks</span>
+                  )}
+                </div>
+                <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${showSuggestionsSection ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showSuggestionsSection && (
+                <div className="mt-4">
+                  <DailyTaskSuggestions
+                    user={user}
+                    db={db}
+                    userHistory={tasks}
+                    userPreferences={userPreferences}
+                    onTaskAdded={refreshAllData}
+                  />
+                </div>
+              )}
+            </div>
 
-          {/* Planning Reminders */}
-          <EventReminder
-            user={user}
-            db={db}
-            onTaskAdded={refreshAllData}
-          />
+            {/* Planning & Events Dropdown */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <button
+                onClick={() => setShowPlanningSection(!showPlanningSection)}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5 text-purple-600" />
+                  <span className="font-medium text-gray-800">Planning & Events</span>
+                </div>
+                <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${showPlanningSection ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showPlanningSection && (
+                <div className="mt-4">
+                  <EventReminder
+                    user={user}
+                    db={db}
+                    onTaskAdded={refreshAllData}
+                    compact={true}
+                  />
+                </div>
+              )}
+            </div>
 
-          {/* Task Actions Component */}
-          <TaskActions
-            showMoreOptions={showMoreOptions}
-            onToggleRecurringForm={() => setShowRecurringForm(!showRecurringForm)}
-            showRecurringForm={showRecurringForm}
-            emergencyModeActive={emergencyModeActive}
-            onShowEmergencyMode={() => setShowEmergencyMode(true)}
-            currentEnergyLevel={currentEnergyLevel}
-            onEnergyLevelChange={setCurrentEnergyLevel}
-          />
-
-          {/* Main Task List Component */}
-          {!loading && (
-            <TaskList
-              tasks={sortedTasks}
-              db={db}
-              user={user}
-              onTaskUpdate={refreshAllData}
-              onTaskDelete={(taskId) => {
-                setTasks(prev => prev.filter(t => t.id !== taskId));
-              }}
-              onTaskComplete={(taskId) => {
-                // Optimistic update: immediately mark task as completed
-                setTasks(prev => 
-                  prev.map(task => 
-                    task.id === taskId 
-                      ? { ...task, completed: true, completedAt: Timestamp.now() }
-                      : task
-                  )
-                );
-              }}
-              loading={loading}
-            />
-          )}
-
-          {/* Past Promises Component */}
-          <PastPromises
-            pastPromises={pastPromises}
-            onRestoreTask={restoreToToday}
-            onSnoozeTask={snoozeTask}
-            onDismissTask={dismissTask}
-          />
+            {/* Past Promises - Collapsible */}
+            {pastPromises.length > 0 && (
+              <PastPromises
+                pastPromises={pastPromises}
+                onRestoreTask={restoreToToday}
+                onSnoozeTask={snoozeTask}
+                onDismissTask={dismissTask}
+              />
+            )}
+          </div>
 
           {/* Task Form Modal */}
           <TaskForm
