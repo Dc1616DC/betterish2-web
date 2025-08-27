@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChevronUpIcon, PlusIcon, SparklesIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import MobileProjectCard from './MobileProjectCard';
+import { setTaskReminder, hasActiveReminder, getReminderInfo } from '@/lib/reminders';
 
 // Category color system for visual clarity
 const CATEGORY_COLORS = {
@@ -18,15 +19,23 @@ const CATEGORY_COLORS = {
   work: { bg: 'bg-gray-500', light: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' }
 };
 
-// Simplified task card for mobile with swipe gestures
-function TaskCard({ task, onComplete, onDismiss, onUndo, isFirst }) {
+// Simplified task card for mobile with swipe gestures and long-press snooze/reminder
+function TaskCard({ task, onComplete, onDismiss, onSnooze, onUndo, onSetReminder, isFirst, functions, user }) {
   const [swiped, setSwiped] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [justCompleted, setJustCompleted] = useState(false);
   const [startX, setStartX] = useState(null);
   const [currentX, setCurrentX] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showSnoozeMenu, setShowSnoozeMenu] = useState(false);
+  const [showReminderMenu, setShowReminderMenu] = useState(false);
+  const [showTimeMenu, setShowTimeMenu] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState(null);
+  const [isLongPress, setIsLongPress] = useState(false);
   const colors = CATEGORY_COLORS[task.category] || CATEGORY_COLORS.work;
+  
+  // Get reminder info for display
+  const reminderInfo = getReminderInfo(task);
   
   const handleComplete = () => {
     setSwiped(true);
@@ -54,20 +63,105 @@ function TaskCard({ task, onComplete, onDismiss, onUndo, isFirst }) {
     if (onUndo) onUndo(task.id);
   };
 
-  // Touch handlers for swipe gestures
+  const handleSnooze = (duration) => {
+    setShowSnoozeMenu(false);
+    setShowTimeMenu(false);
+    if (onSnooze) {
+      onSnooze(task.id, duration);
+    }
+  };
+
+  const handleSetReminder = async (reminderType) => {
+    setShowReminderMenu(false);
+    setShowTimeMenu(false);
+    
+    try {
+      if (onSetReminder && functions && user) {
+        await onSetReminder(task.id, reminderType);
+      }
+    } catch (error) {
+      console.error('Error setting reminder:', error);
+      // Could show a toast or error message here
+    }
+  };
+
+  // Calculate snooze date based on option
+  const getSnoozeUntil = (option) => {
+    const now = new Date();
+    switch(option) {
+      case '1day':
+        now.setDate(now.getDate() + 1);
+        now.setHours(9, 0, 0, 0); // Tomorrow at 9am
+        return now;
+      case '3days':
+        now.setDate(now.getDate() + 3);
+        now.setHours(9, 0, 0, 0); // 3 days from now at 9am
+        return now;
+      case 'weekend':
+        const daysUntilSaturday = (6 - now.getDay() + 7) % 7 || 7;
+        now.setDate(now.getDate() + daysUntilSaturday);
+        now.setHours(9, 0, 0, 0); // Saturday at 9am
+        return now;
+      case '1week':
+        now.setDate(now.getDate() + 7);
+        now.setHours(9, 0, 0, 0); // 1 week from now at 9am
+        return now;
+      default:
+        return now;
+    }
+  };
+
+  // Touch handlers for swipe gestures and long press
   const handleTouchStart = (e) => {
     setStartX(e.touches[0].clientX);
     setCurrentX(e.touches[0].clientX);
     setIsDragging(false);
+    setIsLongPress(false);
+    
+    // Start long press timer (500ms)
+    const timer = setTimeout(() => {
+      setIsLongPress(true);
+      setShowTimeMenu(true);
+      // Haptic feedback for long press
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    }, 500);
+    setLongPressTimer(timer);
   };
 
   const handleTouchMove = (e) => {
     if (!startX) return;
-    setCurrentX(e.touches[0].clientX);
+    
+    const currentPos = e.touches[0].clientX;
+    const movement = Math.abs(currentPos - startX);
+    
+    // Cancel long press if user moves more than 10px
+    if (movement > 10 && longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+    
+    setCurrentX(currentPos);
     setIsDragging(true);
   };
 
   const handleTouchEnd = () => {
+    // Clear long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+
+    // Don't process swipe if long press menu is open
+    if (isLongPress || showTimeMenu || showSnoozeMenu || showReminderMenu) {
+      setStartX(null);
+      setCurrentX(null);
+      setIsDragging(false);
+      setIsLongPress(false);
+      return;
+    }
+
     if (!startX || !currentX || !isDragging) {
       setStartX(null);
       setCurrentX(null);
@@ -104,8 +198,145 @@ function TaskCard({ task, onComplete, onDismiss, onUndo, isFirst }) {
 
   return (
     <div className="relative">
+      {/* Time management menu overlay */}
+      {showTimeMenu && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-25 z-40"
+            onClick={() => setShowTimeMenu(false)}
+          />
+          <div className="absolute top-0 left-0 right-0 bg-white rounded-2xl shadow-xl z-50 border border-gray-200">
+            <div className="p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">Time Management</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    setShowTimeMenu(false);
+                    setShowSnoozeMenu(true);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors flex items-center"
+                >
+                  <span className="text-lg mr-3">💤</span>
+                  <div>
+                    <div className="font-medium text-gray-900">Snooze Task</div>
+                    <div className="text-xs text-gray-500">Hide until later</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowTimeMenu(false);
+                    setShowReminderMenu(true);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors flex items-center"
+                >
+                  <span className="text-lg mr-3">🔔</span>
+                  <div>
+                    <div className="font-medium text-gray-900">Set Reminder</div>
+                    <div className="text-xs text-gray-500">Get notified later</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setShowTimeMenu(false)}
+                  className="w-full mt-2 px-3 py-2 text-gray-500 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Snooze options menu */}
+      {showSnoozeMenu && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-25 z-40"
+            onClick={() => setShowSnoozeMenu(false)}
+          />
+          <div className="absolute top-0 left-0 right-0 bg-white rounded-2xl shadow-xl z-50 border border-gray-200">
+            <div className="p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">Snooze until:</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleSnooze(getSnoozeUntil('1day'))}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="font-medium text-gray-900">Tomorrow</div>
+                  <div className="text-xs text-gray-500">9:00 AM</div>
+                </button>
+                <button
+                  onClick={() => handleSnooze(getSnoozeUntil('3days'))}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="font-medium text-gray-900">In 3 days</div>
+                  <div className="text-xs text-gray-500">9:00 AM</div>
+                </button>
+                <button
+                  onClick={() => handleSnooze(getSnoozeUntil('weekend'))}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="font-medium text-gray-900">This weekend</div>
+                  <div className="text-xs text-gray-500">Saturday 9:00 AM</div>
+                </button>
+                <button
+                  onClick={() => handleSnooze(getSnoozeUntil('1week'))}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="font-medium text-gray-900">Next week</div>
+                  <div className="text-xs text-gray-500">9:00 AM</div>
+                </button>
+                <button
+                  onClick={() => setShowSnoozeMenu(false)}
+                  className="w-full mt-2 px-3 py-2 text-gray-500 text-sm"
+                >
+                  Back
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Reminder options menu */}
+      {showReminderMenu && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-25 z-40"
+            onClick={() => setShowReminderMenu(false)}
+          />
+          <div className="absolute top-0 left-0 right-0 bg-white rounded-2xl shadow-xl z-50 border border-gray-200">
+            <div className="p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">Set reminder for:</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleSetReminder('morning')}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="font-medium text-gray-900">Tomorrow Morning</div>
+                  <div className="text-xs text-gray-500">9:00 AM</div>
+                </button>
+                <button
+                  onClick={() => handleSetReminder('evening')}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="font-medium text-gray-900">Tomorrow Evening</div>
+                  <div className="text-xs text-gray-500">7:00 PM</div>
+                </button>
+                <button
+                  onClick={() => setShowReminderMenu(false)}
+                  className="w-full mt-2 px-3 py-2 text-gray-500 text-sm"
+                >
+                  Back
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Swipe action indicators */}
-      {showSwipeHint && (
+      {showSwipeHint && !showSnoozeMenu && (
         <>
           {swipeOffset > 0 && (
             <div className="absolute left-0 top-0 bottom-0 w-full bg-green-500 rounded-2xl flex items-center justify-start pl-6 z-0">
@@ -153,6 +384,12 @@ function TaskCard({ task, onComplete, onDismiss, onUndo, isFirst }) {
                 </span>
                 {task.priority === 'high' && !task.completed && (
                   <span className="text-xs font-medium text-red-600">urgent</span>
+                )}
+                {reminderInfo && (
+                  <span className="text-xs font-medium text-blue-600 flex items-center gap-1">
+                    <span>🔔</span>
+                    {reminderInfo.formattedTime}
+                  </span>
                 )}
                 {task.completed && justCompleted && (
                   <button
@@ -294,19 +531,44 @@ export default function MobileDashboard({
   suggestions = [], 
   onTaskComplete,
   onTaskAdd,
+  onTaskSnooze,
+  onTaskReminder,
   onShowTaskForm,
   streak = 0,
   upcomingEvents = [],
   onLogout,
   db,
+  functions,
+  user,
   onProjectComplete,
   onUpdate
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [completedToday, setCompletedToday] = useState(0);
   
-  // Filter for today's active tasks
-  const todayTasks = tasks.filter(t => !t.completed && !t.snoozed);
+  // Filter for today's active tasks (exclude completed and snoozed)
+  const todayTasks = tasks.filter(t => {
+    // Filter out completed tasks
+    if (t.completed || t.completedAt) return false;
+    
+    // Filter out snoozed tasks that haven't reached their snooze time yet
+    if (t.snoozedUntil) {
+      try {
+        const snoozeTime = typeof t.snoozedUntil.toDate === 'function' 
+          ? t.snoozedUntil.toDate() 
+          : new Date(t.snoozedUntil);
+        const now = new Date();
+        if (now < snoozeTime) {
+          return false; // Task is still snoozed
+        }
+      } catch (error) {
+        console.warn('Error processing snooze time for task:', t.id, error);
+        // If there's an error processing the snooze time, show the task anyway
+      }
+    }
+    
+    return true;
+  });
   
   // Show suggestions hint if < 3 tasks
   const needsMoreTasks = todayTasks.length < 3;
@@ -367,6 +629,8 @@ export default function MobileDashboard({
                   key={task.id}
                   task={task}
                   isFirst={index === 0}
+                  functions={functions}
+                  user={user}
                   onComplete={(id) => {
                     setCompletedToday(prev => prev + 1);
                     onTaskComplete(id);
@@ -374,6 +638,12 @@ export default function MobileDashboard({
                   onDismiss={(id) => {
                     // For now, just remove from list - could implement proper dismiss later
                     console.log('Task dismissed:', id);
+                  }}
+                  onSnooze={(id, snoozeUntil) => {
+                    if (onTaskSnooze) onTaskSnooze(id, snoozeUntil);
+                  }}
+                  onSetReminder={(id, reminderType) => {
+                    if (onTaskReminder) onTaskReminder(id, reminderType);
                   }}
                   onUndo={(id) => {
                     setCompletedToday(prev => Math.max(0, prev - 1));
@@ -416,8 +686,9 @@ export default function MobileDashboard({
         
         {/* Swipe instructions */}
         {todayTasks.length > 0 && (
-          <div className="mt-8 text-center text-xs text-gray-400 px-4">
+          <div className="mt-8 text-center text-xs text-gray-400 px-4 space-y-1">
             <p>💡 Swipe right to complete • Swipe left to dismiss</p>
+            <p>Long press for snooze or reminder</p>
           </div>
         )}
       </div>

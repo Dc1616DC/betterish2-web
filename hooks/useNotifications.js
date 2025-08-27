@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { getToken, onMessage } from 'firebase/messaging';
 import { doc, updateDoc } from 'firebase/firestore';
 
-// VAPID Key - you'll need to generate this in Firebase Console
-const VAPID_KEY = 'YOUR_VAPID_KEY_HERE'; // Replace with actual VAPID key
+// VAPID Key - Generated from Firebase Console Cloud Messaging
+const VAPID_KEY = 'BLfM-zFvgzgx0LGYrlISWU34W1mMoOem872u--p6ObMJ3Y9-sn97lXUQ21LB1HMX4l9C0lWN1ppfV1BMW-Pi0fU';
 
 export function useNotifications(messaging, user, db) {
   const [permission, setPermission] = useState('default');

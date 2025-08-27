@@ -83,8 +83,8 @@ export default function DashboardClient() {
 
   // Initialize Firebase on client side only
   useEffect(() => {
-    const { auth, db } = initializeFirebaseClient();
-    setFirebaseInstances({ auth, db });
+    const { auth, db, functions } = initializeFirebaseClient();
+    setFirebaseInstances({ auth, db, functions });
     
     // Detect mobile device
     const checkMobile = () => {
@@ -96,8 +96,8 @@ export default function DashboardClient() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Extract auth and db for easier access
-  const { auth, db } = firebaseInstances;
+  // Extract auth, db, and functions for easier access
+  const { auth, db, functions } = firebaseInstances;
 
   // Separate tasks from projects and sort them
   const { regularTasks, projects } = useMemo(() => {
@@ -125,7 +125,28 @@ export default function DashboardClient() {
     
     // Sort regular tasks with error handling
     const incompleteRegular = regular
-      .filter((t) => !t.completedAt && !t.completed)
+      .filter((t) => {
+        // Filter out completed tasks
+        if (t.completedAt || t.completed) return false;
+        
+        // Filter out snoozed tasks that haven't reached their snooze time yet
+        if (t.snoozedUntil) {
+          try {
+            const snoozeTime = typeof t.snoozedUntil.toDate === 'function' 
+              ? t.snoozedUntil.toDate() 
+              : new Date(t.snoozedUntil);
+            const now = new Date();
+            if (now < snoozeTime) {
+              return false; // Task is still snoozed
+            }
+          } catch (error) {
+            console.warn('Error processing snooze time for task:', t.id, error);
+            // If there's an error processing the snooze time, show the task anyway
+          }
+        }
+        
+        return true;
+      })
       .map(task => {
         try {
           const ageInDays = task.createdAt && typeof task.createdAt.toDate === 'function'
@@ -886,6 +907,36 @@ export default function DashboardClient() {
       }
     };
 
+    const handleMobileTaskSnooze = async (taskId, snoozeUntil) => {
+      if (!user || !db) return;
+      try {
+        await updateDoc(doc(db, 'tasks', taskId), {
+          snoozedUntil: Timestamp.fromDate(snoozeUntil),
+          lastActivityAt: Timestamp.now()
+        });
+        await refreshAllData();
+      } catch (error) {
+        console.error('Error snoozing task:', error);
+      }
+    };
+
+    const handleMobileTaskReminder = async (taskId, reminderType) => {
+      if (!user || !db || !firebaseInstances.functions) return;
+      
+      try {
+        const { setTaskReminder } = await import('@/lib/reminders');
+        await setTaskReminder(taskId, reminderType, {
+          functions: firebaseInstances.functions,
+          db: db,
+          user: user
+        });
+        await refreshAllData();
+      } catch (error) {
+        console.error('Error setting task reminder:', error);
+        // Could show a toast notification here
+      }
+    };
+
     const handleMobileTaskAdd = async (taskData) => {
       if (!user || !db) return;
       
@@ -934,11 +985,15 @@ export default function DashboardClient() {
           suggestions={generateSmartDailyTasks(userPreferences, user?.homeId)}
           onTaskComplete={handleMobileTaskComplete}
           onTaskAdd={handleMobileTaskAdd}
+          onTaskSnooze={handleMobileTaskSnooze}
+          onTaskReminder={handleMobileTaskReminder}
           onShowTaskForm={() => setShowMobileTaskForm(true)}
           streak={streakCount}
           upcomingEvents={[]} // You can integrate personal events here
           onLogout={handleLogout}
           db={db}
+          functions={functions}
+          user={user}
           onProjectComplete={handleProjectComplete}
           onUpdate={refreshAllData}
         />
