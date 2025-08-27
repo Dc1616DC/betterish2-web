@@ -37,7 +37,6 @@ import TaskErrorBoundary from '@/components/TaskErrorBoundary';
 import DashboardLoading from '@/components/DashboardLoading';
 import DailyTaskSuggestions from '@/components/DailyTaskSuggestions';
 import EventReminder from '@/components/EventReminder';
-import DebugPanel from '@/components/DebugPanel';
 
 // Mobile components
 import MobileDashboard from '@/components/MobileDashboard';
@@ -81,7 +80,6 @@ export default function DashboardClient() {
   const [showPlanningSection, setShowPlanningSection] = useState(false);
   const [showProjectBreakdown, setShowProjectBreakdown] = useState(false);
   const [projectBreakdownTask, setProjectBreakdownTask] = useState('');
-  const [debugErrors, setDebugErrors] = useState([]);
 
   // Initialize Firebase on client side only
   useEffect(() => {
@@ -314,9 +312,6 @@ export default function DashboardClient() {
     if (!user || !db) return;
 
     try {
-      // Clear previous errors
-      setDebugErrors([]);
-      
       // Simplest possible query - just fetch user's tasks
       const q = query(
         collection(db, 'tasks'),
@@ -378,10 +373,6 @@ export default function DashboardClient() {
             return false;
           } catch (error) {
             console.error('Error filtering task:', task.id, error);
-            setDebugErrors(prev => [...prev, { 
-              message: `Error filtering task ${task.id}: ${error.message}`,
-              task: task
-            }]);
             return false; // Skip problematic tasks
           }
         })
@@ -401,10 +392,6 @@ export default function DashboardClient() {
       setTasks(relevantTasks);
     } catch (error) {
       console.error('Error loading tasks:', error);
-      setDebugErrors(prev => [...prev, { 
-        message: `Fatal error loading tasks: ${error.message}`,
-        error: error
-      }]);
       // Set empty tasks array to prevent infinite loading
       setTasks([]);
       throw error; // Let TaskErrorBoundary handle this
@@ -960,13 +947,6 @@ export default function DashboardClient() {
           isOpen={showMobileTaskForm}
           onClose={() => setShowMobileTaskForm(false)}
           onSubmit={handleMobileTaskAdd}
-        />
-        
-        {/* Debug Panel for Mobile */}
-        <DebugPanel 
-          errors={debugErrors}
-          tasks={tasks}
-          projects={projects}
         />
       </TaskErrorBoundary>
     );
