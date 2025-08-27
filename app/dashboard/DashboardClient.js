@@ -105,39 +105,81 @@ export default function DashboardClient() {
     const proj = [];
     
     tasks.forEach(task => {
-      if (task.isProject) {
-        proj.push(task);
-      } else {
-        regular.push(task);
+      try {
+        if (task.isProject) {
+          // Validate project has required fields
+          if (task.subtasks && Array.isArray(task.subtasks)) {
+            proj.push(task);
+          } else {
+            console.warn('Project missing subtasks:', task.id);
+            // Convert to regular task if project is malformed
+            regular.push({ ...task, isProject: false });
+          }
+        } else {
+          regular.push(task);
+        }
+      } catch (error) {
+        console.error('Error processing task:', task.id, error);
       }
     });
     
-    // Sort regular tasks
+    // Sort regular tasks with error handling
     const incompleteRegular = regular
       .filter((t) => !t.completedAt && !t.completed)
-      .map(task => ({
-        ...task,
-        ageInDays: task.createdAt ? Math.floor((Date.now() - task.createdAt.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0
-      }))
+      .map(task => {
+        try {
+          const ageInDays = task.createdAt && typeof task.createdAt.toDate === 'function'
+            ? Math.floor((Date.now() - task.createdAt.toDate().getTime()) / (1000 * 60 * 60 * 24))
+            : 0;
+          return { ...task, ageInDays };
+        } catch (error) {
+          console.error('Error calculating age for task:', task.id, error);
+          return { ...task, ageInDays: 0 };
+        }
+      })
       .sort((a, b) => (b.ageInDays >= 3 ? 1 : 0) - (a.ageInDays >= 3 ? 1 : 0));
     
     const completedRegular = regular
       .filter((t) => t.completedAt || t.completed)
       .sort((a, b) => {
-        const aTime = a.completedAt ? (a.completedAt.toDate ? a.completedAt.toDate().getTime() : a.completedAt.getTime()) : Date.now();
-        const bTime = b.completedAt ? (b.completedAt.toDate ? b.completedAt.toDate().getTime() : b.completedAt.getTime()) : Date.now();
-        return bTime - aTime;
+        try {
+          const aTime = a.completedAt 
+            ? (typeof a.completedAt.toDate === 'function' ? a.completedAt.toDate().getTime() : Date.now())
+            : Date.now();
+          const bTime = b.completedAt 
+            ? (typeof b.completedAt.toDate === 'function' ? b.completedAt.toDate().getTime() : Date.now())
+            : Date.now();
+          return bTime - aTime;
+        } catch (error) {
+          console.error('Error sorting completed tasks:', error);
+          return 0;
+        }
       });
     
     const sortedRegular = [...incompleteRegular, ...completedRegular];
     
-    // Sort projects by last activity
+    // Sort projects by last activity with error handling
     const sortedProjects = proj
       .filter(p => !p.completedAt && !p.completed) // Only show active projects
       .sort((a, b) => {
-        const aActivity = a.lastActivityAt?.toDate() || a.createdAt?.toDate() || new Date(0);
-        const bActivity = b.lastActivityAt?.toDate() || b.createdAt?.toDate() || new Date(0);
-        return bActivity - aActivity;
+        try {
+          const getActivityDate = (project) => {
+            if (project.lastActivityAt && typeof project.lastActivityAt.toDate === 'function') {
+              return project.lastActivityAt.toDate();
+            }
+            if (project.createdAt && typeof project.createdAt.toDate === 'function') {
+              return project.createdAt.toDate();
+            }
+            return new Date(0);
+          };
+          
+          const aActivity = getActivityDate(a);
+          const bActivity = getActivityDate(b);
+          return bActivity - aActivity;
+        } catch (error) {
+          console.error('Error sorting projects:', error);
+          return 0;
+        }
       });
     
     return {
@@ -860,6 +902,7 @@ export default function DashboardClient() {
       <TaskErrorBoundary>
         <MobileDashboard
           tasks={regularTasks}
+          projects={projects}
           suggestions={generateSmartDailyTasks(userPreferences, user?.homeId)}
           onTaskComplete={handleMobileTaskComplete}
           onTaskAdd={handleMobileTaskAdd}
@@ -867,6 +910,9 @@ export default function DashboardClient() {
           streak={streakCount}
           upcomingEvents={[]} // You can integrate personal events here
           onLogout={handleLogout}
+          db={db}
+          onProjectComplete={handleProjectComplete}
+          onUpdate={refreshAllData}
         />
         
         <MobileTaskForm

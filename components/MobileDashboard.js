@@ -184,13 +184,17 @@ function QuickAddButton({ onClick }) {
 // Main mobile dashboard
 export default function MobileDashboard({ 
   tasks = [], 
+  projects = [],
   suggestions = [], 
   onTaskComplete,
   onTaskAdd,
   onShowTaskForm,
   streak = 0,
   upcomingEvents = [],
-  onLogout
+  onLogout,
+  db,
+  onProjectComplete,
+  onUpdate
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [completedToday, setCompletedToday] = useState(0);
@@ -212,6 +216,35 @@ export default function MobileDashboard({
       
       {/* Main content area */}
       <div className="px-5 pb-24">
+        {/* Active Projects */}
+        {projects && projects.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Active Projects</h2>
+            <div className="space-y-3">
+              {projects.map(project => {
+                const completedCount = project.subtasks?.filter(st => st.completed).length || 0;
+                const totalCount = project.subtasks?.length || 0;
+                const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+                
+                return (
+                  <div key={project.id} className="bg-white rounded-2xl border border-gray-200 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900">{project.title}</h3>
+                      <span className="text-xs text-gray-500">{completedCount}/{totalCount}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
         {/* Today's Tasks */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
