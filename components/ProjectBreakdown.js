@@ -81,7 +81,7 @@ export default function ProjectBreakdown({
         </div>
 
         <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-          <p className="font-medium text-blue-900">"{taskTitle}"</p>
+          <p className="font-medium text-blue-900">&ldquo;{taskTitle}&rdquo;</p>
           <p className="text-sm text-blue-700 mt-1">
             This looks like it might be a multi-step project. Would you like to break it down?
           </p>
@@ -111,7 +111,7 @@ export default function ProjectBreakdown({
               onClick={() => setMode('custom')}
               className="w-full py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              I'll create my own steps
+              I&apos;ll create my own steps
             </button>
 
             <button

@@ -817,7 +817,7 @@ export default function DashboardClient() {
           {/* TODAY'S TASKS - PRIMARY FOCUS (70% of visual importance) */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Today's Focus</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Today&apos;s Focus</h2>
               <button
                 onClick={() => setShowTaskForm(!showTaskForm)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
