@@ -18,6 +18,7 @@ const TaskList = memo(function TaskList({
   const [isPending, startTransition] = useTransition();
   const [processingTasks, setProcessingTasks] = useState(new Set());
   const [breakdownTask, setBreakdownTask] = useState(null);
+  const [recentlyCompleted, setRecentlyCompleted] = useState(new Map()); // Track recently completed for undo
 
   const handleTaskAction = useCallback(async (taskId, action, taskData = null) => {
     if (processingTasks.has(taskId)) return; // Prevent double-clicks

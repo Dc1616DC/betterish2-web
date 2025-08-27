@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronUpIcon, PlusIcon, SparklesIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import MobileProjectCard from './MobileProjectCard';
 
 // Category color system for visual clarity
 const CATEGORY_COLORS = {
@@ -18,13 +19,25 @@ const CATEGORY_COLORS = {
 };
 
 // Simplified task card for mobile
-function TaskCard({ task, onComplete, onAction, isFirst }) {
+function TaskCard({ task, onComplete, onUndo, isFirst }) {
   const [swiped, setSwiped] = useState(false);
+  const [justCompleted, setJustCompleted] = useState(false);
   const colors = CATEGORY_COLORS[task.category] || CATEGORY_COLORS.work;
   
   const handleComplete = () => {
     setSwiped(true);
-    setTimeout(() => onComplete(task.id), 300);
+    setJustCompleted(true);
+    setTimeout(() => {
+      onComplete(task.id);
+      // Show undo option for 5 seconds after completion
+      setTimeout(() => setJustCompleted(false), 5000);
+    }, 300);
+  };
+  
+  const handleUndo = () => {
+    setSwiped(false);
+    setJustCompleted(false);
+    if (onUndo) onUndo(task.id);
   };
 
   return (
@@ -32,7 +45,8 @@ function TaskCard({ task, onComplete, onAction, isFirst }) {
       className={`
         relative bg-white rounded-2xl shadow-sm border transition-all duration-300
         ${isFirst ? 'scale-105 shadow-lg' : 'scale-100'}
-        ${swiped ? 'translate-x-full opacity-0' : 'translate-x-0'}
+        ${task.completed ? 'opacity-50' : 'opacity-100'}
+        ${swiped && !justCompleted ? 'translate-x-full opacity-0' : 'translate-x-0'}
       `}
     >
       {/* Color indicator bar */}
@@ -41,33 +55,47 @@ function TaskCard({ task, onComplete, onAction, isFirst }) {
       <div className="pl-4 pr-3 py-4">
         <div className="flex items-start justify-between">
           <div className="flex-grow mr-3">
-            <h3 className="font-semibold text-gray-900 text-base leading-tight">
+            <h3 className={`font-semibold text-gray-900 text-base leading-tight ${task.completed ? 'line-through' : ''}`}>
               {task.title}
             </h3>
             {task.detail && (
-              <p className="text-sm text-gray-500 mt-1">{task.detail}</p>
+              <p className={`text-sm text-gray-500 mt-1 ${task.completed ? 'line-through' : ''}`}>{task.detail}</p>
             )}
             <div className="flex items-center gap-3 mt-2">
               <span className={`text-xs font-medium ${colors.text}`}>
                 {task.category.replace('_', ' ')}
               </span>
-              {task.priority === 'high' && (
+              {task.priority === 'high' && !task.completed && (
                 <span className="text-xs font-medium text-red-600">urgent</span>
+              )}
+              {task.completed && justCompleted && (
+                <button
+                  onClick={handleUndo}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Undo
+                </button>
               )}
             </div>
           </div>
           
-          <button
-            onClick={handleComplete}
-            className={`
-              flex-shrink-0 w-10 h-10 rounded-full border-2 
-              ${colors.border} ${colors.light}
-              flex items-center justify-center
-              active:scale-95 transition-transform
-            `}
-          >
-            <CheckCircleIcon className={`w-6 h-6 ${colors.text}`} />
-          </button>
+          {!task.completed ? (
+            <button
+              onClick={handleComplete}
+              className={`
+                flex-shrink-0 w-10 h-10 rounded-full border-2 
+                ${colors.border} ${colors.light}
+                flex items-center justify-center
+                active:scale-95 transition-transform
+              `}
+            >
+              <CheckCircleIcon className={`w-6 h-6 ${colors.text}`} />
+            </button>
+          ) : (
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+              <CheckCircleIcon className="w-6 h-6 text-white" />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -221,26 +249,14 @@ export default function MobileDashboard({
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Active Projects</h2>
             <div className="space-y-3">
-              {projects.map(project => {
-                const completedCount = project.subtasks?.filter(st => st.completed).length || 0;
-                const totalCount = project.subtasks?.length || 0;
-                const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-                
-                return (
-                  <div key={project.id} className="bg-white rounded-2xl border border-gray-200 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">{project.title}</h3>
-                      <span className="text-xs text-gray-500">{completedCount}/{totalCount}</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+              {projects.map(project => (
+                <MobileProjectCard
+                  key={project.id}
+                  project={project}
+                  db={db}
+                  onUpdate={onUpdate}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -276,6 +292,10 @@ export default function MobileDashboard({
                   onComplete={(id) => {
                     setCompletedToday(prev => prev + 1);
                     onTaskComplete(id);
+                  }}
+                  onUndo={(id) => {
+                    setCompletedToday(prev => Math.max(0, prev - 1));
+                    // TODO: Implement undo in parent
                   }}
                 />
               ))}
