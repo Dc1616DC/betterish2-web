@@ -257,6 +257,19 @@ export default function DashboardClient() {
     if (!user || !db) return;
 
     try {
+      // Check for recent duplicate tasks (same title in last hour)
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const recentDuplicate = tasks.find(task => 
+        task.title.toLowerCase() === taskData.title.toLowerCase() &&
+        task.createdAt?.toDate?.() > oneHourAgo
+      );
+      
+      if (recentDuplicate) {
+        console.warn('Preventing duplicate task creation:', taskData.title);
+        alert('You just created a similar task recently. Skipping duplicate.');
+        return;
+      }
+
       const newTask = {
         title: taskData.title,
         detail: taskData.detail || '',
@@ -324,14 +337,17 @@ export default function DashboardClient() {
       const relevantTasks = allTasks
         .filter(task => {
           try {
-            // EXCLUDE TEMPLATE TASKS FROM MAIN TASK LIST
+            // EXCLUDE TEMPLATE TASKS FROM MAIN TASK LIST - More comprehensive check
             const isTemplateId = (
               task.id.startsWith('rel_') ||
               task.id.startsWith('baby_') ||
               task.id.startsWith('house_') ||
               task.id.startsWith('self_') ||
               task.id.startsWith('admin_') ||
-              task.id.startsWith('seas_')
+              task.id.startsWith('seas_') ||
+              // Additional template patterns that might slip through
+              task.id.length < 10 || // Template IDs are usually short
+              /^[a-z]+_\d+$/.test(task.id) // Pattern like "rel_014"
             );
             if (isTemplateId) {
               return false;
@@ -343,6 +359,12 @@ export default function DashboardClient() {
             // Safe date handling
             if (!task.createdAt || typeof task.createdAt.toDate !== 'function') return false;
             const taskDate = task.createdAt.toDate();
+            
+            // Skip tasks with future dates (likely corrupted data)
+            if (taskDate > new Date()) {
+              console.warn('Skipping future-dated task:', task.id, taskDate);
+              return false;
+            }
             
             // Include today's incomplete tasks
             if (taskDate >= today && !task.completedAt && !task.completed) return true;
@@ -428,7 +450,10 @@ export default function DashboardClient() {
             docSnap.id.startsWith('house_') ||
             docSnap.id.startsWith('self_') ||
             docSnap.id.startsWith('admin_') ||
-            docSnap.id.startsWith('seas_')
+            docSnap.id.startsWith('seas_') ||
+            // Additional template patterns
+            docSnap.id.length < 10 ||
+            /^[a-z]+_\d+$/.test(docSnap.id)
           );
           if (isTemplateId) {
             return false;
