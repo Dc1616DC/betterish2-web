@@ -256,166 +256,216 @@ export default function DashboardClient() {
   const loadTasks = useCallback(async () => {
     if (!user || !db) return;
 
-    // Simplest possible query - just fetch user's tasks
-    const q = query(
-      collection(db, 'tasks'),
-      where('userId', '==', user.uid)
-    );
+    try {
+      // Simplest possible query - just fetch user's tasks
+      const q = query(
+        collection(db, 'tasks'),
+        where('userId', '==', user.uid)
+      );
 
-    const snapshot = await getDocs(q);
-    const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const threeDaysAgo = new Date(today);
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    
-    const relevantTasks = allTasks
-      .filter(task => {
-        // EXCLUDE TEMPLATE TASKS FROM MAIN TASK LIST
-        const isTemplateId = (
-          task.id.startsWith('rel_') ||
-          task.id.startsWith('baby_') ||
-          task.id.startsWith('house_') ||
-          task.id.startsWith('self_') ||
-          task.id.startsWith('admin_') ||
-          task.id.startsWith('seas_')
-        );
-        if (isTemplateId) {
-          return false;
-        }
-        
-        // EXCLUDE DISMISSED AND DELETED TASKS
-        if (task.dismissed === true || task.deleted === true) return false;
-        
-        if (!task.createdAt) return false;
-        const taskDate = task.createdAt.toDate();
-        
-        // Include today's incomplete tasks
-        if (taskDate >= today && !task.completedAt && !task.completed) return true;
-        
-        // Include today's completed tasks (but we'll sort them to bottom)
-        if (taskDate >= today && (task.completedAt || task.completed)) return true;
-        
-        // Include incomplete tasks from last 3 days 
-        if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
-        
-        return false;
-      })
-      .sort((a, b) => {
-        // Sort by creation date, newest first
-        const aDate = a.createdAt?.toDate?.() || new Date(0);
-        const bDate = b.createdAt?.toDate?.() || new Date(0);
-        return bDate.getTime() - aDate.getTime();
-      });
-    
-    setTasks(relevantTasks);
+      const snapshot = await getDocs(q);
+      const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Filter and sort everything client-side - ONLY TODAY'S TASKS + recent incomplete
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const threeDaysAgo = new Date(today);
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      const relevantTasks = allTasks
+        .filter(task => {
+          try {
+            // EXCLUDE TEMPLATE TASKS FROM MAIN TASK LIST
+            const isTemplateId = (
+              task.id.startsWith('rel_') ||
+              task.id.startsWith('baby_') ||
+              task.id.startsWith('house_') ||
+              task.id.startsWith('self_') ||
+              task.id.startsWith('admin_') ||
+              task.id.startsWith('seas_')
+            );
+            if (isTemplateId) {
+              return false;
+            }
+            
+            // EXCLUDE DISMISSED AND DELETED TASKS
+            if (task.dismissed === true || task.deleted === true) return false;
+            
+            // Safe date handling
+            if (!task.createdAt || typeof task.createdAt.toDate !== 'function') return false;
+            const taskDate = task.createdAt.toDate();
+            
+            // Include today's incomplete tasks
+            if (taskDate >= today && !task.completedAt && !task.completed) return true;
+            
+            // Include today's completed tasks (but we'll sort them to bottom)
+            if (taskDate >= today && (task.completedAt || task.completed)) return true;
+            
+            // Include incomplete tasks from last 3 days 
+            if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
+            
+            return false;
+          } catch (error) {
+            console.error('Error filtering task:', task.id, error);
+            return false; // Skip problematic tasks
+          }
+        })
+        .sort((a, b) => {
+          try {
+            // Sort by creation date, newest first
+            const aDate = a.createdAt?.toDate?.() || new Date(0);
+            const bDate = b.createdAt?.toDate?.() || new Date(0);
+            return bDate.getTime() - aDate.getTime();
+          } catch (error) {
+            console.error('Error sorting tasks:', error);
+            return 0;
+          }
+        });
+      
+      setTasks(relevantTasks);
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+      // Set empty tasks array to prevent infinite loading
+      setTasks([]);
+      throw error; // Let TaskErrorBoundary handle this
+    }
   }, [user, db]);
 
   // Load past promises
   const loadPastPromises = useCallback(async () => {
     if (!user || !db) return;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
-    const snapshot = await getDocs(q);
+      const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
 
-    // Clean up legacy data that might be missing fields
-    const cleanupPromises = [];
-    
-    const eligibleTasks = snapshot.docs.filter((docSnap) => {
-      const data = docSnap.data();
-      const createdDate = data.createdAt?.toDate();
+      // Clean up legacy data that might be missing fields
+      const cleanupPromises = [];
       
-      // Clean up missing fields on legacy tasks
-      if (data.dismissed === undefined || data.deleted === undefined) {
-        cleanupPromises.push(
-          updateDoc(docSnap.ref, {
-            dismissed: data.dismissed || false,
-            deleted: data.deleted || false,
-          })
-        );
-      }
-      
-      // EXCLUDE TEMPLATE TASKS COMPLETELY
-      const isTemplateId = (
-        docSnap.id.startsWith('rel_') ||
-        docSnap.id.startsWith('baby_') ||
-        docSnap.id.startsWith('house_') ||
-        docSnap.id.startsWith('self_') ||
-        docSnap.id.startsWith('admin_') ||
-        docSnap.id.startsWith('seas_')
-      );
-      if (isTemplateId) {
-        return false;
-      }
-      
-      // EXCLUDE DISMISSED TASKS
-      if (data.dismissed === true) {
-        return false;
-      }
-      
-      if (data.lastRestored) {
-        const restoredDate = data.lastRestored.toDate();
-        const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
-        if (restoredToday) return false;
-      }
-      
-      if (!createdDate) return false;
-      if (data.completedAt) return false;
-      if (data.snoozedUntil && data.snoozedUntil.toDate() > new Date()) return false;
-      
-      const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-      return daysSinceCreated >= 1 && daysSinceCreated <= 14 && data.source === 'manual';
-    });
+      const eligibleTasks = snapshot.docs.filter((docSnap) => {
+        try {
+          const data = docSnap.data();
+          
+          // Safe date handling
+          if (!data.createdAt || typeof data.createdAt.toDate !== 'function') return false;
+          const createdDate = data.createdAt.toDate();
+          
+          // Clean up missing fields on legacy tasks
+          if (data.dismissed === undefined || data.deleted === undefined) {
+            cleanupPromises.push(
+              updateDoc(docSnap.ref, {
+                dismissed: data.dismissed || false,
+                deleted: data.deleted || false,
+              })
+            );
+          }
+          
+          // EXCLUDE TEMPLATE TASKS COMPLETELY
+          const isTemplateId = (
+            docSnap.id.startsWith('rel_') ||
+            docSnap.id.startsWith('baby_') ||
+            docSnap.id.startsWith('house_') ||
+            docSnap.id.startsWith('self_') ||
+            docSnap.id.startsWith('admin_') ||
+            docSnap.id.startsWith('seas_')
+          );
+          if (isTemplateId) {
+            return false;
+          }
+          
+          // EXCLUDE DISMISSED TASKS
+          if (data.dismissed === true) {
+            return false;
+          }
+          
+          if (data.lastRestored && typeof data.lastRestored.toDate === 'function') {
+            const restoredDate = data.lastRestored.toDate();
+            const restoredToday = restoredDate >= today && restoredDate < new Date(today.getTime() + 24*60*60*1000);
+            if (restoredToday) return false;
+          }
+          
+          if (data.completedAt) return false;
+          if (data.snoozedUntil && typeof data.snoozedUntil.toDate === 'function' && data.snoozedUntil.toDate() > new Date()) return false;
+          
+          const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+          return daysSinceCreated >= 1 && daysSinceCreated <= 14 && data.source === 'manual';
+        } catch (error) {
+          console.error('Error filtering past promise:', docSnap.id, error);
+          return false; // Skip problematic tasks
+        }
+      });
 
-    const past = eligibleTasks
-      .map((docSnap) => {
-        const data = docSnap.data();
-        const createdDate = data.createdAt.toDate();
-        const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
-        
-        let ageLabel = '';
-        if (daysSinceCreated === 1) ageLabel = 'Yesterday';
-        else if (daysSinceCreated <= 7) ageLabel = `${daysSinceCreated} days ago`;
-        else ageLabel = 'Over a week ago';
-        
-        return {
-          id: docSnap.id,
-          ...data,
-          ageLabel,
-          daysSinceCreated
-        };
-      })
-      .sort((a, b) => b.ageLabel.localeCompare(a.ageLabel))
-      .slice(0, 3);
+      const past = eligibleTasks
+        .map((docSnap) => {
+          try {
+            const data = docSnap.data();
+            const createdDate = data.createdAt.toDate();
+            const daysSinceCreated = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+            
+            let ageLabel = '';
+            if (daysSinceCreated === 1) ageLabel = 'Yesterday';
+            else if (daysSinceCreated <= 7) ageLabel = `${daysSinceCreated} days ago`;
+            else ageLabel = 'Over a week ago';
+            
+            return {
+              id: docSnap.id,
+              ...data,
+              ageLabel,
+              daysSinceCreated
+            };
+          } catch (error) {
+            console.error('Error mapping past promise:', docSnap.id, error);
+            return null;
+          }
+        })
+        .filter(task => task !== null) // Remove any null tasks from errors
+        .sort((a, b) => {
+          try {
+            return b.ageLabel.localeCompare(a.ageLabel);
+          } catch (error) {
+            console.error('Error sorting past promises:', error);
+            return 0;
+          }
+        })
+        .slice(0, 3);
 
-    // Execute cleanup of legacy fields
-    if (cleanupPromises.length > 0) {
-      try {
-        await Promise.all(cleanupPromises);
-      } catch (error) {
-        console.error('Error updating legacy fields:', error);
+      // Execute cleanup of legacy fields
+      if (cleanupPromises.length > 0) {
+        try {
+          await Promise.all(cleanupPromises);
+        } catch (error) {
+          console.error('Error updating legacy fields:', error);
+        }
       }
+
+      // FINAL SAFETY NET: Filter out any template tasks that somehow made it through
+      const safePastPromises = past.filter(task => {
+        try {
+          const isTemplateId = (
+            task.id.startsWith('rel_') ||
+            task.id.startsWith('baby_') ||
+            task.id.startsWith('house_') ||
+            task.id.startsWith('self_') ||
+            task.id.startsWith('admin_') ||
+            task.id.startsWith('seas_')
+          );
+          return !isTemplateId;
+        } catch (error) {
+          console.error('Error filtering template task:', task.id, error);
+          return false;
+        }
+      });
+      
+      setPastPromises(safePastPromises);
+    } catch (error) {
+      console.error('Error loading past promises:', error);
+      // Set empty array to prevent crashes
+      setPastPromises([]);
+      // Don't throw here - past promises are secondary to main tasks
     }
-
-    // FINAL SAFETY NET: Filter out any template tasks that somehow made it through
-    const safePastPromises = past.filter(task => {
-      const isTemplateId = (
-        task.id.startsWith('rel_') ||
-        task.id.startsWith('baby_') ||
-        task.id.startsWith('house_') ||
-        task.id.startsWith('self_') ||
-        task.id.startsWith('admin_') ||
-        task.id.startsWith('seas_')
-      );
-      return !isTemplateId;
-    });
-    
-    setPastPromises(safePastPromises);
   }, [user, db]);
 
   // Handle voice tasks added
@@ -709,6 +759,9 @@ export default function DashboardClient() {
         await loadPastPromises();
       } catch (err) {
         console.error('[Dashboard] loadTasks error:', err);
+        // Don't leave user stuck in loading state
+        setTasks([]);
+        setPastPromises([]);
       } finally {
         setLoading(false);
       }
@@ -788,7 +841,7 @@ export default function DashboardClient() {
 
     // Show mobile loading state
     if (loading && !tasks.length) {
-      return <DashboardLoading showSkeleton={true} />;
+      return <DashboardLoading message="Loading your tasks..." showSkeleton={true} />;
     }
 
     return (

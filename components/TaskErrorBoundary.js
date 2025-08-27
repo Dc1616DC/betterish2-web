@@ -14,6 +14,7 @@ export class TaskErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('[TaskErrorBoundary] Error caught:', error, errorInfo);
+    console.error('[TaskErrorBoundary] Component stack:', errorInfo.componentStack);
     
     // In production, you could send this to an error reporting service
     if (typeof window !== 'undefined' && window.gtag) {
@@ -36,10 +37,11 @@ export class TaskErrorBoundary extends Component {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-red-800">
-                Something went wrong with your tasks
+                Something went wrong with loading your tasks
               </h3>
               <div className="mt-2 text-sm text-red-700">
                 <p>We&apos;re having trouble loading your tasks. This usually fixes itself in a moment.</p>
+                <p className="mt-1 text-xs text-red-600">If this persists, please refresh the page or try logging out and back in.</p>
               </div>
               <div className="mt-4">
                 <button
