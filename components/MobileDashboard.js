@@ -18,14 +18,19 @@ const CATEGORY_COLORS = {
   work: { bg: 'bg-gray-500', light: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' }
 };
 
-// Simplified task card for mobile
-function TaskCard({ task, onComplete, onUndo, isFirst }) {
+// Simplified task card for mobile with swipe gestures
+function TaskCard({ task, onComplete, onDismiss, onUndo, isFirst }) {
   const [swiped, setSwiped] = useState(false);
+  const [swipeDirection, setSwipeDirection] = useState(null);
   const [justCompleted, setJustCompleted] = useState(false);
+  const [startX, setStartX] = useState(null);
+  const [currentX, setCurrentX] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const colors = CATEGORY_COLORS[task.category] || CATEGORY_COLORS.work;
   
   const handleComplete = () => {
     setSwiped(true);
+    setSwipeDirection('complete');
     setJustCompleted(true);
     setTimeout(() => {
       onComplete(task.id);
@@ -34,68 +39,141 @@ function TaskCard({ task, onComplete, onUndo, isFirst }) {
     }, 300);
   };
   
+  const handleDismiss = () => {
+    setSwiped(true);
+    setSwipeDirection('dismiss');
+    setTimeout(() => {
+      if (onDismiss) onDismiss(task.id);
+    }, 300);
+  };
+  
   const handleUndo = () => {
     setSwiped(false);
+    setSwipeDirection(null);
     setJustCompleted(false);
     if (onUndo) onUndo(task.id);
   };
 
+  // Touch handlers for swipe gestures
+  const handleTouchStart = (e) => {
+    setStartX(e.touches[0].clientX);
+    setCurrentX(e.touches[0].clientX);
+    setIsDragging(false);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!startX) return;
+    setCurrentX(e.touches[0].clientX);
+    setIsDragging(true);
+  };
+
+  const handleTouchEnd = () => {
+    if (!startX || !currentX || !isDragging) {
+      setStartX(null);
+      setCurrentX(null);
+      setIsDragging(false);
+      return;
+    }
+
+    const diffX = currentX - startX;
+    const threshold = 100; // Minimum swipe distance
+
+    if (Math.abs(diffX) > threshold) {
+      if (diffX > 0) {
+        // Swipe right - complete
+        handleComplete();
+      } else {
+        // Swipe left - dismiss
+        handleDismiss();
+      }
+    }
+
+    setStartX(null);
+    setCurrentX(null);
+    setIsDragging(false);
+  };
+
+  // Calculate swipe offset for visual feedback
+  const getSwipeOffset = () => {
+    if (!startX || !currentX || !isDragging) return 0;
+    return currentX - startX;
+  };
+
+  const swipeOffset = getSwipeOffset();
+  const showSwipeHint = isDragging && Math.abs(swipeOffset) > 20;
+
   return (
-    <div 
-      className={`
-        relative bg-white rounded-2xl shadow-sm border transition-all duration-300
-        ${isFirst ? 'scale-105 shadow-lg' : 'scale-100'}
-        ${task.completed ? 'opacity-50' : 'opacity-100'}
-        ${swiped && !justCompleted ? 'translate-x-full opacity-0' : 'translate-x-0'}
-      `}
-    >
-      {/* Color indicator bar */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1 ${colors.bg} rounded-l-2xl`} />
-      
-      <div className="pl-4 pr-3 py-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-grow mr-3">
-            <h3 className={`font-semibold text-gray-900 text-base leading-tight ${task.completed ? 'line-through' : ''}`}>
-              {task.title}
-            </h3>
-            {task.detail && (
-              <p className={`text-sm text-gray-500 mt-1 ${task.completed ? 'line-through' : ''}`}>{task.detail}</p>
-            )}
-            <div className="flex items-center gap-3 mt-2">
-              <span className={`text-xs font-medium ${colors.text}`}>
-                {task.category.replace('_', ' ')}
-              </span>
-              {task.priority === 'high' && !task.completed && (
-                <span className="text-xs font-medium text-red-600">urgent</span>
-              )}
-              {task.completed && justCompleted && (
-                <button
-                  onClick={handleUndo}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700"
-                >
-                  Undo
-                </button>
-              )}
-            </div>
-          </div>
-          
-          {!task.completed ? (
-            <button
-              onClick={handleComplete}
-              className={`
-                flex-shrink-0 w-10 h-10 rounded-full border-2 
-                ${colors.border} ${colors.light}
-                flex items-center justify-center
-                active:scale-95 transition-transform
-              `}
-            >
-              <CheckCircleIcon className={`w-6 h-6 ${colors.text}`} />
-            </button>
-          ) : (
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-              <CheckCircleIcon className="w-6 h-6 text-white" />
+    <div className="relative">
+      {/* Swipe action indicators */}
+      {showSwipeHint && (
+        <>
+          {swipeOffset > 0 && (
+            <div className="absolute left-0 top-0 bottom-0 w-full bg-green-500 rounded-2xl flex items-center justify-start pl-6 z-0">
+              <div className="text-white font-semibold">Complete ✓</div>
             </div>
           )}
+          {swipeOffset < 0 && (
+            <div className="absolute left-0 top-0 bottom-0 w-full bg-red-500 rounded-2xl flex items-center justify-end pr-6 z-0">
+              <div className="text-white font-semibold">Dismiss ✕</div>
+            </div>
+          )}
+        </>
+      )}
+
+      <div 
+        className={`
+          relative bg-white rounded-2xl shadow-sm border transition-all duration-300 z-10
+          ${isFirst ? 'scale-105 shadow-lg' : 'scale-100'}
+          ${task.completed ? 'opacity-50' : 'opacity-100'}
+          ${swiped && swipeDirection === 'complete' ? 'translate-x-full opacity-0' : ''}
+          ${swiped && swipeDirection === 'dismiss' ? '-translate-x-full opacity-0' : ''}
+        `}
+        style={{
+          transform: isDragging ? `translateX(${Math.max(-150, Math.min(150, swipeOffset))}px)` : undefined
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Color indicator bar */}
+        <div className={`absolute left-0 top-0 bottom-0 w-1 ${colors.bg} rounded-l-2xl`} />
+        
+        <div className="pl-4 pr-3 py-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-grow">
+              <h3 className={`font-semibold text-gray-900 text-base leading-tight ${task.completed ? 'line-through' : ''}`}>
+                {task.title}
+              </h3>
+              {task.detail && (
+                <p className={`text-sm text-gray-500 mt-1 ${task.completed ? 'line-through' : ''}`}>{task.detail}</p>
+              )}
+              <div className="flex items-center gap-3 mt-2">
+                <span className={`text-xs font-medium ${colors.text}`}>
+                  {task.category.replace('_', ' ')}
+                </span>
+                {task.priority === 'high' && !task.completed && (
+                  <span className="text-xs font-medium text-red-600">urgent</span>
+                )}
+                {task.completed && justCompleted && (
+                  <button
+                    onClick={handleUndo}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    Undo
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Remove the button entirely for incomplete tasks */}
+            {task.completed && (
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center ml-3">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -293,6 +371,10 @@ export default function MobileDashboard({
                     setCompletedToday(prev => prev + 1);
                     onTaskComplete(id);
                   }}
+                  onDismiss={(id) => {
+                    // For now, just remove from list - could implement proper dismiss later
+                    console.log('Task dismissed:', id);
+                  }}
                   onUndo={(id) => {
                     setCompletedToday(prev => Math.max(0, prev - 1));
                     // TODO: Implement undo in parent
@@ -329,6 +411,13 @@ export default function MobileDashboard({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+        
+        {/* Swipe instructions */}
+        {todayTasks.length > 0 && (
+          <div className="mt-8 text-center text-xs text-gray-400 px-4">
+            <p>💡 Swipe right to complete • Swipe left to dismiss</p>
           </div>
         )}
       </div>
