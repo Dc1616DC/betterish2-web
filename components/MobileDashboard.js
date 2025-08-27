@@ -75,7 +75,7 @@ function TaskCard({ task, onComplete, onAction, isFirst }) {
 }
 
 // Minimal header with greeting
-function MobileHeader({ greeting, taskCount, streak }) {
+function MobileHeader({ greeting, taskCount, streak, onLogout }) {
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   
@@ -91,6 +91,15 @@ function MobileHeader({ greeting, taskCount, streak }) {
             {streak > 0 && ` • ${streak} day streak 🔥`}
           </p>
         </div>
+        <button
+          onClick={onLogout}
+          className="p-2 text-gray-500 hover:text-red-600 active:text-red-700"
+          title="Sign out"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
       </div>
     </div>
   );
@@ -180,7 +189,8 @@ export default function MobileDashboard({
   onTaskAdd,
   onShowTaskForm,
   streak = 0,
-  upcomingEvents = []
+  upcomingEvents = [],
+  onLogout
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [completedToday, setCompletedToday] = useState(0);
@@ -197,6 +207,7 @@ export default function MobileDashboard({
         greeting="Good morning"
         taskCount={todayTasks.length}
         streak={streak}
+        onLogout={onLogout}
       />
       
       {/* Main content area */}

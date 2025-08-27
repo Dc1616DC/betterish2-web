@@ -675,6 +675,18 @@ export default function DashboardClient() {
     setLoading(false);
   };
 
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      if (auth) {
+        await signOut(auth);
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   // Set up date and greeting
   useEffect(() => {
     setMounted(true);
@@ -854,6 +866,7 @@ export default function DashboardClient() {
           onShowTaskForm={() => setShowMobileTaskForm(true)}
           streak={streakCount}
           upcomingEvents={[]} // You can integrate personal events here
+          onLogout={handleLogout}
         />
         
         <MobileTaskForm
@@ -877,12 +890,24 @@ export default function DashboardClient() {
         <main className="max-w-2xl mx-auto p-4">
           
           {/* Simplified Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">{greeting}</h1>
-            <p className="text-gray-600">{dateStr}</p>
-            {streakCount > 0 && (
-              <p className="text-sm text-green-600 mt-1">🔥 {streakCount} day streak</p>
-            )}
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{greeting}</h1>
+              <p className="text-gray-600">{dateStr}</p>
+              {streakCount > 0 && (
+                <p className="text-sm text-green-600 mt-1">🔥 {streakCount} day streak</p>
+              )}
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+              title="Sign out"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>Sign out</span>
+            </button>
           </div>
 
           {/* TODAY'S TASKS - PRIMARY FOCUS (70% of visual importance) */}

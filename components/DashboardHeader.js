@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ExclamationTriangleIcon, ArrowPathIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, ArrowPathIcon, PlusIcon, ArrowRightOnRectangleIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import StreakBanner from '@/components/StreakBanner';
 import SmartReminders from '@/components/SmartReminders';
 import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
@@ -20,14 +20,60 @@ export default function DashboardHeader({
   onAddTask,
   onVoiceTasksAdded,
   showMoreOptions,
-  onToggleMoreOptions
+  onToggleMoreOptions,
+  onLogout
 }) {
+  const [showUserMenu, setShowUserMenu] = useState(false);
   return (
     <>
       {/* Header with date and greeting */}
-      <div className="mb-6">
-        <h1 className="text-lg text-gray-500 mb-1">{dateStr}</h1>
-        <h2 className="text-2xl font-bold text-gray-800">{greeting}</h2>
+      <div className="mb-6 relative">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-lg text-gray-500 mb-1">{dateStr}</h1>
+            <h2 className="text-2xl font-bold text-gray-800">{greeting}</h2>
+          </div>
+          
+          {/* User Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="User menu"
+            >
+              <UserCircleIcon className="w-8 h-8 text-gray-600" />
+            </button>
+            
+            {showUserMenu && (
+              <>
+                {/* Backdrop to close menu */}
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setShowUserMenu(false)}
+                />
+                
+                {/* Menu dropdown */}
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                  <div className="p-3 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-900">{user?.displayName || 'User'}</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      if (onLogout) onLogout();
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors flex items-center gap-2 text-red-600 hover:text-red-700"
+                  >
+                    <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Streak Banner - Important but subtle */}
