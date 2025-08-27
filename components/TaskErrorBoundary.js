@@ -5,7 +5,12 @@ import { Component } from 'react';
 export class TaskErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { 
+      hasError: false, 
+      error: null,
+      errorInfo: null,
+      showDetails: false 
+    };
   }
 
   static getDerivedStateFromError(error) {
@@ -15,6 +20,11 @@ export class TaskErrorBoundary extends Component {
   componentDidCatch(error, errorInfo) {
     console.error('[TaskErrorBoundary] Error caught:', error, errorInfo);
     console.error('[TaskErrorBoundary] Component stack:', errorInfo.componentStack);
+    
+    // Store error info for display
+    this.setState({
+      errorInfo: errorInfo
+    });
     
     // In production, you could send this to an error reporting service
     if (typeof window !== 'undefined' && window.gtag) {
@@ -43,17 +53,50 @@ export class TaskErrorBoundary extends Component {
                 <p>We&apos;re having trouble loading your tasks. This usually fixes itself in a moment.</p>
                 <p className="mt-1 text-xs text-red-600">If this persists, please refresh the page or try logging out and back in.</p>
               </div>
-              <div className="mt-4">
+              <div className="mt-4 space-y-2">
                 <button
                   onClick={() => {
                     this.setState({ hasError: false, error: null });
                     window.location.reload();
                   }}
-                  className="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 rounded text-sm transition-colors"
+                  className="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 rounded text-sm transition-colors mr-2"
                 >
                   Try Again
                 </button>
+                <button
+                  onClick={() => this.setState({ showDetails: !this.state.showDetails })}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded text-sm transition-colors mr-2"
+                >
+                  {this.state.showDetails ? 'Hide' : 'Show'} Error Details
+                </button>
+                <a
+                  href="/debug"
+                  className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded text-sm transition-colors inline-block"
+                >
+                  Open Debug Page
+                </a>
               </div>
+              
+              {this.state.showDetails && (
+                <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
+                  <p className="font-semibold mb-2">Error Message:</p>
+                  <p className="text-red-600 mb-3">{this.state.error?.toString()}</p>
+                  
+                  <p className="font-semibold mb-2">Error Stack:</p>
+                  <pre className="whitespace-pre-wrap text-gray-600 overflow-x-auto">
+                    {this.state.error?.stack}
+                  </pre>
+                  
+                  {this.state.errorInfo && (
+                    <>
+                      <p className="font-semibold mb-2 mt-3">Component Stack:</p>
+                      <pre className="whitespace-pre-wrap text-gray-600 overflow-x-auto">
+                        {this.state.errorInfo.componentStack}
+                      </pre>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
