@@ -753,6 +753,24 @@ export default function DashboardClient() {
 
     const handleMobileTaskAdd = async (taskData) => {
       if (!user || !db) return;
+      
+      // Check if this might be a project on mobile too
+      if (mightBeProject(taskData.title)) {
+        // For mobile, just create a simple project with basic subtasks
+        const basicSubtasks = [
+          { id: Date.now() + 1, title: 'Plan the approach', completed: false, completedAt: null },
+          { id: Date.now() + 2, title: 'Gather materials', completed: false, completedAt: null },
+          { id: Date.now() + 3, title: 'Complete the work', completed: false, completedAt: null },
+          { id: Date.now() + 4, title: 'Review and finalize', completed: false, completedAt: null }
+        ];
+        
+        await handleCreateProject({
+          title: taskData.title,
+          subtasks: basicSubtasks
+        });
+        return;
+      }
+      
       try {
         const newTask = {
           ...taskData,
@@ -776,7 +794,7 @@ export default function DashboardClient() {
     return (
       <TaskErrorBoundary>
         <MobileDashboard
-          tasks={sortedTasks}
+          tasks={regularTasks}
           suggestions={generateSmartDailyTasks(userPreferences, user?.homeId)}
           onTaskComplete={handleMobileTaskComplete}
           onTaskAdd={handleMobileTaskAdd}
