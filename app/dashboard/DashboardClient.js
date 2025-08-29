@@ -1365,14 +1365,16 @@ export default function DashboardClient() {
             </div>
           )}
 
-          {/* AI Sidekick Chat */}
-          <SidekickChat
-            task={selectedTask}
-            isVisible={showSidekickChat}
-            onClose={handleCloseChat}
-            userTier={userTier}
-            onUpgradeRequest={() => setShowUpgradeModal(true)}
-          />
+          {/* AI Sidekick Chat - TEMPORARILY DISABLED FOR DEBUGGING */}
+          {false && (
+            <SidekickChat
+              task={selectedTask}
+              isVisible={showSidekickChat}
+              onClose={handleCloseChat}
+              userTier={userTier}
+              onUpgradeRequest={() => setShowUpgradeModal(true)}
+            />
+          )}
 
           {/* Success Messages */}
           {voiceSuccess && (
