@@ -23,11 +23,6 @@ function LooseEndsPage() {
     setMounted(true);
   }, []);
 
-  // Early return for SSR/hydration
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
   const fetchLooseEnds = useCallback(async () => {
     if (!user) return;
     
@@ -84,6 +79,11 @@ function LooseEndsPage() {
     if (!mounted || !user) return;
     fetchLooseEnds();
   }, [user, mounted, fetchLooseEnds]);
+
+  // Early return for SSR/hydration
+  if (typeof window === 'undefined') {
+    return null;
+  }
 
   const markTaskDone = async (taskId) => {
     const taskRef = doc(db, 'tasks', taskId);
