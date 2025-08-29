@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
 import { canUseChat, incrementChatUsage } from '@/lib/subscription';
@@ -34,9 +34,9 @@ export default function SidekickChat({ task, isVisible, onClose, userTier = 'fre
     if (isVisible && user) {
       checkUsageLimits();
     }
-  }, [isVisible, user, userTier]);
+  }, [isVisible, user, userTier, checkUsageLimits]);
 
-  const checkUsageLimits = async () => {
+  const checkUsageLimits = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -45,7 +45,7 @@ export default function SidekickChat({ task, isVisible, onClose, userTier = 'fre
     } catch (error) {
       console.error('Error checking usage limits:', error);
     }
-  };
+  }, [user, userTier]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading || !usageInfo.allowed) return;
@@ -193,7 +193,7 @@ export default function SidekickChat({ task, isVisible, onClose, userTier = 'fre
           {!usageInfo.allowed ? (
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-3">
-                You've used your {usageInfo.limit} free chats this month
+                You&apos;ve used your {usageInfo.limit} free chats this month
               </p>
               <button 
                 onClick={() => onUpgradeRequest && onUpgradeRequest()}

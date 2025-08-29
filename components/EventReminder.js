@@ -122,7 +122,7 @@ export default function EventReminder({ user, db, onTaskAdded, compact = false }
       console.error('Error loading personal events:', error);
     }
     setLoading(false);
-  }, [user, db, compact]);
+  }, [user, db, compact, calculateUpcomingEvents]);
 
   useEffect(() => {
     if (user && db) {
@@ -130,8 +130,8 @@ export default function EventReminder({ user, db, onTaskAdded, compact = false }
     }
   }, [user, db, loadPersonalEvents]);
 
-  // Helper function to calculate upcoming events (not using useCallback to avoid circular deps)
-  const calculateUpcomingEvents = (eventsData) => {
+  // Helper function to calculate upcoming events
+  const calculateUpcomingEvents = useCallback((eventsData) => {
     const today = new Date();
     const upcoming = [];
     
@@ -172,7 +172,7 @@ export default function EventReminder({ user, db, onTaskAdded, compact = false }
       }];
       setPlanningReminders(appointmentReminders);
     }
-  };
+  }, [compact]);
 
   const handleAddPlanningTask = async (task) => {
     if (!user || !db) return;

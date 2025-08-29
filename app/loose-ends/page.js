@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import {
   collection,
@@ -18,17 +18,17 @@ function LooseEndsPage() {
   const [manualTasks, setManualTasks] = useState([]);
   const [mounted, setMounted] = useState(false);
 
-  // Early return for SSR/hydration
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
   // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const fetchLooseEnds = async () => {
+  // Early return for SSR/hydration
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const fetchLooseEnds = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -78,12 +78,12 @@ function LooseEndsPage() {
       console.error('Error fetching loose ends:', error);
       setManualTasks([]);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     if (!mounted || !user) return;
     fetchLooseEnds();
-  }, [user, mounted]);
+  }, [user, mounted, fetchLooseEnds]);
 
   const markTaskDone = async (taskId) => {
     const taskRef = doc(db, 'tasks', taskId);

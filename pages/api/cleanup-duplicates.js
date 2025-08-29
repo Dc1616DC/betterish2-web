@@ -1,5 +1,5 @@
 import { cleanupDuplicatesIfSafe } from '@/lib/duplicateHandler';
-import { auth } from '@/lib/firebase-admin';
+import { adminAuth as auth } from '@/lib/firebase-admin';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
