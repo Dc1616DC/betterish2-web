@@ -8,10 +8,6 @@ const GROK_API_KEY = process.env.GROK_API_KEY;
 const rateLimitStore = new Map();
 
 function checkRateLimit(userId, tier) {
-  // TEMPORARILY DISABLED FOR TESTING
-  console.log('⚠️ Rate limiting temporarily disabled for testing');
-  return true;
-  
   const key = `${userId}-${new Date().toISOString().slice(0, 7)}`; // monthly key
   const current = rateLimitStore.get(key) || 0;
   

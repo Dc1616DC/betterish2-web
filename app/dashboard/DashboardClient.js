@@ -1370,7 +1370,8 @@ export default function DashboardClient() {
             task={selectedTask}
             isVisible={showSidekickChat}
             onClose={handleCloseChat}
-            userTier="free"
+            userTier={userTier}
+            onUpgradeRequest={() => setShowUpgradeModal(true)}
           />
 
           {/* Success Messages */}
