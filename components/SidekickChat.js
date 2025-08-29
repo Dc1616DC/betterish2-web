@@ -29,13 +29,6 @@ export default function SidekickChat({ task, isVisible, onClose, userTier = 'fre
     }
   }, [isVisible, task, messages.length]);
 
-  // Check usage limits when component becomes visible
-  useEffect(() => {
-    if (isVisible && user) {
-      checkUsageLimits();
-    }
-  }, [isVisible, user, userTier, checkUsageLimits]);
-
   const checkUsageLimits = useCallback(async () => {
     if (!user) return;
     
@@ -46,6 +39,13 @@ export default function SidekickChat({ task, isVisible, onClose, userTier = 'fre
       console.error('Error checking usage limits:', error);
     }
   }, [user, userTier]);
+
+  // Check usage limits when component becomes visible
+  useEffect(() => {
+    if (isVisible && user) {
+      checkUsageLimits();
+    }
+  }, [isVisible, user, userTier, checkUsageLimits]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading || !usageInfo.allowed) return;
