@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDownIcon, ChevronRightIcon, PauseIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronRightIcon, PauseIcon, CheckCircleIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { updateDoc, doc, Timestamp } from 'firebase/firestore';
+import SidekickChat from './SidekickChat';
 
-export default function ProjectCard({ project, db, onUpdate, onComplete }) {
+export default function ProjectCard({ project, db, onUpdate, onComplete, userTier, onUpgradeRequest }) {
   const [expanded, setExpanded] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const completedCount = project.subtasks?.filter(st => st.completed).length || 0;
   const totalCount = project.subtasks?.length || 0;
@@ -102,13 +104,22 @@ export default function ProjectCard({ project, db, onUpdate, onComplete }) {
           </div>
         </div>
 
-        <button
-          onClick={handlePause}
-          className="text-gray-400 hover:text-gray-600"
-          title={project.projectStatus === 'paused' ? 'Resume' : 'Pause'}
-        >
-          <PauseIcon className="w-5 h-5" />
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowChat(true)}
+            className="text-gray-400 hover:text-blue-600 transition-colors"
+            title="Get AI help with this project"
+          >
+            <ChatBubbleLeftIcon className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handlePause}
+            className="text-gray-400 hover:text-gray-600"
+            title={project.projectStatus === 'paused' ? 'Resume' : 'Pause'}
+          >
+            <PauseIcon className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {expanded && project.subtasks && (
@@ -144,6 +155,21 @@ export default function ProjectCard({ project, db, onUpdate, onComplete }) {
           )}
         </div>
       )}
+
+      {/* AI Chat */}
+      <SidekickChat
+        task={{
+          id: project.id,
+          title: project.title,
+          detail: `Project with ${totalCount} steps (${completedCount} completed)`,
+          category: 'project',
+          subtasks: project.subtasks
+        }}
+        isVisible={showChat}
+        onClose={() => setShowChat(false)}
+        userTier={userTier}
+        onUpgradeRequest={onUpgradeRequest}
+      />
     </div>
   );
 }

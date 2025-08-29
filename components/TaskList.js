@@ -13,6 +13,7 @@ const TaskList = memo(function TaskList({
   onTaskUpdate,
   onTaskDelete,
   onTaskComplete,
+  onOpenChat = null,
   loading = false 
 }) {
   const [isPending, startTransition] = useTransition();
@@ -190,6 +191,7 @@ const TaskList = memo(function TaskList({
             task={task}
             onAction={(taskId, action) => debouncedHandleTaskAction(taskId, action, task)}
             onBreakdown={(task) => setBreakdownTask(task)}
+            onOpenChat={onOpenChat}
             isProcessing={processingTasks.has(task.id)}
           />
         ))}
@@ -210,7 +212,7 @@ const TaskList = memo(function TaskList({
   );
 });
 
-const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, isProcessing }) {
+const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenChat, isProcessing }) {
   const [swipeRevealed, setSwipeRevealed] = useState('');
 
   const swipeGesture = useSwipeGesture({
@@ -320,6 +322,16 @@ const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, isProcess
               >
                 📋
               </button>
+              {onOpenChat && (
+                <button
+                  onClick={() => onOpenChat(task)}
+                  disabled={isProcessing}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+                  title="Get AI help with this task"
+                >
+                  💭
+                </button>
+              )}
               <button
                 onClick={() => onAction(task.id, 'complete')}
                 disabled={isProcessing}

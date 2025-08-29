@@ -41,6 +41,7 @@ import EventReminder from '@/components/EventReminder';
 // Mobile components
 import MobileDashboard from '@/components/MobileDashboard';
 import MobileTaskForm from '@/components/MobileTaskForm';
+import SidekickChat from '@/components/SidekickChat';
 
 // Project components
 import ProjectCard from '@/components/ProjectCard';
@@ -63,6 +64,8 @@ export default function DashboardClient() {
   const [showEmergencyMode, setShowEmergencyMode] = useState(false);
   const [currentEnergyLevel, setCurrentEnergyLevel] = useState('medium');
   const [completionHistory, setCompletionHistory] = useState([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [userTier, setUserTier] = useState('free');
   const [emergencyModeActive, setEmergencyModeActive] = useState(false);
   const [activeModeTemplates, setActiveModeTemplates] = useState([]);
   const [userPreferences, setUserPreferences] = useState(null);
@@ -80,6 +83,11 @@ export default function DashboardClient() {
   const [showPlanningSection, setShowPlanningSection] = useState(false);
   const [showProjectBreakdown, setShowProjectBreakdown] = useState(false);
   const [projectBreakdownTask, setProjectBreakdownTask] = useState('');
+  
+  // AI Helper and Undo functionality
+  const [showSidekickChat, setShowSidekickChat] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [recentlyCompleted, setRecentlyCompleted] = useState([]);
 
   // Initialize Firebase on client side only
   useEffect(() => {
@@ -310,6 +318,36 @@ export default function DashboardClient() {
       }
     } catch (error) {
       console.error('Error creating task:', error);
+    }
+  };
+
+  // AI Helper handlers
+  const handleOpenChat = (task) => {
+    setSelectedTask(task);
+    setShowSidekickChat(true);
+  };
+
+  const handleCloseChat = () => {
+    setShowSidekickChat(false);
+    setSelectedTask(null);
+  };
+
+  // Undo functionality
+  const handleTaskUndo = async (taskId) => {
+    if (!db) return;
+    
+    try {
+      await updateDoc(doc(db, 'tasks', taskId), {
+        completed: false,
+        completedAt: null
+      });
+      
+      // Remove from recently completed
+      setRecentlyCompleted(prev => prev.filter(t => t.id !== taskId));
+      
+      await refreshAllData();
+    } catch (error) {
+      console.error('Error undoing task:', error);
     }
   };
 
@@ -583,7 +621,7 @@ export default function DashboardClient() {
 
   // Restore task to today
   const restoreToToday = async (taskId) => {
-    if (!db) return;
+    if (!db || !user) return;
     
     try {
       const taskDoc = await getDoc(doc(db, 'tasks', taskId));
@@ -591,40 +629,51 @@ export default function DashboardClient() {
         const data = taskDoc.data();
         const now = Timestamp.now();
         
+        // Update the task to move it to today
         await updateDoc(doc(db, 'tasks', taskId), {
           createdAt: now,
           lastRestored: now,
           restoreCount: (data.restoreCount || 0) + 1,
+          dismissed: false,  // Clear any dismissed status
+          snoozedUntil: null, // Clear any snooze
         });
         
-        // Move to today's tasks
-        const restored = {
-          id: taskId,
-          ...data,
-          createdAt: now,
-          lastRestored: now,
-        };
-        
-        setTasks(prev => [...prev, restored]);
+        // Remove from past promises immediately for UI feedback
         setPastPromises(prev => prev.filter(t => t.id !== taskId));
+        
+        // Refresh all data to ensure proper display
+        await refreshAllData();
       }
     } catch (error) {
       console.error('Error restoring task:', error);
+      alert('Error moving task to today. Please try again.');
     }
   };
 
   // Snooze task
   const snoozeTask = async (taskId) => {
-    if (!db) return;
+    if (!db || !user) return;
     
-    const snoozeTime = new Date();
-    snoozeTime.setHours(snoozeTime.getHours() + 1);
-    
-    await updateDoc(doc(db, 'tasks', taskId), {
-      snoozedUntil: Timestamp.fromDate(snoozeTime),
-    });
-    
-    setPastPromises(prev => prev.filter(t => t.id !== taskId));
+    try {
+      // Snooze until tomorrow morning (9 AM)
+      const snoozeTime = new Date();
+      snoozeTime.setDate(snoozeTime.getDate() + 1);
+      snoozeTime.setHours(9, 0, 0, 0);
+      
+      await updateDoc(doc(db, 'tasks', taskId), {
+        snoozedUntil: Timestamp.fromDate(snoozeTime),
+        lastActivityAt: Timestamp.now()
+      });
+      
+      // Remove from past promises immediately for UI feedback
+      setPastPromises(prev => prev.filter(t => t.id !== taskId));
+      
+      // Refresh to update task lists
+      await refreshAllData();
+    } catch (error) {
+      console.error('Error snoozing task:', error);
+      alert('Error snoozing task. Please try again.');
+    }
   };
 
   // Cleanup template tasks from database
@@ -717,8 +766,11 @@ export default function DashboardClient() {
         dismissedAt: Timestamp.now(),
       });
       
+      // Remove from past promises immediately for UI feedback
+      setPastPromises(prev => prev.filter(t => t.id !== taskId));
+      
       // Refresh data to ensure dismissed task doesn't reappear
-      await loadPastPromises();
+      await refreshAllData();
     } catch (error) {
       console.error('Error dismissing task:', error);
       
@@ -1065,6 +1117,8 @@ export default function DashboardClient() {
                     db={db}
                     onUpdate={refreshAllData}
                     onComplete={handleProjectComplete}
+                    userTier={userTier}
+                    onUpgradeRequest={() => setShowUpgradeModal(true)}
                   />
                 ))}
               </div>
@@ -1085,6 +1139,16 @@ export default function DashboardClient() {
                     setTasks(prev => prev.filter(t => t.id !== taskId));
                   }}
                   onTaskComplete={(taskId) => {
+                    // Find the task being completed
+                    const completedTask = tasks.find(t => t.id === taskId);
+                    if (completedTask) {
+                      // Add to recently completed for undo functionality
+                      setRecentlyCompleted(prev => [
+                        { ...completedTask, completedAt: new Date() },
+                        ...prev.slice(0, 4) // Keep only last 5 completed tasks
+                      ]);
+                    }
+                    
                     // Optimistic update: immediately mark task as completed
                     setTasks(prev => 
                       prev.map(task => 
@@ -1094,6 +1158,7 @@ export default function DashboardClient() {
                       )
                     );
                   }}
+                  onOpenChat={handleOpenChat}
                   loading={loading}
                 />
               </div>
@@ -1276,6 +1341,37 @@ export default function DashboardClient() {
             />
           )}
 
+
+          {/* Recently Completed Tasks - Undo Section */}
+          {recentlyCompleted.length > 0 && (
+            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+              <h3 className="text-sm font-medium text-green-800 mb-3">Recently Completed</h3>
+              <div className="space-y-2">
+                {recentlyCompleted.slice(0, 3).map((task) => (
+                  <div key={task.id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-green-200">
+                    <div className="flex-1">
+                      <span className="text-sm text-gray-600 line-through">{task.title}</span>
+                      <span className="text-xs text-green-600 ml-2">✓ Completed</span>
+                    </div>
+                    <button
+                      onClick={() => handleTaskUndo(task.id)}
+                      className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors"
+                    >
+                      ↶ Undo
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* AI Sidekick Chat */}
+          <SidekickChat
+            task={selectedTask}
+            isVisible={showSidekickChat}
+            onClose={handleCloseChat}
+            userTier="free"
+          />
 
           {/* Success Messages */}
           {voiceSuccess && (

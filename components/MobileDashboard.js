@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronUpIcon, PlusIcon, SparklesIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { ChevronUpIcon, PlusIcon, SparklesIcon, CalendarIcon, ChatBubbleLeftEllipsisIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import MobileProjectCard from './MobileProjectCard';
+import SidekickChat from './SidekickChat';
 import { setTaskReminder, hasActiveReminder, getReminderInfo } from '@/lib/reminders';
 
 // Category color system for visual clarity
@@ -20,7 +21,7 @@ const CATEGORY_COLORS = {
 };
 
 // Simplified task card for mobile with swipe gestures and long-press snooze/reminder
-function TaskCard({ task, onComplete, onDismiss, onSnooze, onUndo, onSetReminder, isFirst, functions, user }) {
+function TaskCard({ task, onComplete, onDismiss, onSnooze, onUndo, onSetReminder, onOpenChat, isFirst, functions, user, userTier }) {
   const [swiped, setSwiped] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [justCompleted, setJustCompleted] = useState(false);
@@ -233,6 +234,21 @@ function TaskCard({ task, onComplete, onDismiss, onSnooze, onUndo, onSetReminder
                   <div>
                     <div className="font-medium text-gray-900">Set Reminder</div>
                     <div className="text-xs text-gray-500">Get notified later</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowTimeMenu(false);
+                    onOpenChat && onOpenChat(task);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors flex items-center"
+                >
+                  <span className="text-lg mr-3">💭</span>
+                  <div>
+                    <div className="font-medium text-gray-900">Ask Sidekick</div>
+                    <div className="text-xs text-gray-500">
+                      {userTier === 'premium' || userTier === 'family' ? 'Get help with this task' : 'Free: 3/month'}
+                    </div>
                   </div>
                 </button>
                 <button
@@ -541,10 +557,24 @@ export default function MobileDashboard({
   functions,
   user,
   onProjectComplete,
-  onUpdate
+  onUpdate,
+  userTier = 'free'
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [completedToday, setCompletedToday] = useState(0);
+  const [showSidekickChat, setShowSidekickChat] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  // Chat handlers
+  const handleOpenChat = (task) => {
+    setSelectedTask(task);
+    setShowSidekickChat(true);
+  };
+
+  const handleCloseChat = () => {
+    setShowSidekickChat(false);
+    setSelectedTask(null);
+  };
   
   // Filter for today's active tasks (exclude completed and snoozed)
   const todayTasks = tasks.filter(t => {
@@ -631,6 +661,7 @@ export default function MobileDashboard({
                   isFirst={index === 0}
                   functions={functions}
                   user={user}
+                  userTier={userTier}
                   onComplete={(id) => {
                     setCompletedToday(prev => prev + 1);
                     onTaskComplete(id);
@@ -645,6 +676,7 @@ export default function MobileDashboard({
                   onSetReminder={(id, reminderType) => {
                     if (onTaskReminder) onTaskReminder(id, reminderType);
                   }}
+                  onOpenChat={handleOpenChat}
                   onUndo={(id) => {
                     setCompletedToday(prev => Math.max(0, prev - 1));
                     // TODO: Implement undo in parent
@@ -703,6 +735,14 @@ export default function MobileDashboard({
         suggestions={suggestions}
         onAddTask={onTaskAdd}
         currentTaskCount={todayTasks.length}
+      />
+
+      {/* AI Sidekick Chat */}
+      <SidekickChat
+        task={selectedTask}
+        isVisible={showSidekickChat}
+        onClose={handleCloseChat}
+        userTier={userTier}
       />
     </div>
   );

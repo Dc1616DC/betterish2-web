@@ -9,26 +9,29 @@ import {
   getDocs,
   updateDoc,
   Timestamp,
-  addDoc,
   doc
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import dynamic from 'next/dynamic';
 
 function LooseEndsPage() {
   const [user, loading] = useAuthState(auth);
   const [manualTasks, setManualTasks] = useState([]);
   const [mounted, setMounted] = useState(false);
 
+  // Early return for SSR/hydration
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!mounted || !user) return;
-
-    const fetchLooseEnds = async () => {
+  const fetchLooseEnds = async () => {
+    if (!user) return;
+    
+    try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -45,8 +48,12 @@ function LooseEndsPage() {
         const isBeforeToday = createdAt < today;
         const isIncomplete = !data.completedAt;
         const isManual = (data.source ?? 'manual') === 'manual';
-        const isDismissed = data.status === 'dismissed';
-        return isBeforeToday && isIncomplete && isManual && !isDismissed;
+        const isDismissed = data.status === 'dismissed' || data.dismissed;
+        
+        // Exclude snoozed tasks that haven't reached their snooze time yet
+        const isSnoozed = data.snoozedUntil && data.snoozedUntil.toDate() > new Date();
+        
+        return isBeforeToday && isIncomplete && isManual && !isDismissed && !isSnoozed;
       });
 
       const deduped = [];
@@ -67,8 +74,14 @@ function LooseEndsPage() {
       }
 
       setManualTasks(deduped);
-    };
+    } catch (error) {
+      console.error('Error fetching loose ends:', error);
+      setManualTasks([]);
+    }
+  };
 
+  useEffect(() => {
+    if (!mounted || !user) return;
     fetchLooseEnds();
   }, [user, mounted]);
 
@@ -85,21 +98,42 @@ function LooseEndsPage() {
   };
 
   const addToToday = async (task) => {
-    // Don't include template ID when saving to Firestore
-    const newTask = {
-      title: task.title,
-      detail: task.detail,
-      userId: user.uid,
-      createdAt: Timestamp.now(),
-      source: 'manual',
-      // Add dismissed and deleted fields for consistency
-      dismissed: false,
-      deleted: false
-    };
+    try {
+      console.log('🔧 addToToday called with task:', task);
+      
+      // Update the existing task to move it to today instead of creating a new one
+      const taskRef = doc(db, 'tasks', task.id);
+      const now = Timestamp.now();
+      
+      // Prepare update data, ensuring no undefined fields
+      const updateData = {
+        createdAt: now,
+        lastRestored: now,
+        restoreCount: (task.restoreCount || 0) + 1,
+        dismissed: false,  // Clear any dismissed status
+        snoozedUntil: null, // Clear any snooze
+        lastActivityAt: now,
+        // Ensure title and detail are never undefined
+        title: task.title || 'Untitled Task',
+        detail: task.detail || ''
+      };
 
-    await addDoc(collection(db, 'tasks'), newTask);
-    setManualTasks((prev) => prev.filter((t) => t.id !== task.id));
+      console.log('🔧 Updating with data:', updateData);
+      
+      await updateDoc(taskRef, updateData);
+
+      console.log('✅ Successfully updated task');
+      
+      // Remove from loose ends list immediately for UI feedback
+      setManualTasks((prev) => prev.filter((t) => t.id !== task.id));
+    } catch (error) {
+      console.error('❌ Error moving task to today:', error);
+      console.error('❌ Task data was:', task);
+      // Fallback: if update fails, refresh the data to show correct state
+      fetchLooseEnds();
+    }
   };
+
 
   // Handle SSR and loading states
   if (!mounted || loading) {
@@ -123,7 +157,10 @@ function LooseEndsPage() {
 
   return (
     <main className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Loose Ends</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">Loose Ends</h1>
+      </div>
+
 
       {manualTasks.length === 0 ? (
         <p className="text-gray-500">No unfinished manual tasks. 🎉</p>
@@ -167,15 +204,4 @@ function LooseEndsPage() {
   );
 }
 
-// Export the component with dynamic import to prevent SSR issues
-export default dynamic(() => Promise.resolve(LooseEndsPage), {
-  ssr: false,
-  loading: () => (
-    <main className="max-w-md mx-auto p-4">
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="text-gray-500 mt-2">Loading...</p>
-      </div>
-    </main>
-  )
-});
+export default LooseEndsPage;

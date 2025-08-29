@@ -454,6 +454,17 @@ export default function DashboardClient() {
               onTaskDelete={(taskId) => {
                 setTasks(prev => prev.filter(t => t.id !== taskId));
               }}
+              onTaskComplete={(taskId) => {
+                // Mark task as completed
+                setTasks(prev => 
+                  prev.map(task => 
+                    task.id === taskId 
+                      ? { ...task, completed: true, completedAt: new Date() }
+                      : task
+                  )
+                );
+              }}
+              onOpenChat={() => {}} // Placeholder to prevent error
               loading={loading}
             />
           )}
