@@ -439,7 +439,7 @@ function MobileHeader({ greeting, taskCount, streak, onLogout }) {
   const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   
   return (
-    <div className="px-5 pt-safe pb-4">
+    <div className="px-4 py-4" style={{ paddingTop: `max(1rem, env(safe-area-inset-top))` }}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -533,7 +533,10 @@ function QuickAddButton({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-20 right-5 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform z-30"
+      className="fixed bottom-24 right-4 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform z-30"
+      style={{ 
+        bottom: `calc(5rem + env(safe-area-inset-bottom) + 1rem)` 
+      }}
     >
       <PlusIcon className="w-6 h-6" />
     </button>
@@ -604,7 +607,7 @@ export default function MobileDashboard({
   const needsMoreTasks = todayTasks.length < 3;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="mobile-container bg-gray-50">
       <MobileHeader 
         greeting="Good morning"
         taskCount={todayTasks.length}
@@ -612,8 +615,8 @@ export default function MobileDashboard({
         onLogout={onLogout}
       />
       
-      {/* Main content area */}
-      <div className="px-5 pb-24">
+      {/* Main content area with proper mobile scrolling */}
+      <div className="px-4 mobile-content">
         {/* Active Projects */}
         {projects && projects.length > 0 && (
           <div className="mb-6">

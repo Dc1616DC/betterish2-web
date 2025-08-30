@@ -40,16 +40,27 @@ export default function MobileTaskForm({ isOpen, onClose, onSubmit }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50 flex items-end">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black bg-opacity-25"
         onClick={onClose}
       />
       
-      {/* Form Panel - Simple positioning */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-xl" style={{ maxHeight: '85vh' }}>
-        <div className="overflow-y-auto" style={{ maxHeight: '85vh' }}>
+      {/* Form Panel - Better mobile positioning */}
+      <div 
+        className="relative w-full bg-white rounded-t-3xl shadow-xl animate-slide-up"
+        style={{ 
+          maxHeight: 'calc(90vh - env(safe-area-inset-bottom))',
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}
+      >
+        <div 
+          className="overflow-y-auto -webkit-overflow-scrolling-touch"
+          style={{ 
+            maxHeight: 'calc(90vh - env(safe-area-inset-bottom))'
+          }}
+        >
           <form onSubmit={handleSubmit}>
             {/* Header */}
             <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-4 border-b">

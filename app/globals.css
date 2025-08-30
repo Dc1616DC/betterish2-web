@@ -19,10 +19,56 @@
   }
 }
 
+html {
+  /* Prevent horizontal scrolling */
+  overflow-x: hidden;
+  /* Enable smooth scrolling */
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* Prevent horizontal scrolling */
+  overflow-x: hidden;
+  /* Enable proper touch scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile viewport fixes */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
+/* Safe area insets for modern devices */
+.mobile-container {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Bottom navigation spacing */
+.mobile-content {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
+/* Fixed bottom navigation */
+.bottom-nav-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* Mobile-first animations */
@@ -57,8 +103,9 @@ body {
   transform: scale(0.95);
 }
 
-/* Disable text selection for better mobile UX */
+/* Mobile-specific optimizations */
 @media (max-width: 768px) {
+  /* Disable text selection for better mobile UX */
   .no-select {
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -74,5 +121,40 @@ body {
   .overflow-x-auto {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Improve touch targets */
+  button, 
+  input, 
+  [role="button"] {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Smooth scroll momentum */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent zoom on input focus */
+  input, 
+  textarea, 
+  select {
+    font-size: 16px;
+  }
+
+  /* Better mobile positioning for fixed elements */
+  .fixed {
+    position: -webkit-sticky;
+    position: sticky;
+  }
+}
+
+/* iOS-specific fixes */
+@supports (-webkit-appearance: none) {
+  .mobile-container {
+    /* Fix iOS Safari bottom bar issues */
+    height: 100vh;
+    height: 100dvh;
   }
 }

@@ -81,7 +81,7 @@ export default function RootLayout({ children }) {
         }} />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased pb-20`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ErrorBoundary fallbackMessage="Something went wrong with the app. Please refresh the page.">
           {children}

@@ -21,7 +21,8 @@ export default function DashboardHeader({
   onVoiceTasksAdded,
   showMoreOptions,
   onToggleMoreOptions,
-  onLogout
+  onLogout,
+  onCleanupTasks
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   return (
@@ -58,6 +59,19 @@ export default function DashboardHeader({
                     <p className="text-sm font-medium text-gray-900">{user?.displayName || 'User'}</p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
+                  
+                  {/* Temporary cleanup button */}
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      if (onCleanupTasks) onCleanupTasks();
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors flex items-center gap-2 text-orange-600 hover:text-orange-700"
+                    title="Clean up corrupted template tasks that may be causing errors"
+                  >
+                    <ArrowPathIcon className="w-5 h-5" />
+                    <span>🧹 Cleanup Tasks</span>
+                  </button>
                   
                   <button
                     onClick={() => {

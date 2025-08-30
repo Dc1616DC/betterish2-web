@@ -1122,7 +1122,7 @@ export default function DashboardClient() {
   return (
     <TaskErrorBoundary>
       <PullToRefresh onRefresh={refreshAllData}>
-        <main className="max-w-2xl mx-auto p-4">
+        <main className="max-w-2xl mx-auto p-4 mobile-content">
           
           {/* Simplified Header */}
           <div className="mb-6 flex items-start justify-between">

@@ -57,7 +57,7 @@ function BrowsePage() {
   // Handle SSR and loading states
   if (!mounted || loading) {
     return (
-      <main className="max-w-md mx-auto p-4 pb-24">
+      <main className="max-w-md mx-auto p-4 mobile-content">
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="text-gray-500 mt-2">Loading...</p>
@@ -68,7 +68,7 @@ function BrowsePage() {
 
   if (!user) {
     return (
-      <main className="max-w-md mx-auto p-4 pb-24">
+      <main className="max-w-md mx-auto p-4 mobile-content">
         <p className="text-center text-gray-500">Please log in to browse tasks.</p>
       </main>
     );
