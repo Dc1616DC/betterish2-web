@@ -80,7 +80,7 @@ export default function DashboardClient() {
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
   const [showSuggestionsSection, setShowSuggestionsSection] = useState(false);
-  const [showPlanningSection, setShowPlanningSection] = useState(false);
+  const [showPlanningSection, setShowPlanningSection] = useState(true);
   const [showProjectBreakdown, setShowProjectBreakdown] = useState(false);
   const [projectBreakdownTask, setProjectBreakdownTask] = useState('');
   

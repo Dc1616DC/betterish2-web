@@ -5,6 +5,7 @@ import { ChevronUpIcon, PlusIcon, SparklesIcon, CalendarIcon, ChatBubbleLeftElli
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import MobileProjectCard from './MobileProjectCard';
 import SidekickChat from './SidekickChat';
+import EventReminder from './EventReminder';
 import { setTaskReminder, hasActiveReminder, getReminderInfo } from '@/lib/reminders';
 
 // Category color system for visual clarity
@@ -486,16 +487,22 @@ function SuggestionsDrawer({ isOpen, onClose, suggestions, onAddTask, currentTas
         fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-xl z-50
         transform transition-transform duration-300
         ${isOpen ? 'translate-y-0' : 'translate-y-full'}
-      `}>
-        <div className="px-5 pb-safe">
+      `}
+      style={{ 
+        maxHeight: 'calc(85vh - env(safe-area-inset-bottom))',
+        paddingBottom: 'env(safe-area-inset-bottom)'
+      }}
+      >
+        <div className="flex flex-col h-full">
           {/* Handle bar */}
-          <div className="flex justify-center py-3">
+          <div className="flex justify-center py-3 flex-shrink-0">
             <div className="w-12 h-1 bg-gray-300 rounded-full" />
           </div>
           
-          <h3 className="font-semibold text-gray-900 mb-3">Suggested for today</h3>
-          
-          <div className="space-y-3 max-h-80 overflow-y-auto">
+          <div className="px-5 flex-1 flex flex-col">
+            <h3 className="font-semibold text-gray-900 mb-3 flex-shrink-0">Suggested for today</h3>
+            
+            <div className="space-y-3 flex-1 overflow-y-auto -webkit-overflow-scrolling-touch pb-4">
             {suggestions.map((task, index) => {
               const colors = CATEGORY_COLORS[task.category] || CATEGORY_COLORS.work;
               return (
@@ -521,6 +528,7 @@ function SuggestionsDrawer({ isOpen, onClose, suggestions, onAddTask, currentTas
                 </button>
               );
             })}
+            </div>
           </div>
         </div>
       </div>
@@ -690,6 +698,22 @@ export default function MobileDashboard({
           )}
         </div>
         
+        {/* Planning & Events Section */}
+        <div className="mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <CalendarIcon className="w-5 h-5 text-purple-600" />
+              <h3 className="font-semibold text-gray-900">Planning & Events</h3>
+            </div>
+            <EventReminder
+              user={user}
+              db={db}
+              onTaskAdded={onUpdate}
+              compact={true}
+            />
+          </div>
+        </div>
+
         {/* Suggestions hint */}
         {needsMoreTasks && !showSuggestions && (
           <button
