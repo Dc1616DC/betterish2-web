@@ -63,7 +63,7 @@ export default function AdminPage() {
             <h3 className="text-lg font-semibold mb-2">What will be deleted:</h3>
             <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
               <li>Tasks with template ID prefixes: rel_, baby_, house_, self_, admin_, seas_, work_, health_, maint_, fam_, pers_, home_</li>
-              <li>Tasks with template titles like "Ask how her day was", "Clean up after dinner", etc.</li>
+              <li>Tasks with template titles like &quot;Ask how her day was&quot;, &quot;Clean up after dinner&quot;, etc.</li>
               <li>Tasks with suspicious short IDs (likely auto-generated templates)</li>
               <li>Tasks missing critical fields (title, userId, createdAt)</li>
               <li>Orphaned tasks with no valid userId</li>
