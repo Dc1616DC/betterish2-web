@@ -5,7 +5,13 @@ import { ChevronUpIcon, PlusIcon, SparklesIcon, CalendarIcon, ChatBubbleLeftElli
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import MobileProjectCard from './MobileProjectCard';
 import SidekickChat from './SidekickChat';
-import EventReminder from './EventReminder';
+import dynamic from 'next/dynamic';
+
+// Dynamically import EventReminder to prevent lexical declaration issues
+const EventReminder = dynamic(() => import('./EventReminder'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse h-16 bg-gray-100 rounded"></div>
+});
 import { setTaskReminder, hasActiveReminder, getReminderInfo } from '@/lib/reminders';
 
 // Category color system for visual clarity
@@ -699,20 +705,22 @@ export default function MobileDashboard({
         </div>
         
         {/* Planning & Events Section */}
-        <div className="mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarIcon className="w-5 h-5 text-purple-600" />
-              <h3 className="font-semibold text-gray-900">Planning & Events</h3>
+        {user && db && (
+          <div className="mb-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <CalendarIcon className="w-5 h-5 text-purple-600" />
+                <h3 className="font-semibold text-gray-900">Planning & Events</h3>
+              </div>
+              <EventReminder
+                user={user}
+                db={db}
+                onTaskAdded={onUpdate}
+                compact={true}
+              />
             </div>
-            <EventReminder
-              user={user}
-              db={db}
-              onTaskAdded={onUpdate}
-              compact={true}
-            />
           </div>
-        </div>
+        )}
 
         {/* Suggestions hint */}
         {needsMoreTasks && !showSuggestions && (
