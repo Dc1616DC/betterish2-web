@@ -156,22 +156,20 @@ export default function ProjectCard({ project, db, onUpdate, onComplete, userTie
         </div>
       )}
 
-      {/* AI Chat - TEMPORARILY DISABLED FOR DEBUGGING */}
-      {false && (
-        <SidekickChat
-          task={{
-            id: project.id,
-            title: project.title,
-            detail: `Project with ${totalCount} steps (${completedCount} completed)`,
-            category: 'project',
-            subtasks: project.subtasks
-          }}
-          isVisible={showChat}
-          onClose={() => setShowChat(false)}
-          userTier={userTier}
-          onUpgradeRequest={onUpgradeRequest}
-        />
-      )}
+      {/* AI Chat */}
+      <SidekickChat
+        task={{
+          id: project.id,
+          title: project.title,
+          detail: `Project with ${totalCount} steps (${completedCount} completed)`,
+          category: 'project',
+          subtasks: project.subtasks
+        }}
+        isVisible={showChat}
+        onClose={() => setShowChat(false)}
+        userTier={userTier}
+        onUpgradeRequest={onUpgradeRequest}
+      />
     </div>
   );
 }

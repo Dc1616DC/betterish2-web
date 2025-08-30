@@ -29,23 +29,23 @@ export default function SidekickChat({ task, isVisible, onClose, userTier = 'fre
     }
   }, [isVisible, task, messages.length]);
 
-  const checkUsageLimits = useCallback(async () => {
-    if (!user) return;
-    
-    try {
-      const usage = await canUseChat(user.uid, userTier);
-      setUsageInfo(usage);
-    } catch (error) {
-      console.error('Error checking usage limits:', error);
-    }
-  }, [user, userTier]);
-
   // Check usage limits when component becomes visible
   useEffect(() => {
+    const checkUsageLimits = async () => {
+      if (!user) return;
+      
+      try {
+        const usage = await canUseChat(user.uid, userTier);
+        setUsageInfo(usage);
+      } catch (error) {
+        console.error('Error checking usage limits:', error);
+      }
+    };
+
     if (isVisible && user) {
       checkUsageLimits();
     }
-  }, [isVisible, user, userTier, checkUsageLimits]);
+  }, [isVisible, user, userTier]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading || !usageInfo.allowed) return;
@@ -106,7 +106,14 @@ export default function SidekickChat({ task, isVisible, onClose, userTier = 'fre
         
         // Increment usage and refresh limits
         await incrementChatUsage(user.uid);
-        await checkUsageLimits();
+        
+        // Refresh usage limits
+        try {
+          const usage = await canUseChat(user.uid, userTier);
+          setUsageInfo(usage);
+        } catch (error) {
+          console.error('Error refreshing usage limits:', error);
+        }
       } else {
         throw new Error(data.error || 'Something went wrong');
       }

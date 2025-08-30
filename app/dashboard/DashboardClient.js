@@ -426,8 +426,11 @@ export default function DashboardClient() {
             // Include today's completed tasks (but we'll sort them to bottom)
             if (taskDate >= today && (task.completedAt || task.completed)) return true;
             
-            // Include incomplete tasks from last 3 days 
-            if (!task.completedAt && !task.completed && taskDate >= threeDaysAgo && taskDate < today) return true;
+            // Include incomplete tasks from last 7 days (more permissive)
+            if (!task.completedAt && !task.completed && taskDate >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) return true;
+            
+            // Temporarily show ALL incomplete tasks to help recover your tasks
+            if (!task.completedAt && !task.completed) return true;
             
             return false;
           } catch (error) {
@@ -692,9 +695,9 @@ export default function DashboardClient() {
       console.log(`📊 Checking ${snapshot.docs.length} total tasks for templates...`);
       
       const templateTasks = [];
-      const templatePrefixes = ['rel_', 'baby_', 'house_', 'self_', 'admin_', 'seas_'];
+      const templatePrefixes = ['rel_', 'baby_', 'house_', 'self_', 'admin_', 'seas_', 'work_', 'health_', 'maint_'];
       
-      // Template task titles to search for
+      // Template task titles to search for (more comprehensive)
       const templateTitles = [
         'Ask how her day was',
         'Put your phone away at dinner',
@@ -705,24 +708,74 @@ export default function DashboardClient() {
         'Wipe kitchen counters',
         'Quick toy pickup',
         'Take out trash',
-        'Ask how she slept'
+        'Ask how she slept',
+        'Make the bed',
+        'Do laundry',
+        'Schedule dentist',
+        'Check car oil',
+        'Water plants',
+        'Call mom',
+        'Plan date night',
+        'Read bedtime story',
+        'Clean bathroom',
+        'Grocery shopping'
       ];
       
       snapshot.docs.forEach((docSnap) => {
         const taskId = docSnap.id;
         const taskData = docSnap.data();
         
-        // Check by ID prefix OR by matching template content
+        let shouldDelete = false;
+        let reason = '';
+        
+        // Check by ID prefix
         const isTemplateById = templatePrefixes.some(prefix => taskId.startsWith(prefix));
+        if (isTemplateById) {
+          shouldDelete = true;
+          reason = 'template ID prefix';
+        }
+        
+        // Check by template title content
         const isTemplateByTitle = templateTitles.some(title => 
           taskData.title && taskData.title.toLowerCase().includes(title.toLowerCase())
         );
+        if (isTemplateByTitle) {
+          shouldDelete = true;
+          reason = 'template title match';
+        }
         
-        if (isTemplateById || isTemplateByTitle) {
-          console.log(`🎯 Found template task: ${taskId} - ${taskData.title} (byId: ${isTemplateById}, byTitle: ${isTemplateByTitle})`);
+        // Check for very short IDs (likely auto-generated templates)
+        if (taskId.length < 10 && /^[a-z]+_?\d*$/.test(taskId)) {
+          shouldDelete = true;
+          reason = 'suspicious short ID format';
+        }
+        
+        // Check for missing critical data
+        if (!taskData.title || !taskData.userId || !taskData.createdAt) {
+          shouldDelete = true;
+          reason = 'missing critical fields';
+        }
+        
+        // Check for very old tasks (before 2023) that might be corrupted
+        if (taskData.createdAt && taskData.createdAt.toDate) {
+          try {
+            const taskDate = taskData.createdAt.toDate();
+            if (taskDate.getFullYear() < 2023) {
+              shouldDelete = true;
+              reason = 'very old task (pre-2023)';
+            }
+          } catch (error) {
+            shouldDelete = true;
+            reason = 'invalid date format';
+          }
+        }
+        
+        if (shouldDelete) {
+          console.log(`🎯 Found problematic task: ${taskId} - ${taskData.title} (${reason})`);
           templateTasks.push({
             id: taskId,
-            title: taskData.title,
+            title: taskData.title || 'NO TITLE',
+            reason: reason,
             ref: docSnap.ref
           });
         }
@@ -731,11 +784,12 @@ export default function DashboardClient() {
       console.log(`Found ${templateTasks.length} template tasks:`, templateTasks);
       
       if (templateTasks.length === 0) {
-        alert('✅ No template tasks found. Database is clean!');
+        alert('✅ No problematic tasks found. Database is clean!');
         return;
       }
       
-      const confirmed = confirm(`⚠️ Delete ${templateTasks.length} template tasks from database?\n\nTasks to delete:\n${templateTasks.map(t => `- ${t.id}: ${t.title}`).join('\n')}`);
+      const taskList = templateTasks.map(t => `- ${t.id}: ${t.title} (${t.reason})`).join('\n');
+      const confirmed = confirm(`⚠️ Found ${templateTasks.length} problematic tasks to delete:\n\n${taskList}\n\n🗑️ Delete these tasks to clean up your database?`);
       if (!confirmed) return;
       
       console.log('🗑️ Deleting template tasks...');
@@ -1079,16 +1133,26 @@ export default function DashboardClient() {
                 <p className="text-sm text-green-600 mt-1">🔥 {streakCount} day streak</p>
               )}
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
-              title="Sign out"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              <span>Sign out</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Temporary cleanup button */}
+              <button
+                onClick={cleanupTemplateTasks}
+                className="px-3 py-2 text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors flex items-center gap-2"
+                title="Clean up corrupted template tasks that may be causing errors"
+              >
+                🧹 Cleanup
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+                title="Sign out"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Sign out</span>
+              </button>
+            </div>
           </div>
 
           {/* TODAY'S TASKS - PRIMARY FOCUS (70% of visual importance) */}
@@ -1365,16 +1429,14 @@ export default function DashboardClient() {
             </div>
           )}
 
-          {/* AI Sidekick Chat - TEMPORARILY DISABLED FOR DEBUGGING */}
-          {false && (
-            <SidekickChat
-              task={selectedTask}
-              isVisible={showSidekickChat}
-              onClose={handleCloseChat}
-              userTier={userTier}
-              onUpgradeRequest={() => setShowUpgradeModal(true)}
-            />
-          )}
+          {/* AI Sidekick Chat */}
+          <SidekickChat
+            task={selectedTask}
+            isVisible={showSidekickChat}
+            onClose={handleCloseChat}
+            userTier={userTier}
+            onUpgradeRequest={() => setShowUpgradeModal(true)}
+          />
 
           {/* Success Messages */}
           {voiceSuccess && (

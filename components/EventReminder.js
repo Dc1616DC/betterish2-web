@@ -107,30 +107,7 @@ export default function EventReminder({ user, db, onTaskAdded, compact = false }
   const [showSetup, setShowSetup] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const loadPersonalEvents = useCallback(async () => {
-    try {
-      const eventsDoc = await getDoc(doc(db, 'personalEvents', user.uid));
-      if (eventsDoc.exists()) {
-        const data = eventsDoc.data();
-        setPersonalEvents(data);
-        calculateUpcomingEvents(data);
-      } else {
-        // No personal events set up yet
-        setPlanningReminders(PLANNING_REMINDERS.slice(0, compact ? 2 : 4));
-      }
-    } catch (error) {
-      console.error('Error loading personal events:', error);
-    }
-    setLoading(false);
-  }, [user, db, compact, calculateUpcomingEvents]);
-
-  useEffect(() => {
-    if (user && db) {
-      loadPersonalEvents();
-    }
-  }, [user, db, loadPersonalEvents]);
-
-  // Helper function to calculate upcoming events
+  // Helper function to calculate upcoming events - moved before loadPersonalEvents
   const calculateUpcomingEvents = useCallback((eventsData) => {
     const today = new Date();
     const upcoming = [];
@@ -173,6 +150,29 @@ export default function EventReminder({ user, db, onTaskAdded, compact = false }
       setPlanningReminders(appointmentReminders);
     }
   }, [compact]);
+
+  const loadPersonalEvents = useCallback(async () => {
+    try {
+      const eventsDoc = await getDoc(doc(db, 'personalEvents', user.uid));
+      if (eventsDoc.exists()) {
+        const data = eventsDoc.data();
+        setPersonalEvents(data);
+        calculateUpcomingEvents(data);
+      } else {
+        // No personal events set up yet
+        setPlanningReminders(PLANNING_REMINDERS.slice(0, compact ? 2 : 4));
+      }
+    } catch (error) {
+      console.error('Error loading personal events:', error);
+    }
+    setLoading(false);
+  }, [user, db, compact, calculateUpcomingEvents]);
+
+  useEffect(() => {
+    if (user && db) {
+      loadPersonalEvents();
+    }
+  }, [user, db, loadPersonalEvents]);
 
   const handleAddPlanningTask = async (task) => {
     if (!user || !db) return;
