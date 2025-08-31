@@ -92,7 +92,7 @@ export default function EmergencyMode({ isOpen, onClose }) {
         {/* Message */}
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
           <p className="text-orange-800 text-sm font-medium mb-2">
-            It's okay to have overwhelming days.
+            It&apos;s okay to have overwhelming days.
           </p>
           <p className="text-orange-700 text-sm">
             Focus only on the essentials below. Everything else can wait.
@@ -157,13 +157,13 @@ export default function EmergencyMode({ isOpen, onClose }) {
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
             <p className="text-green-800 font-medium mb-1">🎉 You did it!</p>
             <p className="text-green-700 text-sm">
-              That's enough for today. Rest well, tomorrow is a new day.
+              That&apos;s enough for today. Rest well, tomorrow is a new day.
             </p>
           </div>
         ) : (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
             <p className="text-gray-700 text-sm">
-              One step at a time. You've got this. 💪
+              One step at a time. You&apos;ve got this. 💪
             </p>
           </div>
         )}

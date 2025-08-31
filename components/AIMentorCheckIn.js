@@ -61,7 +61,7 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
         suggestions: [],
         actions: [
           { type: 'manual_add', label: 'Add something myself' },
-          { type: 'skip_checkin', label: 'I\'m good, thanks' }
+          { type: 'skip_checkin', label: 'I&apos;m good, thanks' }
         ]
       });
       setIsExpanded(true);
@@ -117,7 +117,7 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
           ) : (
             <>
               <ChatBubbleBottomCenterTextIcon className="w-5 h-5 text-blue-600" />
-              <span className="text-blue-700 font-medium">What's up today?</span>
+              <span className="text-blue-700 font-medium">What&apos;s up today?</span>
               <SparklesIcon className="w-4 h-4 text-blue-500" />
             </>
           )}
@@ -211,7 +211,7 @@ function TaskBreakdown({ breakdown, taskTitle }) {
 
   return (
     <div className="bg-blue-50 rounded-lg p-4 mt-3">
-      <h4 className="font-medium text-blue-900 mb-3">Breaking down: "{taskTitle}"</h4>
+      <h4 className="font-medium text-blue-900 mb-3">Breaking down: &quot;{taskTitle}&quot;</h4>
       
       {breakdown.today && (
         <div className="mb-3">
