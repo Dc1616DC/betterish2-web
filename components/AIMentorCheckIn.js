@@ -37,7 +37,8 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
         body: JSON.stringify({
           userId: user.uid,
           action,
-          taskTitle
+          taskTitle,
+          userTasks: currentTasks
         })
       });
 

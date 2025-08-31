@@ -36,7 +36,7 @@ import PastPromises from '@/components/PastPromises';
 import TaskForm from '@/components/TaskForm';
 import TaskErrorBoundary from '@/components/TaskErrorBoundary';
 import DashboardLoading from '@/components/DashboardLoading';
-import DailyTaskSuggestions from '@/components/DailyTaskSuggestions';
+import AIMentorCheckIn from '@/components/AIMentorCheckIn';
 import EventReminder from '@/components/EventReminder';
 
 // Mobile components
@@ -80,7 +80,6 @@ export default function DashboardClient() {
   const [firebaseInstances, setFirebaseInstances] = useState({ auth: null, db: null });
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
-  const [showSuggestionsSection, setShowSuggestionsSection] = useState(false);
   const [showPlanningSection, setShowPlanningSection] = useState(true);
   const [showProjectBreakdown, setShowProjectBreakdown] = useState(false);
   const [projectBreakdownTask, setProjectBreakdownTask] = useState('');
@@ -1259,78 +1258,36 @@ export default function DashboardClient() {
 
           {/* COLLAPSIBLE SECTIONS - Secondary */}
           <div className="space-y-4">
-            {/* Suggestions Dropdown */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <button
-                onClick={() => setShowSuggestionsSection(!showSuggestionsSection)}
-                className="w-full flex items-center justify-between text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <SparklesIcon className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium text-gray-800">Get Suggestions</span>
-                  {tasks.length < 3 && (
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Add more tasks</span>
-                  )}
-                </div>
-                <ChevronDownIcon className={`w-5 h-5 text-gray-500 transition-transform ${showSuggestionsSection ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {showSuggestionsSection && (
-                <div className="mt-4 space-y-2">
-                  {generateSmartDailyTasks(userPreferences, user?.homeId).slice(0, 5).map((suggestion, index) => (
-                    <div key={index} className="flex items-start justify-between p-3 bg-white rounded-lg border border-gray-200">
-                      <div className="flex-grow">
-                        <div className="font-medium text-gray-900">{suggestion.title}</div>
-                        {suggestion.detail && (
-                          <div className="text-sm text-gray-600 mt-1">{suggestion.detail}</div>
-                        )}
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            suggestion.category === 'personal' ? 'bg-indigo-100 text-indigo-700' :
-                            suggestion.category === 'relationship' ? 'bg-rose-100 text-rose-700' :
-                            suggestion.category === 'household' ? 'bg-emerald-100 text-emerald-700' :
-                            suggestion.category === 'baby' ? 'bg-amber-100 text-amber-700' :
-                            suggestion.category === 'home_projects' ? 'bg-orange-100 text-orange-700' :
-                            suggestion.category === 'health' ? 'bg-cyan-100 text-cyan-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {suggestion.category.replace('_', ' ')}
-                          </span>
-                          {suggestion.priority === 'high' && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">urgent</span>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        onClick={async () => {
-                          try {
-                            const newTask = {
-                              ...suggestion,
-                              userId: user.uid,
-                              createdAt: Timestamp.now(),
-                              source: 'suggestion',
-                              dismissed: false,
-                              deleted: false,
-                            };
-                            await addDoc(collection(db, 'tasks'), newTask);
-                            await refreshAllData();
-                            // Haptic feedback
-                            if ('vibrate' in navigator) {
-                              navigator.vibrate(10);
-                            }
-                          } catch (error) {
-                            console.error('Error adding task:', error);
-                          }
-                        }}
-                        className="ml-3 px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* AI Mentor Check-In */}
+            <AIMentorCheckIn
+              onAddTasks={async (newTasks) => {
+                try {
+                  for (const task of newTasks) {
+                    const newTask = {
+                      ...task,
+                      userId: user.uid,
+                      createdAt: Timestamp.now(),
+                      source: 'ai_mentor',
+                      dismissed: false,
+                      deleted: false,
+                    };
+                    await addDoc(collection(db, 'tasks'), newTask);
+                  }
+                  await refreshAllData();
+                  // Haptic feedback
+                  if ('vibrate' in navigator) {
+                    navigator.vibrate([10, 50, 10]);
+                  }
+                } catch (error) {
+                  console.error('Error adding tasks:', error);
+                }
+              }}
+              onEmergencyMode={() => {
+                // Handle emergency mode - could show emergency task overlay
+                console.log('Emergency mode activated');
+              }}
+              currentTasks={tasks.filter(t => !t.completed)}
+            />
 
             {/* Planning & Events Dropdown */}
             <div className="bg-gray-50 rounded-xl p-4">

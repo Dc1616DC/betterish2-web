@@ -5,12 +5,10 @@
 
 import { NextResponse } from 'next/server';
 import { createDadMentor } from '@/lib/aiMentor';
-import { getAIContext } from '@/lib/patternTracking';
-import { adminDb } from '@/lib/firebase-admin';
 
 export async function POST(request) {
   try {
-    const { userId, action = 'check_in', taskTitle = null } = await request.json();
+    const { userId, action = 'check_in', taskTitle = null, userTasks = [] } = await request.json();
     
     if (!userId) {
       return NextResponse.json(
@@ -18,28 +16,6 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-
-    // Use Firebase Admin for server-side access
-    if (!adminDb) {
-      throw new Error('Firebase Admin not initialized');
-    }
-    
-    // Get user's current tasks
-    const tasksRef = adminDb.collection('tasks');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const q = tasksRef
-      .where('userId', '==', userId)
-      .where('completed', '==', false)
-      .orderBy('createdAt', 'desc')
-      .limit(20);
-    
-    const tasksSnapshot = await q.get();
-    const userTasks = tasksSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
 
     const mentor = createDadMentor();
 
