@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#2563eb" stroke="#1d4ed8" stroke-width="8"/>
+  
+  <!-- Letter "B" for Betterish -->
+  <text x="256" y="320" font-family="Arial, sans-serif" font-size="280" font-weight="bold" 
+        text-anchor="middle" fill="white">B</text>
+  
+  <!-- Small dot accent -->
+  <circle cx="380" cy="180" r="24" fill="#60a5fa"/>
+</svg>

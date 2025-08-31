@@ -1,9 +1,8 @@
-const CACHE_NAME = 'betterish-v1';
+const CACHE_NAME = 'betterish-v2';
 const STATIC_CACHE_URLS = [
   '/',
   '/dashboard',
-  '/loose-ends',
-  '/manifest.json'
+  '/loose-ends'
 ];
 
 // Install event - cache static resources
@@ -43,7 +42,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle API requests differently
+  // Skip Next.js internal requests that cause issues
+  if (event.request.url.includes('/_next/static/chunks/') || 
+      event.request.url.includes('/_next/static/webpack/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Handle API requests differently - network first
   if (event.request.url.includes('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -59,7 +65,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first strategy for other requests
+  // Network first strategy for pages (to avoid stale content issues)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(event.request) || caches.match('/dashboard');
+        })
+    );
+    return;
+  }
+
+  // Cache first for static assets
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
@@ -71,11 +99,11 @@ self.addEventListener('fetch', (event) => {
         return fetch(event.request)
           .then((response) => {
             // Don't cache non-successful responses
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+            if (!response || response.status !== 200) {
               return response;
             }
 
-            // Clone the response
+            // Clone the response for caching
             const responseToCache = response.clone();
 
             caches.open(CACHE_NAME)
@@ -84,13 +112,6 @@ self.addEventListener('fetch', (event) => {
               });
 
             return response;
-          })
-          .catch(() => {
-            // If both cache and network fail, show offline page
-            if (event.request.mode === 'navigate') {
-              return caches.match('/dashboard');
-            }
-            return new Response('Offline', { status: 503 });
           });
       })
   );

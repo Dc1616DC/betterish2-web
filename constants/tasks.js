@@ -226,9 +226,18 @@ export const householdTasksByType = {
   ]
 };
 
-// Enhanced task generation with preferences
+// Enhanced task generation with seasonal and priority intelligence
 export function generateSmartDailyTasks(preferences = {}) {
   const { partnerName = 'your partner', childAge = '1-2y', homeType = 'house' } = preferences;
+  
+  // Import seasonal tasks
+  const { getCurrentSeasonalTasks, getEssentialTasks } = require('../lib/seasonalTasks');
+  
+  // Get current seasonal tasks for this month
+  const seasonalTasks = getCurrentSeasonalTasks();
+  
+  // Get essential tasks by priority
+  const essentials = getEssentialTasks();
   
   // Get age-appropriate baby tasks
   const babyTasks = babyTasksByAge[childAge] || babyTasksByAge['1-2y'];
@@ -260,23 +269,54 @@ export function generateSmartDailyTasks(preferences = {}) {
   // Pick random tasks
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   
-  // Create a more diverse selection
-  const taskPools = [
-    relationshipTasks,
-    babyTasks,
-    allHouseholdTasks,
-    [...homeProjectTasks, ...maintenanceTasks], // Home improvement
-    [...healthTasks, ...eventTasks] // Planning ahead
+  // PRIORITY SYSTEM: 80/20 rule - always include disaster prevention tasks
+  const suggestions = [];
+  
+  // 1. Always include ONE daily essential (relationship saver)
+  if (essentials.daily && essentials.daily.length > 0) {
+    suggestions.push(pick(essentials.daily));
+  }
+  
+  // 2. Include seasonal task if it's time-sensitive
+  const urgentSeasonal = seasonalTasks.filter(t => t.priority === 'time-sensitive' || t.priority === 'deadline');
+  if (urgentSeasonal.length > 0) {
+    suggestions.push(pick(urgentSeasonal));
+  } else if (seasonalTasks.length > 0) {
+    suggestions.push(pick(seasonalTasks));
+  }
+  
+  // 3. Fill remaining slots with variety (keep existing logic but reduced)
+  const remainingSlots = Math.max(0, 5 - suggestions.length);
+  const varietyTasks = [
+    ...relationshipTasks,
+    ...babyTasks,
+    ...allHouseholdTasks,
+    ...homeProjectTasks,
+    ...maintenanceTasks,
+    ...healthTasks,
+    ...eventTasks
   ];
   
-  const selected = [
-    pick(relationshipTasks),
-    pick(babyTasks),
-    pick(allHouseholdTasks)
-  ];
+  // Add variety tasks but avoid duplicates
+  for (let i = 0; i < remainingSlots && varietyTasks.length > 0; i++) {
+    const selected = pick(varietyTasks);
+    suggestions.push(selected);
+    
+    // Remove similar tasks to avoid repetition
+    const indexToRemove = varietyTasks.findIndex(t => t.id === selected.id);
+    if (indexToRemove > -1) {
+      varietyTasks.splice(indexToRemove, 1);
+    }
+  }
   
-  // Remove id field from each task
-  return selected.map(({ id, ...task }) => task);
+  // Remove id field and add priority indicators
+  return suggestions.map(({ id, ...task }) => ({
+    ...task,
+    isEssential: essentials?.daily?.some(e => e.title === task.title) || false,
+    isSeasonal: seasonalTasks?.some(s => s.title === task.title) || false,
+    timeEstimate: task.timeEstimate || (task.simplicity === 'low' ? '< 2 min' : task.simplicity === 'medium' ? '2-10 min' : '10+ min'),
+    prevents: task.prevents || null
+  }));
 }
 
 // Time-based task suggestions

@@ -31,8 +31,14 @@ export const metadata = {
     statusBarStyle: "default",
     title: "Betterish",
   },
-  themeColor: "#2563eb",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#2563eb',
 };
 
 export default function RootLayout({ children }) {
@@ -63,18 +69,28 @@ export default function RootLayout({ children }) {
         {/* Manifest */}
         <link rel="manifest" href="/manifest.json" />
 
-        {/* Service Worker Registration */}
+{/* Service Worker Registration */}
         <script dangerouslySetInnerHTML={{
           __html: `
-            if ('serviceWorker' in navigator) {
+            if ('serviceWorker' in navigator && 'caches' in window) {
               window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                  .then(function(registration) {
-                    console.log('SW registered: ', registration);
-                  })
-                  .catch(function(registrationError) {
-                    console.log('SW registration failed: ', registrationError);
-                  });
+                // Clear any corrupted cache first
+                caches.keys().then(function(cacheNames) {
+                  return Promise.all(
+                    cacheNames.map(function(cacheName) {
+                      if (cacheName.includes('betterish')) {
+                        return caches.delete(cacheName);
+                      }
+                    })
+                  );
+                }).then(function() {
+                  // Register fresh service worker
+                  return navigator.serviceWorker.register('/sw.js');
+                }).then(function(registration) {
+                  console.log('✅ Service worker registered successfully');
+                }).catch(function(error) {
+                  console.warn('⚠️ Service worker registration failed:', error);
+                });
               });
             }
           `

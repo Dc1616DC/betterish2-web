@@ -26,6 +26,7 @@ import RecurringTaskManager from '@/components/RecurringTaskManager';
 import EmergencyModeSelector from '@/components/EmergencyModeSelector';
 import { shouldCreateToday } from '@/lib/recurringTasks';
 import { generateSmartContextualTasks } from '@/lib/contextualTasks';
+import { trackTaskCompletion, initializePatternTracking } from '@/lib/patternTracking';
 
 // Import our new modular components
 import DashboardHeader from '@/components/DashboardHeader';
@@ -1003,10 +1004,19 @@ export default function DashboardClient() {
     const handleMobileTaskComplete = async (taskId) => {
       if (!user || !db) return;
       try {
+        // Find the task being completed for pattern tracking
+        const completedTask = tasks.find(t => t.id === taskId);
+        
         await updateDoc(doc(db, 'tasks', taskId), {
           completed: true,
           completedAt: Timestamp.now()
         });
+
+        // 🧠 NEW: Track completion patterns for AI mentor
+        if (completedTask && user?.uid) {
+          trackTaskCompletion(user.uid, completedTask);
+        }
+
         await refreshAllData();
       } catch (error) {
         console.error('Error completing task:', error);
@@ -1202,7 +1212,7 @@ export default function DashboardClient() {
                   onTaskDelete={(taskId) => {
                     setTasks(prev => prev.filter(t => t.id !== taskId));
                   }}
-                  onTaskComplete={(taskId) => {
+                  onTaskComplete={async (taskId) => {
                     // Find the task being completed
                     const completedTask = tasks.find(t => t.id === taskId);
                     if (completedTask) {
@@ -1211,6 +1221,11 @@ export default function DashboardClient() {
                         { ...completedTask, completedAt: new Date() },
                         ...prev.slice(0, 4) // Keep only last 5 completed tasks
                       ]);
+
+                      // 🧠 NEW: Track completion patterns for AI mentor
+                      if (user?.uid) {
+                        trackTaskCompletion(user.uid, completedTask);
+                      }
                     }
                     
                     // Optimistic update: immediately mark task as completed

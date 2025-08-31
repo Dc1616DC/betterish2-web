@@ -5,6 +5,8 @@ import { ChevronUpIcon, PlusIcon, SparklesIcon, CalendarIcon, ChatBubbleLeftElli
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import MobileProjectCard from './MobileProjectCard';
 import SidekickChat from './SidekickChat';
+import EmergencyMode from './EmergencyMode';
+import AIMentorCheckIn from './AIMentorCheckIn';
 import dynamic from 'next/dynamic';
 
 // Dynamically import EventReminder to prevent lexical declaration issues
@@ -523,11 +525,37 @@ function SuggestionsDrawer({ isOpen, onClose, suggestions, onAddTask, currentTas
                   <div className="flex items-start">
                     <div className={`w-1 h-12 ${colors.bg} rounded-full mr-3 flex-shrink-0`} />
                     <div className="flex-grow">
-                      <h4 className="font-medium text-gray-900">{task.title}</h4>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium text-gray-900">{task.title}</h4>
+                        {task.isEssential && (
+                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                            Essential
+                          </span>
+                        )}
+                        {task.isSeasonal && (
+                          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                            Seasonal
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500 mt-1">{task.detail}</p>
-                      <span className={`text-xs font-medium ${colors.text} mt-2 inline-block`}>
-                        {task.category.replace('_', ' ')}
-                      </span>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`text-xs font-medium ${colors.text}`}>
+                          {task.category.replace('_', ' ')}
+                        </span>
+                        {task.timeEstimate && (
+                          <>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-500">{task.timeEstimate}</span>
+                          </>
+                        )}
+                        {task.prevents && (
+                          <>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-600">Prevents {task.prevents}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <PlusIcon className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
                   </div>
@@ -581,6 +609,7 @@ export default function MobileDashboard({
   const [completedToday, setCompletedToday] = useState(0);
   const [showSidekickChat, setShowSidekickChat] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [showEmergencyMode, setShowEmergencyMode] = useState(false);
 
   // Chat handlers
   const handleOpenChat = (task) => {
@@ -722,16 +751,24 @@ export default function MobileDashboard({
           </div>
         )}
 
-        {/* Suggestions hint */}
-        {needsMoreTasks && !showSuggestions && (
-          <button
-            onClick={() => setShowSuggestions(true)}
-            className="w-full py-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100 flex items-center justify-center gap-2 active:scale-98 transition-transform"
-          >
-            <SparklesIcon className="w-5 h-5 text-blue-600" />
-            <span className="text-blue-700 font-medium">Get task suggestions</span>
-          </button>
-        )}
+        {/* AI Mentor Check-In - Replaces old suggestions */}
+        <AIMentorCheckIn
+          onAddTasks={(newTasks) => {
+            newTasks.forEach(task => onTaskAdd(task));
+          }}
+          onEmergencyMode={() => setShowEmergencyMode(true)}
+          currentTasks={todayTasks}
+        />
+        
+        {/* Emergency Mode Button */}
+        <button
+          onClick={() => setShowEmergencyMode(true)}
+          className="w-full py-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200 flex items-center justify-center gap-2 active:scale-98 transition-transform mt-4"
+        >
+          <span className="text-2xl">🚨</span>
+          <span className="text-orange-700 font-medium">Emergency Mode</span>
+          <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full">Survival</span>
+        </button>
         
         {/* Upcoming events (minimal) */}
         {upcomingEvents.length > 0 && (
@@ -763,14 +800,7 @@ export default function MobileDashboard({
       {/* Quick add button */}
       <QuickAddButton onClick={onShowTaskForm} />
       
-      {/* Suggestions drawer */}
-      <SuggestionsDrawer
-        isOpen={showSuggestions}
-        onClose={() => setShowSuggestions(false)}
-        suggestions={suggestions}
-        onAddTask={onTaskAdd}
-        currentTaskCount={todayTasks.length}
-      />
+{/* Old suggestions drawer removed - replaced with AI Mentor Check-In */}
 
       {/* AI Sidekick Chat */}
       <SidekickChat
@@ -778,6 +808,12 @@ export default function MobileDashboard({
         isVisible={showSidekickChat}
         onClose={handleCloseChat}
         userTier={userTier}
+      />
+
+      {/* Emergency Mode */}
+      <EmergencyMode
+        isOpen={showEmergencyMode}
+        onClose={() => setShowEmergencyMode(false)}
       />
     </div>
   );
