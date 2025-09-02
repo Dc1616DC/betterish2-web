@@ -5,14 +5,18 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-comp
 
 // Initialize Firebase in the service worker
 // Note: In production, you'll need to replace these with your actual config values
-firebase.initializeApp({
-  apiKey: "AIzaSyAIagVTVnvTAynzWpR1rN9LYjqP0VR-jRY",
-  authDomain: "betterish.firebaseapp.com",
+// Firebase config will be injected by the app at runtime
+// This prevents exposing API keys in public files
+const firebaseConfig = self.firebaseConfig || {
+  apiKey: "FIREBASE_API_KEY_WILL_BE_INJECTED",
+  authDomain: "betterish.firebaseapp.com", 
   projectId: "betterish",
   storageBucket: "betterish.appspot.com",
   messagingSenderId: "518718685590",
   appId: "1:518718685590:web:81365b3437a62636bd5db7"
-});
+};
+
+firebase.initializeApp(firebaseConfig);
 
 const messaging = firebase.messaging();
 

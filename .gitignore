@@ -43,3 +43,14 @@ next-env.d.ts
 # Firebase functions
 /functions/node_modules
 /functions/.env*
+
+# Test files that may contain API keys
+test-firebase.js
+scripts/test-*.js
+testsprite_tests/tmp/
+testsprite_tests/**/*.json
+
+# Service account keys and sensitive files
+*service-account*.json
+*firebase-key*.json
+*api-key*.txt
