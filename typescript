@@ -927,3 +927,17 @@ Failed to log chat interaction: Error: 16 UNAUTHENTICATED: Request had invalid a
  [32m[1m✓[22m[39m Compiled in 359ms (1057 modules)
  [32m[1m✓[22m[39m Compiled in 208ms (1057 modules)
  [32m[1m✓[22m[39m Compiled in 155ms (1057 modules)
+ GET /dashboard [32m200[39m in 180ms
+ [37m[1m○[22m[39m Compiling /loose-ends ...
+ [32m[1m✓[22m[39m Compiled /loose-ends in 636ms (1061 modules)
+ GET /loose-ends [32m200[39m in 714ms
+ GET /browse [32m200[39m in 716ms
+ [32m[1m✓[22m[39m Compiled /api/ai-checkin in 361ms (1205 modules)
+ POST /api/ai-checkin [32m200[39m in 607ms
+ POST /api/ai-checkin [32m200[39m in 45ms
+ POST /api/ai-checkin [32m200[39m in 31ms
+ [32m[1m✓[22m[39m Compiled in 428ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 155ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 197ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 136ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 175ms (1057 modules)

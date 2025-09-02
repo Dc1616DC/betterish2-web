@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon, CheckIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/24/outline';
+import SidekickChat from './SidekickChat';
 
 const TASK_BREAKDOWNS = {
   'Fix squeaky door hinge': [
@@ -62,6 +63,8 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiBreakdown, setAiBreakdown] = useState(null);
+  const [showMorpheusChat, setShowMorpheusChat] = useState(false);
+  const [selectedStepForHelp, setSelectedStepForHelp] = useState(null);
 
   const predefinedSteps = TASK_BREAKDOWNS[task.title] || [];
   const allSteps = predefinedSteps.length > 0 ? predefinedSteps : (aiSteps.length > 0 ? aiSteps : customSteps);
@@ -188,9 +191,22 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
                 </button>
               )}
               {allSteps.length > 0 && (
-                <div className="text-sm text-gray-500">
-                  {Math.round((completedSteps.size / allSteps.length) * 100)}% done
-                </div>
+                <>
+                  <button
+                    onClick={() => {
+                      setSelectedStepForHelp(null);
+                      setShowMorpheusChat(true);
+                    }}
+                    className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200 flex items-center gap-1"
+                    title="Get help from Morpheus"
+                  >
+                    <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
+                    Get Help
+                  </button>
+                  <div className="text-sm text-gray-500">
+                    {Math.round((completedSteps.size / allSteps.length) * 100)}% done
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -239,6 +255,17 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
               >
                 {step}
               </span>
+
+              <button
+                onClick={() => {
+                  setSelectedStepForHelp(step);
+                  setShowMorpheusChat(true);
+                }}
+                className="flex-shrink-0 text-purple-500 hover:text-purple-700"
+                title="Get help with this step"
+              >
+                <ChatBubbleBottomCenterTextIcon className="w-4 h-4" />
+              </button>
 
               {predefinedSteps.length === 0 && (
                 <button
@@ -305,6 +332,26 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
           )}
         </div>
       </div>
+      
+      {/* Morpheus Chat Modal */}
+      {showMorpheusChat && (
+        <SidekickChat
+          task={{
+            ...task,
+            title: selectedStepForHelp 
+              ? `Help with step: "${selectedStepForHelp}"` 
+              : `Help with project: ${task.title}`,
+            description: selectedStepForHelp 
+              ? `I need help understanding how to: ${selectedStepForHelp}. This is part of the project: ${task.title}`
+              : `I need help with this project: ${task.title}. Here are all the steps: ${allSteps.join(', ')}`
+          }}
+          isVisible={showMorpheusChat}
+          onClose={() => {
+            setShowMorpheusChat(false);
+            setSelectedStepForHelp(null);
+          }}
+        />
+      )}
     </div>
   );
 }
