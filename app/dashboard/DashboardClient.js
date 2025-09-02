@@ -15,6 +15,7 @@ import DashboardLoading from '@/components/DashboardLoading';
 import SidekickChat from '@/components/SidekickChat';
 import MorpheusCheckIn from '@/components/AIMentorCheckIn';
 import AppWalkthrough from '@/components/AppWalkthrough';
+import TaskBreakdown from '@/components/TaskBreakdown';
 
 // Mobile detection hook
 function useMediaQuery(query) {
@@ -64,6 +65,8 @@ function DashboardContent() {
   const [showSidekickChat, setShowSidekickChat] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const [showTaskBreakdown, setShowTaskBreakdown] = useState(false);
+  const [selectedProjectTask, setSelectedProjectTask] = useState(null);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -78,6 +81,11 @@ function DashboardContent() {
   const handleOpenChat = (task) => {
     setSelectedTask(task);
     setShowSidekickChat(true);
+  };
+
+  const handleOpenProjectBreakdown = (task) => {
+    setSelectedProjectTask(task);
+    setShowTaskBreakdown(true);
   };
 
   // AI Mentor handlers
@@ -212,7 +220,7 @@ function DashboardContent() {
                     )}
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleOpenChat(task)}
+                        onClick={() => handleOpenProjectBreakdown(task)}
                         className="flex-1 bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
                       >
                         View Project Steps
@@ -299,6 +307,21 @@ function DashboardContent() {
           onClose={() => {
             setShowSidekickChat(false);
             setSelectedTask(null);
+          }}
+        />
+      )}
+
+      {/* Task Breakdown Modal */}
+      {showTaskBreakdown && selectedProjectTask && (
+        <TaskBreakdown
+          task={selectedProjectTask}
+          onClose={() => {
+            setShowTaskBreakdown(false);
+            setSelectedProjectTask(null);
+          }}
+          onSubtaskComplete={(taskId) => {
+            // Handle subtask completion if needed
+            console.log('Subtask completed:', taskId);
           }}
         />
       )}

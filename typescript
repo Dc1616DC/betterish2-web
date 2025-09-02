@@ -892,3 +892,38 @@ Failed to log chat interaction: Error: 16 UNAUTHENTICATED: Request had invalid a
  [32m[1m✓[22m[39m Compiled in 220ms (390 modules)
  [32m[1m✓[22m[39m Compiled in 84ms (390 modules)
  [32m[1m✓[22m[39m Compiled in 82ms (390 modules)
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 527ms (1043 modules)
+ [31m[1m⨯[22m[39m [Error: ENOENT: no such file or directory, open '/Users/danielchase/betterish-web/.next/server/app/_not-found/page.js'] {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/Users/danielchase/betterish-web/.next/server/app/_not-found/page.js'[39m
+}
+ [32m[1m✓[22m[39m Compiled /_error in 435ms (1378 modules)
+ GET /dashboard [31m500[39m in 2699ms
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run sde   dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1870ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 1993ms (1031 modules)
+ GET /_next/static/webpack/a42291bba0c1a110.webpack.hot-update.json [33m404[39m in 2443ms
+ GET /dashboard [32m200[39m in 2199ms
+ GET /dashboard [32m200[39m in 2200ms
+ [32m[1m✓[22m[39m Compiled in 410ms (1041 modules)
+ GET /dashboard [32m200[39m in 74ms
+ [32m[1m✓[22m[39m Compiled /favicon.ico in 102ms (672 modules)
+ [32m[1m✓[22m[39m Compiled in 239ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 359ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 208ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 155ms (1057 modules)
