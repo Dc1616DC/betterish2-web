@@ -1,157 +1,71 @@
 'use client';
 
-import { useState, useTransition, useMemo, useCallback, memo } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { useDebounceCallback } from '@/hooks/useDebounce';
-import { updateDoc, doc, Timestamp, getDoc } from 'firebase/firestore';
+import { useTasks } from '@/hooks/useTasks';
+import { TaskCategory, TaskPriority } from '@/lib/services/TaskService';
 import TaskBreakdown from './TaskBreakdown';
+
+// Helper functions for display labels
+function getCategoryLabel(category) {
+  const labels = {
+    [TaskCategory.PERSONAL]: '🧘 Personal Time',
+    [TaskCategory.HOUSEHOLD]: '🏠 Household', 
+    [TaskCategory.HOME_PROJECTS]: '🔨 Home Projects',
+    [TaskCategory.BABY]: '👶 Kids & Baby',
+    [TaskCategory.RELATIONSHIP]: '❤️ Relationship',
+    [TaskCategory.HEALTH]: '🏥 Health & Medical',
+    [TaskCategory.EVENTS]: '🎉 Events & Celebrations',
+    [TaskCategory.MAINTENANCE]: '⚙️ Maintenance & Annual',
+    [TaskCategory.WORK]: '💼 Work'
+  };
+  return labels[category] || category;
+}
+
+function getPriorityLabel(priority) {
+  const labels = {
+    [TaskPriority.LOW]: '🟢 Low',
+    [TaskPriority.MEDIUM]: '🟡 Medium', 
+    [TaskPriority.HIGH]: '🔴 High'
+  };
+  return labels[priority] || priority;
+}
 
 const TaskList = memo(function TaskList({ 
   tasks, 
-  db, 
-  user, 
-  onTaskUpdate,
-  onTaskDelete,
-  onTaskComplete,
   onOpenChat = null,
   loading = false 
 }) {
-  const [isPending, startTransition] = useTransition();
   const [processingTasks, setProcessingTasks] = useState(new Set());
   const [breakdownTask, setBreakdownTask] = useState(null);
-  const [recentlyCompleted, setRecentlyCompleted] = useState(new Map()); // Track recently completed for undo
+  
+  // Use our centralized task operations
+  const { completeTask, deleteTask, snoozeTask } = useTasks();
 
-  const handleTaskAction = useCallback(async (taskId, action, taskData = null) => {
+  const handleTaskAction = useCallback(async (taskId, action) => {
     if (processingTasks.has(taskId)) return; // Prevent double-clicks
     
-    // Processing task action
     setProcessingTasks(prev => new Set(prev).add(taskId));
     
     try {
-      // Use optimistic updates for immediate UI feedback
       switch (action) {
         case 'complete':
-          // Auth and DB guard - crucial for Firebase v9
-          if (!user || !user.uid || !db) {
-            console.error('[TASK] Cannot complete task: missing auth or db', { 
-              user: !!user, 
-              uid: user?.uid, 
-              db: !!db 
-            });
-            return;
-          }
-          
-          console.log(`[TASK] Starting completion of task ${taskId} for user ${user.uid}`);
-          
-          // Debug logging
-          // Attempting to complete task
-          
-          // FIRST: Check if document exists before trying to update
-          const completeTaskRef = doc(db, 'tasks', taskId);
-          const completeTaskDoc = await getDoc(completeTaskRef);
-          
-          if (!completeTaskDoc.exists()) {
-            // Document doesn't exist - removing from UI
-            // Document doesn't exist, just remove from UI via optimistic update
-            if (onTaskComplete) {
-              onTaskComplete(taskId);
-            }
-            break;
-          }
-          
-          // Optimistic update first
-          if (onTaskComplete) {
-            onTaskComplete(taskId);
-          }
-          
-          await updateDoc(completeTaskRef, {
-            completed: true,
-            completedAt: new Date()
-          })
-            .catch(error => {
-              // Firestore update error
-              throw error;
-            });
-          // Task marked as completed
+          await completeTask(taskId);
           break;
           
         case 'snooze':
-          // Auth guard
-          if (!user || !user.uid) {
-            // No authenticated user for snooze operation
-            return;
-          }
-          
-          // FIRST: Check if document exists before trying to update
-          const snoozeTaskRef = doc(db, 'tasks', taskId);
-          const snoozeTaskDoc = await getDoc(snoozeTaskRef);
-          
-          if (!snoozeTaskDoc.exists()) {
-            console.log(`[TaskList] ⚠️ Document ${taskId} doesn't exist - cannot snooze non-existent task`);
-            // Document doesn't exist, just remove from UI
-            if (onTaskDelete) {
-              onTaskDelete(taskId);
-            }
-            break;
-          }
-          
           const snoozeTime = new Date();
           snoozeTime.setHours(snoozeTime.getHours() + 1);
-          await updateDoc(snoozeTaskRef, {
-            snoozedUntil: Timestamp.fromDate(snoozeTime),
-          });
-          // Task snoozed successfully
+          await snoozeTask(taskId, snoozeTime);
           break;
           
         case 'delete':
-          // Auth guard - crucial for Firebase v9
-          if (!user || !user.uid) {
-            // No authenticated user for delete operation
-            return;
-          }
-          
-          // Debug logging with full task data
-          // Attempting to soft-delete task
-          
-          // FIRST: Check if document exists before trying to update
-          const taskRef = doc(db, 'tasks', taskId);
-          const taskDoc = await getDoc(taskRef);
-          
-          if (!taskDoc.exists()) {
-            // Document doesn't exist - removing from UI
-            // Document doesn't exist, just remove from UI
-            if (onTaskDelete) {
-              onTaskDelete(taskId);
-            }
-            break;
-          }
-          
-          // SOFT DELETE: Mark as deleted instead of hard deleting
-          await updateDoc(taskRef, {
-            deleted: true,
-            deletedAt: new Date()
-          })
-            .catch(error => {
-              // Firestore update error
-              throw error;
-            });
-          // Task soft-deleted successfully
-          if (onTaskDelete) {
-            onTaskDelete(taskId);
-          }
+          await deleteTask(taskId);
           break;
       }
-      
-      // Only refresh for snooze actions, not for complete (handled by optimistic update)
-      if (action === 'snooze' && onTaskUpdate) {
-        startTransition(() => {
-          setTimeout(() => {
-            onTaskUpdate();
-          }, 200);
-        });
-      }
     } catch (error) {
-      // Error processing task action
+      console.error('Task action failed:', error);
     } finally {
       setProcessingTasks(prev => {
         const newSet = new Set(prev);
@@ -159,7 +73,7 @@ const TaskList = memo(function TaskList({
         return newSet;
       });
     }
-  }, [db, user, onTaskUpdate, onTaskDelete, onTaskComplete, processingTasks]);
+  }, [completeTask, deleteTask, snoozeTask, processingTasks]);
 
   // Debounce task actions to prevent rapid fire clicks
   const debouncedHandleTaskAction = useDebounceCallback(handleTaskAction, 300);
@@ -189,7 +103,7 @@ const TaskList = memo(function TaskList({
           <TaskItem 
             key={task.id}
             task={task}
-            onAction={(taskId, action) => debouncedHandleTaskAction(taskId, action, task)}
+            onAction={debouncedHandleTaskAction}
             onBreakdown={(task) => setBreakdownTask(task)}
             onOpenChat={onOpenChat}
             isProcessing={processingTasks.has(task.id)}
@@ -203,7 +117,7 @@ const TaskList = memo(function TaskList({
           task={breakdownTask}
           onSubtaskComplete={(taskId) => {
             setBreakdownTask(null);
-            debouncedHandleTaskAction(taskId, 'complete', breakdownTask);
+            debouncedHandleTaskAction(taskId, 'complete');
           }}
           onClose={() => setBreakdownTask(null)}
         />
@@ -297,17 +211,17 @@ const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenCha
                   ? 'bg-gray-100 text-gray-500' 
                   : 'bg-blue-100 text-blue-800'
               }`}>
-                {task.category}
+                {getCategoryLabel(task.category)}
               </span>
             )}
             {task.priority && (
               <span className={`inline-block text-xs px-2 py-1 rounded-full ${
                 isCompleted ? 'bg-gray-100 text-gray-500' :
-                task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                task.priority === TaskPriority.HIGH ? 'bg-red-100 text-red-800' :
+                task.priority === TaskPriority.MEDIUM ? 'bg-yellow-100 text-yellow-800' :
                 'bg-green-100 text-green-800'
               }`}>
-                {task.priority}
+                {getPriorityLabel(task.priority)}
               </span>
             )}
           </div>

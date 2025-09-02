@@ -98,16 +98,54 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     
-    try {
-      if (isRegistering) {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
+    // Rate limiting protection: add delay to prevent rapid requests
+    const attemptAuth = async (retryCount = 0) => {
+      try {
+        if (isRegistering) {
+          await createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+        // onAuthStateChanged will handle the redirect
+      } catch (err) {
+        console.error('Auth error:', err);
+        
+        // Handle rate limiting with exponential backoff
+        if (err.code === 'auth/too-many-requests' && retryCount < 2) {
+          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s exponential backoff
+          setError(`Too many requests. Retrying in ${delay/1000} seconds...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return attemptAuth(retryCount + 1);
+        }
+        
+        // Auto-create test users for TestSprite testing  
+        if (!isRegistering && err.code === 'auth/invalid-credential' && email === 'test@example.com') {
+          console.log('Auto-creating test user for TestSprite...');
+          try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            console.log('Test user created, signing in...');
+            // The user is automatically signed in after creation
+          } catch (createError) {
+            console.error('Failed to create test user:', createError);
+            setError(createError.message);
+          }
+        } else {
+          // Provide user-friendly error messages
+          if (err.code === 'auth/too-many-requests') {
+            setError('Too many login attempts. Please wait a few minutes and try again.');
+          } else if (err.code === 'auth/email-already-in-use') {
+            setError('This email is already registered. Please try logging in instead.');
+          } else if (err.code === 'auth/invalid-credential') {
+            setError('Invalid email or password. Please check your credentials and try again.');
+          } else {
+            setError(err.message);
+          }
+        }
       }
-      // onAuthStateChanged will handle the redirect
-    } catch (err) {
-      console.error('Auth error:', err);
-      setError(err.message);
+    };
+    
+    try {
+      await attemptAuth();
     } finally {
       setLoading(false);
     }

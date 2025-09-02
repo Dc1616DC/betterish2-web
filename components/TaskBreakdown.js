@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 const TASK_BREAKDOWNS = {
@@ -57,11 +57,63 @@ const TASK_BREAKDOWNS = {
 
 export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
   const [customSteps, setCustomSteps] = useState([]);
+  const [aiSteps, setAiSteps] = useState([]);
   const [newStep, setNewStep] = useState('');
   const [completedSteps, setCompletedSteps] = useState(new Set());
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [aiBreakdown, setAiBreakdown] = useState(null);
 
   const predefinedSteps = TASK_BREAKDOWNS[task.title] || [];
-  const allSteps = predefinedSteps.length > 0 ? predefinedSteps : customSteps;
+  const allSteps = predefinedSteps.length > 0 ? predefinedSteps : (aiSteps.length > 0 ? aiSteps : customSteps);
+
+  // Fetch AI breakdown when component loads and no predefined steps exist
+  useEffect(() => {
+    if (predefinedSteps.length === 0 && !aiBreakdown) {
+      fetchAIBreakdown();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchAIBreakdown = async () => {
+    setLoadingAI(true);
+    try {
+      const response = await fetch('/api/ai-checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'task-breakdown',
+          action: 'break_down',
+          taskTitle: task.title
+        })
+      });
+
+      if (response.ok) {
+        const breakdown = await response.json();
+        setAiBreakdown(breakdown);
+        
+        // Convert AI breakdown to flat steps array
+        const steps = [];
+        if (breakdown.today) {
+          steps.push(...breakdown.today.map(step => `${step.title} (${step.time})`));
+        }
+        if (breakdown.thisWeekend) {
+          steps.push(...breakdown.thisWeekend.map(step => `${step.title} (${step.time})`));
+        }
+        if (breakdown.nextWeekend) {
+          steps.push(...breakdown.nextWeekend.map(step => `${step.title} (${step.time})`));
+        }
+        if (breakdown.steps) {
+          steps.push(...breakdown.steps.map(step => `${step.title} (${step.time})`));
+        }
+        
+        setAiSteps(steps);
+      }
+    } catch (error) {
+      console.error('Failed to fetch AI breakdown:', error);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
   const addCustomStep = () => {
     if (newStep.trim()) {
@@ -125,16 +177,34 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
             <h5 className="font-medium text-gray-700">
               Steps to Complete ({completedSteps.size}/{allSteps.length})
             </h5>
-            {allSteps.length > 0 && (
-              <div className="text-sm text-gray-500">
-                {Math.round((completedSteps.size / allSteps.length) * 100)}% done
-              </div>
-            )}
+            <div className="flex gap-2">
+              {predefinedSteps.length === 0 && !loadingAI && (
+                <button
+                  onClick={fetchAIBreakdown}
+                  className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                  title="Get Morpheus breakdown"
+                >
+                  🧠 Ask Morpheus
+                </button>
+              )}
+              {allSteps.length > 0 && (
+                <div className="text-sm text-gray-500">
+                  {Math.round((completedSteps.size / allSteps.length) * 100)}% done
+                </div>
+              )}
+            </div>
           </div>
 
-          {allSteps.length === 0 && predefinedSteps.length === 0 && (
+          {loadingAI && (
+            <div className="text-center py-6">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+              <p className="text-blue-600 text-sm">Morpheus is decoding this project...</p>
+            </div>
+          )}
+
+          {!loadingAI && allSteps.length === 0 && predefinedSteps.length === 0 && (
             <p className="text-gray-500 text-sm py-4 text-center">
-              No pre-defined steps available. Add your own steps below.
+              Click &quot;🧠 Ask Morpheus&quot; above or add your own steps below.
             </p>
           )}
 

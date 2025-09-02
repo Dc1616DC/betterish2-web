@@ -1,8 +1,15 @@
-const CACHE_NAME = 'betterish-v2';
+const CACHE_NAME = 'betterish-v4'; // Updated version to force refresh and fix Firebase conflicts
 const STATIC_CACHE_URLS = [
   '/',
   '/dashboard',
   '/loose-ends'
+];
+
+// Skip intercepting Firebase requests to prevent errors
+const FIREBASE_DOMAINS = [
+  'firestore.googleapis.com',
+  'identitytoolkit.googleapis.com',
+  'securetoken.googleapis.com'
 ];
 
 // Install event - cache static resources
@@ -39,6 +46,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Skip Firebase requests completely to prevent errors
+  const url = new URL(event.request.url);
+  if (FIREBASE_DOMAINS.some(domain => url.hostname.includes(domain)) || 
+      url.hostname.includes('firebase') || 
+      url.hostname.includes('google.com')) {
     return;
   }
 

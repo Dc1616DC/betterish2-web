@@ -1,14 +1,14 @@
 /**
- * API endpoint for AI Daily Check-In
+ * API endpoint for Morpheus Daily Check-In
  * Provides contextual guidance based on user patterns and current situation
  */
 
 import { NextResponse } from 'next/server';
-import { createDadMentor } from '@/lib/aiMentor';
+import { createMorpheus } from '@/lib/aiMentor';
 
 export async function POST(request) {
   try {
-    const { userId, action = 'check_in', taskTitle = null, userTasks = [] } = await request.json();
+    const { userId, action = 'check_in', taskTitle = null, userTasks = [], category = null } = await request.json();
     
     if (!userId) {
       return NextResponse.json(
@@ -17,11 +17,11 @@ export async function POST(request) {
       );
     }
 
-    const mentor = createDadMentor();
+    const morpheus = createMorpheus();
 
     switch (action) {
       case 'check_in':
-        const checkInResponse = await mentor.morningCheckIn(userId, userTasks);
+        const checkInResponse = await morpheus.morningCheckIn(userId, userTasks);
         return NextResponse.json(checkInResponse);
 
       case 'break_down':
@@ -31,7 +31,7 @@ export async function POST(request) {
             { status: 400 }
           );
         }
-        const breakdown = await mentor.breakDownTask(taskTitle);
+        const breakdown = await morpheus.breakDownTask(taskTitle);
         return NextResponse.json(breakdown);
 
       case 'get_help':
@@ -41,8 +41,18 @@ export async function POST(request) {
             { status: 400 }
           );
         }
-        const help = mentor.getTaskHelp(taskTitle);
+        const help = morpheus.getTaskHelp(taskTitle);
         return NextResponse.json(help);
+
+      case 'browse_category':
+        if (!category) {
+          return NextResponse.json(
+            { error: 'Category is required for browsing' },
+            { status: 400 }
+          );
+        }
+        const browseSuggestions = morpheus.getBrowseSuggestions(category, userTasks);
+        return NextResponse.json({ suggestions: browseSuggestions });
 
       default:
         return NextResponse.json(

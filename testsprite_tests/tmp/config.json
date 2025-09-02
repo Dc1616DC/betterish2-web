@@ -1,0 +1,16 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3001",
+  "executionArgs": {
+    "projectName": "betterish-web",
+    "projectPath": "/Users/danielchase/betterish-web",
+    "testIds": [],
+    "additionalInstruction": "Final validation test after comprehensive architecture redesign and infrastructure fixes. Focus on login functionality, dashboard loading, task operations, and overall system stability. The ServiceWorker has been fixed to not interfere with Firebase, and the Firestore composite index has been deployed.",
+    "envs": {
+      "API_KEY": "sk-user-oHceeual_DtRZZDIpk_AmdLYJ0gkimWiGJB3QM1S11HTci2tts3sgbhz7z5TiK3NTCrmcoTwN129mBljQ1XXrLV530mjAhqMEIkOdBu5Y-3iXDj5BcodJobF6gubGxv-Oa0"
+    }
+  },
+  "proxy": "http://f04e8dc2-c80d-463b-86cd-42e99618267f:GuQUvPMYdCqc3Ar51KnohCTdszU98EWv@tun.testsprite.com:8080"
+}

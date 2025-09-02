@@ -1,0 +1,891 @@
+Script started on Sat Aug 30 20:31:57 2025
+untered an unexpected error. sw.js:63:9
+GET
+http://localhost:3003/icons/icon-32x32.png
+[HTTP/1.1 404 Not Found 0ms]
+
+GET
+http://localhost:3003/icons/icon-180x180.png
+[HTTP/1.1 404 Not Found 0ms]
+
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools react-dom-client.development.js:25022:1
+ Server   ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+ Server   ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+SW registered:  
+ServiceWorkerRegistration { installing: null, waiting: null, active: ServiceWorker, navigationPreload: Navigation[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004huuntered an unexpected error. sw. [Kjjs:63:9[?2004l
+zsh: command not found: untered
+GET
+http://localhost:3003/icons/icon-32x32.png
+[HTTP/1.1 404 Not Found 0ms]
+
+GET
+http://localhost:3003/icons/icon-180x180.png
+[HTTP/1.1 404 Not Found 0ms]
+
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools react-dom-client.development.js:25022:1
+ Server   ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+ Server   ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+SW registered:  
+ServiceWorkerRegistration { installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadM[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hGGET[?2004l
+zsh: command not found: GET
+http://localhost:3003/icons/icon-32x32.png
+[HTTP/1.1 404 Not Found 0ms]
+
+GET
+http://localhost:3003/icons/icon-180x180.png
+[HTTP/1.1 404 Not Found 0ms]
+
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools react-dom-client.development.js:25022:1
+ Server   ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+ Server   ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+SW registered:  
+ServiceWorkerRegistration { installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager,Se[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hhhttp://localhost:3003/icons/icon [K--32x32.png[?2004l
+zsh: no such file or directory: http://localhost:3003/icons/icon-32x32.png
+[HTTP/1.1 404 Not Found 0ms]
+
+GET
+http://localhost:3003/icons/icon-180x180.png
+[HTTP/1.1 404 Not Found 0ms]
+
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools react-dom-client.development.js:25022:1
+ Server   ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+ Server   ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+SW registered:  
+ServiceWorkerRegistration { installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[[HTTP/1.1 404 Not Found 0ms][?2004l
+zsh: bad pattern: [HTTP/1.1
+
+GET
+http://localhost:3003/icons/icon-180x180.png
+[HTTP/1.1 404 Not Found 0ms]
+
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools react-dom-client.development.js:25022:1
+ Server   ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+ Server   ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+SW registered:  
+ServiceWorkerRegistration { installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager,ServiceWorkerRegistration { installingteSeaCServiceWorkerRegistration { inst[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                GET
+http://localhost:3003/icons/icon-180x180.png
+[HTTP/1.1 404 Not Found 0ms]
+
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools react-dom-client.development.js:25022:1
+ Server   ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+ Server   ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+SW registered:  
+ServiceWorkerRegistration { installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager,Ser]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hGGET[?2004l
+zsh: command not found: GET
+http://localhost:3003/icons/icon-180x180.png
+[HTTP/1.1 404 Not Found 0ms]
+
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools react-dom-client.development.js:25022:1
+ Server   ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+ Server   ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+SW registered:  
+ServiceWorkerRegistration { installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager,ServiceWorkerRegistration { installingteSeaCServiceWorkerRegistration { installing:[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hhhttp://localhost:3003/icons/icon [K--180x180.png[?2004l
+zsh: no such file or directory: http://localhost:3003/icons/icon-180x180.png
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[[HTTP/1.1 404 Not Found 0ms][?2004l
+zsh: bad pattern: [HTTP/1.1
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hDDownload the React DevTools for  [Kaa better development experience: https://react.dev/link/react-devtools react-dom [K--client.development.js:25022:1[?2004l
+zsh: command not found: Download
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h  Server   ⚠ Unsupported metadata [K  themeColor is configured in metadata export in /. Please move it to viewport ex [Kpport instead.[?2004l
+zsh: command not found: Server
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hRRead more: https://nextjs.org/do [Kccs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client [K..browser.development.js:2674:1[?2004l
+ Server   ⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client.browser.development.js:2674:1
+SW registered:  
+ServiceWorkerRegistration { installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager,ServiceWorkerRegistration { installingteSeaCServiceWorkerRegistration { installing: nhMServiceWorkerRegistration {s: SeokieStoreManager }
+localhost:3003:6:29
+
+​
+
+/usr/bin/Read: line 4: read: `more:': not a valid identifier
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hRRead more: https://nextjs.org/do [Kccs/app/api-reference/functions/generate-viewport react-server-dom-webpack-client [K..browser.development.js:2674:1[?2004l
+SW registered:  
+ServiceWorkerRegistration { installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager,ServiceWorkerRegistration { installingteSeaCServiceWorkerRegistration { installing: nhMServiceWorkerRegistration {s: SeokieStoreManager }
+localhost:3003:6:29
+
+​
+
+/usr/bin/Read: line 4: read: `more:': not a valid identifier
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hSServiceWorkerRegistration { inst [Kaalling: null, waiting: null, active: ServiceWorker, navigationPreload: Navigatio [KnnPreloadManager,ServiceWorkerRegistration { installingteSeaCServiceWorkerRegistr [Kaation { installing: nhMServiceWorkerRegistration {s: SeokieStoreManager }[?2004l
+zsh: parse error near `}'
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hllocalhost:3003:6:29[?2004l
+zsh: command not found: localhost:3003:6:29
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[7m<200b>[27m[?2004l
+zsh: command not found: \u200b
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K [33m[1m⚠[22m[39m Port 3000 is in use, using available port 3005 instead.
+   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3005
+   - Network:      http://10.0.0.248:3005
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1136ms
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 979ms (775 modules)
+ GET /_next/static/chunks/app/page.js [33m404[39m in 1279ms
+ GET /_next/static/chunks/webpack.js?v=1756555112617 [33m404[39m in 1281ms
+ GET /_next/static/chunks/main-app.js?v=1756555112617 [33m404[39m in 1280ms
+ GET /_next/static/css/app/layout.css?v=1756555112617 [33m404[39m in 1286ms
+ [37m[1m○[22m[39m Compiling /loose-ends ...
+ [32m[1m✓[22m[39m Compiled /loose-ends in 846ms (1189 modules)
+ GET /loose-ends [32m200[39m in 1187ms
+ GET /dashboard [32m200[39m in 1479ms
+ GET / [32m200[39m in 1481ms
+ GET / [32m200[39m in 24ms
+ GET /dashboard [32m200[39m in 12ms
+ [32m[1m✓[22m[39m Compiled /login in 402ms (1181 modules)
+ GET /login [32m200[39m in 469ms
+ [32m[1m✓[22m[39m Compiled in 1402ms (464 modules)
+ GET /login [32m200[39m in 17ms
+ [32m[1m✓[22m[39m Compiled in 496ms (1195 modules)
+ [32m[1m✓[22m[39m Compiled in 246ms (1195 modules)
+<w> [1m[33m[webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/danielchase/betterish-web/.next/cache/webpack/client-development/3.pack.gz_' -> '/Users/danielchase/betterish-web/.next/cache/webpack/client-development/3.pack.gz'[39m[22m
+ [32m[1m✓[22m[39m Compiled in 414ms (1195 modules)
+ [32m[1m✓[22m[39m Compiled in 196ms (1195 modules)
+ [32m[1m✓[22m[39m Compiled in 439ms (1195 modules)
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K [33m[1m⚠[22m[39m Port 3000 is in use, using available port 3001 instead.
+   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3001
+   - Network:      http://10.0.0.248:3001
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1209ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 3.6s (1213 modules)
+ GET /loose-ends [32m200[39m in 4062ms
+ GET /dashboard [32m200[39m in 4063ms
+ GET / [32m200[39m in 4066ms
+ GET /dashboard [32m200[39m in 93ms
+ GET /loose-ends [32m200[39m in 87ms
+ GET / [32m200[39m in 86ms
+ [32m[1m✓[22m[39m Compiled /_not-found in 308ms (1199 modules)
+ GET /badge-72.jpg [33m404[39m in 428ms
+ GET /icon-192.jpg [33m404[39m in 424ms
+ GET / [32m200[39m in 415ms
+ [32m[1m✓[22m[39m Compiled /login in 239ms (1192 modules)
+ GET /login [32m200[39m in 484ms
+ GET /dashboard [32m200[39m in 41ms
+ [37m[1m○[22m[39m Compiling /api/ai-checkin ...
+ [32m[1m✓[22m[39m Compiled /api/ai-checkin in 549ms (1336 modules)
+Error getting user patterns: [Error [FirebaseError]: Expected first argument to collection() to be a CollectionReference, a DocumentReference or FirebaseFirestore] {
+  code: [32m'invalid-argument'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+ POST /api/ai-checkin [32m200[39m in 774ms
+ [32m[1m✓[22m[39m Compiled in 653ms (1192 modules)
+ GET /dashboard [32m200[39m in 167ms
+ [37m[1m [22m[39m Reload env: .env.local
+ [32m[1m✓[22m[39m Compiled in 534ms (1178 modules)
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[7mclaude mcp add TestSprite --env [7mA[7mPI_KEY=sk-user-oHceeual_DtRZZDIpk_AmdLYJ0gkimWiGJB3QM1S11HTci2tts3sgbhz7z5TiK3N[7mT[7mCrmcoTwN129mBljQ1XXrLV530mjAhqMEIkOdBu5Y-3iXDj5BcodJobF6gubGxv-Oa0 -- npx @test[7ms[7mprite/testsprite-mcp@latest[27m[K[3A[20C[27mc[27ml[27ma[27mu[27md[27me[27m [27mm[27mc[27mp[27m [27ma[27md[27md[27m [27mT[27me[27ms[27mt[27mS[27mp[27mr[27mi[27mt[27me[27m [27m-[27m-[27me[27mn[27mv[27m A[27mP[27mI[27m_[27mK[27mE[27mY[27m=[27ms[27mk[27m-[27mu[27ms[27me[27mr[27m-[27mo[27mH[27mc[27me[27me[27mu[27ma[27ml[27m_[27mD[27mt[27mR[27mZ[27mZ[27mD[27mI[27mp[27mk[27m_[27mA[27mm[27md[27mL[27mY[27mJ[27m0[27mg[27mk[27mi[27mm[27mW[27mi[27mG[27mJ[27mB[27m3[27mQ[27mM[27m1[27mS[27m1[27m1[27mH[27mT[27mc[27mi[27m2[27mt[27mt[27ms[27m3[27ms[27mg[27mb[27mh[27mz[27m7[27mz[27m5[27mT[27mi[27mK[27m3[27mNT[27mC[27mr[27mm[27mc[27mo[27mT[27mw[27mN[27m1[27m2[27m9[27mm[27mB[27ml[27mj[27mQ[27m1[27mX[27mX[27mr[27mL[27mV[27m5[27m3[27m0[27mm[27mj[27mA[27mh[27mq[27mM[27mE[27mI[27mk[27mO[27md[27mB[27mu[27m5[27mY[27m-[27m3[27mi[27mX[27mD[27mj[27m5[27mB[27mc[27mo[27md[27mJ[27mo[27mb[27mF[27m6[27mg[27mu[27mb[27mG[27mx[27mv[27m-[27mO[27ma[27m0[27m [27m-[27m-[27m [27mn[27mp[27mx[27m [27m@[27mt[27me[27ms[27mts[27mp[27mr[27mi[27mt[27me[27m/[27mt[27me[27ms[27mt[27ms[27mp[27mr[27mi[27mt[27me[27m-[27mm[27mc[27mp[27m@[27ml[27ma[27mt[27me[27ms[27mt[?2004l
+Added stdio MCP server TestSprite with command: npx @testsprite/testsprite-mcp@latest to local config
+File modified: /Users/danielchase/.claude.json [project: /Users/danielchase/betterish-web]
+[?25h[?25h[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[7mHey, help me to test this projec[7mt[7m with TestSprite.[27m[K[A[30C[27mH[27me[27my[27m,[27m [27mh[27me[27ml[27mp[27m [27mm[27me[27m [27mt[27mo[27m [27mt[27me[27ms[27mt[27m [27mt[27mh[27mi[27ms[27m [27mp[27mr[27mo[27mj[27me[27mct[27m [27mw[27mi[27mt[27mh[27m [27mT[27me[27ms[27mt[27mS[27mp[27mr[27mi[27mt[27me[27m.[?2004l
+zsh: command not found: Hey,
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[7mclaude mcp list[27m[15D[27mc[27ml[27ma[27mu[27md[27me[27m [27mm[27mc[27mp[27m [27ml[27mi[27ms[27mt[?2004l
+Checking MCP server health...
+
+TestSprite: npx @testsprite/testsprite-mcp@latest - ✓ Connected
+[?25h[?25h[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hhhelp me test this project with t [Keestsrptit     prite[?2004l
+zsh: command not found: help
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[7mfirebase login --reauth[27m[23D[27mf[27mi[27mr[27me[27mb[27ma[27ms[27me[27m [27ml[27mo[27mg[27mi[27mn[27m [27m-[27m-[27mr[27me[27ma[27mu[27mt[27mh[?2004l
+
+Visit this URL on this device to log in:
+[1m[4mhttps://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=671438893&redirect_uri=http%3A%2F%2Flocalhost%3A9005&login_hint=daniel%40betterish.co[24m[22m
+
+Waiting for authentication...
+
+[32m[1m✔ [22m[39m Success! Logged in as [1mdaniel@betterish.co[22m
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K [33m[1m⚠[22m[39m Port 3000 is in use, using available port 3001 instead.
+   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3001
+   - Network:      http://10.0.0.248:3001
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1685ms
+ [37m[1m○[22m[39m Compiling / ...
+ [32m[1m✓[22m[39m Compiled / in 1726ms (977 modules)
+ GET / [32m200[39m in 2185ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 533ms (1024 modules)
+ GET /dashboard [32m200[39m in 610ms
+ GET /dashboard [32m200[39m in 12ms
+ [32m[1m✓[22m[39m Compiled /browse in 362ms (1035 modules)
+ GET /browse [32m200[39m in 450ms
+ GET /dashboard [32m200[39m in 38ms
+ [32m[1m✓[22m[39m Compiled /login in 281ms (1042 modules)
+ GET /login [32m200[39m in 337ms
+ GET /dashboard [32m200[39m in 37ms
+ GET /dashboard [32m200[39m in 230ms
+ GET /login [32m200[39m in 38ms
+ GET /dashboard [32m200[39m in 30ms
+ [32m[1m✓[22m[39m Compiled in 188ms (389 modules)
+ GET /dashboard [32m200[39m in 20ms
+ [32m[1m✓[22m[39m Compiled in 160ms (389 modules)
+ [32m[1m✓[22m[39m Compiled in 163ms (389 modules)
+[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1725ms
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 1305ms (789 modules)
+ GET /_next/static/css/app/layout.css?v=1756656574496 [33m404[39m in 1612ms
+ GET /_next/static/chunks/main-app.js?v=1756656574496 [33m404[39m in 1551ms
+ GET /_next/static/chunks/app/layout.js [33m404[39m in 1552ms
+ GET /_next/static/chunks/webpack.js?v=1756656574496 [33m404[39m in 1554ms
+ GET /_next/static/chunks/app/page.js [33m404[39m in 1552ms
+ GET /_next/static/chunks/app-pages-internals.js [33m404[39m in 1553ms
+ GET /sw-simple.js [33m404[39m in 42ms
+ GET /.well-known/appspecific/com.chrome.devtools.json [33m404[39m in 34ms
+ GET /.well-known/appspecific/com.chrome.devtools.json [33m404[39m in 44ms
+ GET /_next/static/chunks/app/page.js [33m404[39m in 29ms
+ GET /sw-simple.js [33m404[39m in 49ms
+ GET /.well-known/appspecific/com.chrome.devtools.json [33m404[39m in 42ms
+ [37m[1m○[22m[39m Compiling / ...
+ [32m[1m✓[22m[39m Compiled / in 666ms (967 modules)
+ GET / [32m200[39m in 978ms
+ [32m[1m✓[22m[39m Compiled /favicon.ico in 173ms (641 modules)
+ GET /favicon.ico [32m200[39m in 242ms
+ [37m[1m○[22m[39m Compiling /loose-ends ...
+ [32m[1m✓[22m[39m Compiled /loose-ends in 580ms (1060 modules)
+ GET /login [32m200[39m in 973ms
+ GET / [32m200[39m in 974ms
+ GET /loose-ends [32m200[39m in 974ms
+ GET /dashboard [32m200[39m in 975ms
+ GET /sw-simple.js [33m404[39m in 22ms
+ GET /dashboard [32m200[39m in 31ms
+ GET /sw-simple.js [33m404[39m in 220ms
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 2.3s
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 1240ms (789 modules)
+ GET /_next/static/chunks/app/page.js [33m404[39m in 1468ms
+ [37m[1m○[22m[39m Compiling /loose-ends ...
+ [32m[1m✓[22m[39m Compiled /loose-ends in 860ms (1037 modules)
+ [33m[1m⚠[22m[39m Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /_next/static/webpack/49edb500ca1ed9a5.webpack.hot-update.json [33m404[39m in 812ms
+ GET /loose-ends [32m200[39m in 1487ms
+ GET /dashboard [32m200[39m in 1488ms
+ GET / [32m200[39m in 1490ms
+ GET / [32m200[39m in 23ms
+ GET /dashboard [32m200[39m in 33ms
+ [32m[1m✓[22m[39m Compiled /browse in 382ms (1048 modules)
+ GET /browse [32m200[39m in 452ms
+ GET /dashboard [32m200[39m in 13ms
+ GET /loose-ends [32m200[39m in 27ms
+ GET /dashboard [32m200[39m in 36ms
+^[c^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004h[7mfirebase login --reauth[27m[23D[27mf[27mi[27mr[27me[27mb[27ma[27ms[27me[27m [27ml[27mo[27mg[27mi[27mn[27m [27m-[27m-[27mr[27me[27ma[27mu[27mt[27mh[?2004l
+
+Visit this URL on this device to log in:
+[1m[4mhttps://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=120022691&redirect_uri=http%3A%2F%2Flocalhost%3A9005&login_hint=daniel%40betterish.co[24m[22m
+
+Waiting for authentication...
+
+[32m[1m✔ [22m[39m Success! Logged in as [1mdaniel@betterish.co[22m
+[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1805ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 1444ms (1017 modules)
+ GET /dashboard [32m200[39m in 2026ms
+ [32m[1m✓[22m[39m Compiled /loose-ends in 386ms (1040 modules)
+ GET /loose-ends [32m200[39m in 486ms
+ GET /loose-ends [32m200[39m in 10ms
+ [32m[1m✓[22m[39m Compiled /browse in 269ms (1037 modules)
+ GET /browse [32m200[39m in 336ms
+ GET /dashboard [32m200[39m in 33ms
+ GET /dashboard [32m200[39m in 214ms
+ [32m[1m✓[22m[39m Compiled /_not-found in 430ms (1035 modules)
+ GET /sw-simple.js [33m404[39m in 553ms
+ [32m[1m✓[22m[39m Compiled in 443ms (1045 modules)
+ GET /dashboard [32m200[39m in 76ms
+ [32m[1m✓[22m[39m Compiled /favicon.ico in 180ms (673 modules)
+ [32m[1m✓[22m[39m Compiled in 387ms (1069 modules)
+ [32m[1m✓[22m[39m Compiled in 264ms (1069 modules)
+ [32m[1m✓[22m[39m Compiled in 218ms (1053 modules)
+ [32m[1m✓[22m[39m Compiled in 241ms (1053 modules)
+ [32m[1m✓[22m[39m Compiled in 192ms (392 modules)
+ [32m[1m✓[22m[39m Compiled in 333ms (392 modules)
+ [32m[1m✓[22m[39m Compiled in 165ms (392 modules)
+ [31m[1m⨯[22m[39m TypeError: Cannot read properties of undefined (reading 'call')
+    at Object.t [as require] (.next/server/webpack-runtime.js:1:128)
+    at JSON.parse (<anonymous>) {
+  digest: [32m'761146098'[39m
+}
+TypeError: Cannot read properties of undefined (reading 'call')
+    at Object.t [as require] (.next/server/webpack-runtime.js:1:128)
+    at JSON.parse (<anonymous>)
+ [31m[1m⨯[22m[39m TypeError: Cannot read properties of undefined (reading 'call')
+    at Object.t [as require] (.next/server/webpack-runtime.js:1:128)
+    at JSON.parse (<anonymous>) {
+  page: [32m'/dashboard'[39m
+}
+ [37m[1m○[22m[39m Compiling /_error ...
+ [32m[1m✓[22m[39m Compiled /_error in 1007ms (1374 modules)
+ GET /dashboard [31m500[39m in 1634ms
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1768ms
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 1381ms (789 modules)
+ GET /_next/static/webpack/39dc9dee2fb2f916.webpack.hot-update.json [33m404[39m in 1599ms
+ [33m[1m⚠[22m[39m Fast Refresh had to perform a full reload due to a runtime error.
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 670ms (1015 modules)
+ GET /dashboard [32m200[39m in 979ms
+ GET /dashboard [32m200[39m in 54ms
+ [32m[1m✓[22m[39m Compiled /api/sidekick-chat in 389ms (1039 modules)
+📨 Sidekick chat request received
+Task: {
+  id: [32m'rLwssUSvoRHePlk1bvvw'[39m,
+  title: [32m'dog sitter'[39m,
+  category: [32m'personal'[39m
+}
+Message: Where do you recommend finding a dog sitter
+User: { id: [32m'1YEUy17ns7gJ8J3VEQWOPcbjqjq2'[39m, tier: [32m'free'[39m }
+🔄 Grok response received: Ah, finding a reliable dog sitter—key for those family trips or long workdays. I'd start with apps like Rover or Wag; they're easy to use, with vetted sitters and reviews. Setting up a profile takes about 10-15 minutes, and rates run $20-40 per visit depending on your area.
+
+For a more personal touch, check local Facebook groups or Nextdoor—often neighbors offer services for $15-30. Ask your vet for recommendations too. As a backup, line up a family member or friend in case plans fall through. If you need tips on interviewing them, hit up YouTube channels like "The Dog People" for quick guides. You've got this!
+Failed to log chat interaction: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at logChatInteraction (app/api/sidekick-chat/route.js:138:17)
+    at POST (app/api/sidekick-chat/route.js:189:10)
+[0m [90m 136 |[39m     [0m
+[0m [90m 137 |[39m     [36mconst[39m logRef [33m=[39m db[33m.[39mcollection([32m'chatLogs'[39m)[33m.[39mdoc([32m`${userId}_${Date.now()}`[39m)[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 138 |[39m     [36mawait[39m logRef[33m.[39m[36mset[39m({[0m
+[0m [90m     |[39m                 [31m[1m^[22m[39m[0m
+[0m [90m 139 |[39m       userId[33m,[39m[0m
+[0m [90m 140 |[39m       taskId[33m,[39m[0m
+[0m [90m 141 |[39m       userMessage[33m,[39m[0m {
+  code: [33m16[39m,
+  details: [32m'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.'[39m,
+  metadata: [36m[Metadata][39m,
+  note: [32m'Exception occurred in retry method that was not classified as transient'[39m
+}
+ POST /api/sidekick-chat [32m200[39m in 16067ms
+ GET /sw-simple.js [33m404[39m in 105ms
+ [32m[1m✓[22m[39m Compiled /browse in 408ms (1041 modules)
+ GET /browse [32m200[39m in 517ms
+ [32m[1m✓[22m[39m Compiled /loose-ends in 232ms (1050 modules)
+ GET /loose-ends [32m200[39m in 281ms
+ GET /dashboard [32m200[39m in 42ms
+ [37m[1m○[22m[39m Compiling /api/ai-checkin ...
+ [32m[1m✓[22m[39m Compiled /api/ai-checkin in 693ms (1171 modules)
+Error getting user patterns: [Error [FirebaseError]: Expected first argument to collection() to be a CollectionReference, a DocumentReference or FirebaseFirestore] {
+  code: [32m'invalid-argument'[39m,
+  customData: [90mundefined[39m,
+  toString: [36m[Function (anonymous)][39m
+}
+ POST /api/ai-checkin [32m200[39m in 951ms
+ [32m[1m✓[22m[39m Compiled in 813ms (1042 modules)
+ GET /dashboard [32m200[39m in 142ms
+ [32m[1m✓[22m[39m Compiled in 461ms (1042 modules)
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1729ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 1457ms (1025 modules)
+ GET /dashboard [32m200[39m in 1765ms
+ GET /dashboard [32m200[39m in 210ms
+ GET /dashboard [32m200[39m in 57ms
+ [32m[1m✓[22m[39m Compiled /_not-found in 438ms (1029 modules)
+ GET /sw-simple.js [33m404[39m in 561ms
+ GET /dashboard [32m200[39m in 130ms
+ [32m[1m✓[22m[39m Compiled in 552ms (1025 modules)
+ [32m[1m✓[22m[39m Compiled /_not-found in 377ms (1015 modules)
+ GET /sw-simple.js [33m404[39m in 499ms
+ [32m[1m✓[22m[39m Compiled in 326ms (377 modules)
+ [32m[1m✓[22m[39m Compiled in 125ms (377 modules)
+ [32m[1m✓[22m[39m Compiled in 88ms (377 modules)
+ [32m[1m✓[22m[39m Compiled in 98ms (377 modules)
+ [31m[1m⨯[22m[39m Error: Cannot find module './243.js'
+Require stack:
+- /Users/danielchase/betterish-web/.next/server/webpack-runtime.js
+- /Users/danielchase/betterish-web/.next/server/app/_not-found/page.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/require.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/load-components.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/utils.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/options.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/index.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-server.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/start-server.js
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/dashboard/page.js:1:41209)
+    at Object.<anonymous> (.next/server/app/dashboard/page.js:1:41270) {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [36m[Array][39m,
+  page: [32m'/dashboard'[39m
+}
+ [37m[1m○[22m[39m Compiling /_error ...
+ [32m[1m✓[22m[39m Compiled /_error in 1122ms (1346 modules)
+ GET /dashboard [31m500[39m in 1364ms
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1849ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 1547ms (1029 modules)
+ GET /_next/static/webpack/3b96c09adb37fcf0.webpack.hot-update.json [33m404[39m in 1955ms
+ GET /dashboard [32m200[39m in 1928ms
+ GET /dashboard [32m200[39m in 47ms
+ [37m[1m○[22m[39m Compiling /browse ...
+ [32m[1m✓[22m[39m Compiled /browse in 503ms (1030 modules)
+ GET /browse [32m200[39m in 567ms
+ [37m[1m○[22m[39m Compiling /api/ai-checkin ...
+ [32m[1m✓[22m[39m Compiled /api/ai-checkin in 522ms (1174 modules)
+ POST /api/ai-checkin [32m200[39m in 751ms
+ POST /api/ai-checkin [32m200[39m in 752ms
+ POST /api/ai-checkin [32m200[39m in 25ms
+ POST /api/ai-checkin [32m200[39m in 32ms
+ POST /api/ai-checkin [32m200[39m in 17ms
+ POST /api/ai-checkin [32m200[39m in 17ms
+ POST /api/ai-checkin [32m200[39m in 12ms
+ POST /api/ai-checkin [32m200[39m in 14ms
+ POST /api/ai-checkin [32m200[39m in 18ms
+ POST /api/ai-checkin [32m200[39m in 17ms
+ POST /api/ai-checkin [32m200[39m in 12ms
+ [32m[1m✓[22m[39m Compiled in 485ms (1041 modules)
+ GET /browse [32m200[39m in 149ms
+ [32m[1m✓[22m[39m Compiled in 462ms (1041 modules)
+ [32m[1m✓[22m[39m Compiled in 194ms (1041 modules)
+ [32m[1m✓[22m[39m Compiled in 132ms (384 modules)
+ [32m[1m✓[22m[39m Compiled in 89ms (384 modules)
+ [32m[1m✓[22m[39m Compiled in 219ms (1041 modules)
+ [32m[1m✓[22m[39m Compiled in 232ms (384 modules)
+ [32m[1m✓[22m[39m Compiled /_not-found in 322ms (1031 modules)
+ GET /sw-simple.js [33m404[39m in 434ms
+ GET /browse [32m200[39m in 218ms
+ GET /_next/static/chunks/app/browse/page.js [33m404[39m in 86ms
+ GET /_next/static/css/app/layout.css?v=1756834238887 [33m404[39m in 87ms
+ GET /_next/static/chunks/app/layout.js [33m404[39m in 88ms
+ GET /_next/static/chunks/main-app.js?v=1756834238887 [33m404[39m in 90ms
+ GET /_next/static/chunks/app-pages-internals.js [33m404[39m in 90ms
+ GET /dashboard [32m200[39m in 86ms
+ GET /_next/static/chunks/main-app.js?v=1756834248639 [33m404[39m in 87ms
+ GET /_next/static/chunks/app-pages-internals.js [33m404[39m in 85ms
+ GET /_next/static/chunks/app/dashboard/page.js [33m404[39m in 85ms
+ GET /_next/static/chunks/app/layout.js [33m404[39m in 86ms
+ GET /_next/static/css/app/layout.css?v=1756834248639 [33m404[39m in 86ms
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1789ms
+ [37m[1m○[22m[39m Compiling / ...
+ [32m[1m✓[22m[39m Compiled / in 1237ms (977 modules)
+ GET / [32m200[39m in 1689ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 534ms (1032 modules)
+ GET /dashboard [32m200[39m in 624ms
+ GET /dashboard [32m200[39m in 12ms
+ [32m[1m✓[22m[39m Compiled /browse in 259ms (1033 modules)
+ GET /browse [32m200[39m in 353ms
+ [32m[1m✓[22m[39m Compiled /api/ai-checkin in 487ms (1177 modules)
+ POST /api/ai-checkin [32m200[39m in 714ms
+ POST /api/ai-checkin [32m200[39m in 715ms
+ POST /api/ai-checkin [32m200[39m in 36ms
+ POST /api/ai-checkin [32m200[39m in 28ms
+ POST /api/ai-checkin [32m200[39m in 21ms
+ POST /api/ai-checkin [32m200[39m in 28ms
+ POST /api/ai-checkin [32m200[39m in 21ms
+ GET /dashboard [32m200[39m in 87ms
+ [32m[1m✓[22m[39m Compiled /api/sidekick-chat in 406ms (1053 modules)
+📨 Sidekick chat request received
+Task: {
+  id: [32m'N9ct307G3OfK0G8CNLUI'[39m,
+  title: [32m'Send a funny meme'[39m,
+  category: [32m'relationship'[39m
+}
+Message: Do you have any good ones to send to my wife?
+User: { id: [32m'1YEUy17ns7gJ8J3VEQWOPcbjqjq2'[39m, tier: [32m'free'[39m }
+🔄 Grok response received: Haha, yeah, keeping the spark alive with a good meme is gold. For your wife, try something relatable like the "Distracted Boyfriend" meme – swap in her as the girlfriend, you as the boyfriend, and "weekend chores" as the other woman. Or the classic "This is Fine" dog in the burning room, captioned "Me handling the kids' bedtime routine."
+
+You can whip one up quick on Imgflip.com – takes about 5 minutes. If tech's not your thing, grab a pre-made one from Reddit's r/WholesomeMemes. Text it over with a "Thinking of you" – always lands well. What's her sense of humor like?
+Failed to log chat interaction: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at logChatInteraction (app/api/sidekick-chat/route.js:138:17)
+    at POST (app/api/sidekick-chat/route.js:189:10)
+[0m [90m 136 |[39m     [0m
+[0m [90m 137 |[39m     [36mconst[39m logRef [33m=[39m db[33m.[39mcollection([32m'chatLogs'[39m)[33m.[39mdoc([32m`${userId}_${Date.now()}`[39m)[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 138 |[39m     [36mawait[39m logRef[33m.[39m[36mset[39m({[0m
+[0m [90m     |[39m                 [31m[1m^[22m[39m[0m
+[0m [90m 139 |[39m       userId[33m,[39m[0m
+[0m [90m 140 |[39m       taskId[33m,[39m[0m
+[0m [90m 141 |[39m       userMessage[33m,[39m[0m {
+  code: [33m16[39m,
+  details: [32m'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.'[39m,
+  metadata: [36m[Metadata][39m,
+  note: [32m'Exception occurred in retry method that was not classified as transient'[39m
+}
+ POST /api/sidekick-chat [32m200[39m in 18308ms
+📨 Sidekick chat request received
+Task: {
+  id: [32m'N9ct307G3OfK0G8CNLUI'[39m,
+  title: [32m'Send a funny meme'[39m,
+  category: [32m'relationship'[39m
+}
+Message: she likes adorable things
+User: { id: [32m'1YEUy17ns7gJ8J3VEQWOPcbjqjq2'[39m, tier: [32m'free'[39m }
+🔄 Grok response received: Ah, adorable vibes? Perfect for keeping it light and sweet. Go for something like a cute animal meme – think the "Success Kid" baby fist-pumping with a caption like "Me after finally getting the kids to bed so we can Netflix." Or a fluffy kitten one: "When you surprise me with coffee" over a wide-eyed cat.
+
+Imgflip.com is still your best bet – search for "adorable memes" and customize in under 5 minutes. If you want pro-level cute, try Canva's free meme maker app (downloads in seconds). Send it with a heart emoji for extra points. What's her favorite animal? That could nail it!
+Failed to log chat interaction: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at logChatInteraction (app/api/sidekick-chat/route.js:138:17)
+    at POST (app/api/sidekick-chat/route.js:189:10)
+[0m [90m 136 |[39m     [0m
+[0m [90m 137 |[39m     [36mconst[39m logRef [33m=[39m db[33m.[39mcollection([32m'chatLogs'[39m)[33m.[39mdoc([32m`${userId}_${Date.now()}`[39m)[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 138 |[39m     [36mawait[39m logRef[33m.[39m[36mset[39m({[0m
+[0m [90m     |[39m                 [31m[1m^[22m[39m[0m
+[0m [90m 139 |[39m       userId[33m,[39m[0m
+[0m [90m 140 |[39m       taskId[33m,[39m[0m
+[0m [90m 141 |[39m       userMessage[33m,[39m[0m {
+  code: [33m16[39m,
+  details: [32m'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.'[39m,
+  metadata: [36m[Metadata][39m,
+  note: [32m'Exception occurred in retry method that was not classified as transient'[39m
+}
+ POST /api/sidekick-chat [32m200[39m in 15878ms
+ [32m[1m✓[22m[39m Compiled /_not-found in 387ms (1034 modules)
+ GET /sw-simple.js [33m404[39m in 539ms
+ [32m[1m✓[22m[39m Compiled in 683ms (1046 modules)
+ [32m[1m✓[22m[39m Compiled in 239ms (1046 modules)
+ [32m[1m✓[22m[39m Compiled in 183ms (1046 modules)
+ [32m[1m✓[22m[39m Compiled in 93ms (388 modules)
+ [32m[1m✓[22m[39m Compiled in 254ms (1046 modules)
+ [32m[1m✓[22m[39m Compiled in 191ms (388 modules)
+ [32m[1m✓[22m[39m Compiled in 686ms (1056 modules)
+ [32m[1m✓[22m[39m Compiled in 168ms (1056 modules)
+ [31m[1m⨯[22m[39m ./app/dashboard/DashboardClient.js
+Error:   [31m×[0m Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+     ╭─[[36;1;4m/Users/danielchase/betterish-web/app/dashboard/DashboardClient.js[0m:191:1]
+ [2m188[0m │               tasks={activeTasks} 
+ [2m189[0m │               onOpenChat={handleOpenChat}
+ [2m190[0m │             />
+ [2m191[0m │           )}
+     · [35;1m           ▲[0m
+ [2m192[0m │         </div>
+ [2m193[0m │ 
+ [2m194[0m │         {/* Completed tasks section */}
+     ╰────
+  [31m×[0m Expected ',', got '{'
+     ╭─[[36;1;4m/Users/danielchase/betterish-web/app/dashboard/DashboardClient.js[0m:194:1]
+ [2m191[0m │           )}
+ [2m192[0m │         </div>
+ [2m193[0m │ 
+ [2m194[0m │         {/* Completed tasks section */}
+     · [35;1m        ─[0m
+ [2m195[0m │         {completedTasks && completedTasks.length > 0 && (
+ [2m196[0m │           <div className="mb-8">
+ [2m197[0m │             <div className="flex justify-between items-center mb-4">
+     ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/dashboard/DashboardClient.js
+./app/dashboard/page.js
+ [31m[1m⨯[22m[39m ./app/dashboard/DashboardClient.js
+Error:   [31m×[0m Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+     ╭─[[36;1;4m/Users/danielchase/betterish-web/app/dashboard/DashboardClient.js[0m:191:1]
+ [2m188[0m │               tasks={activeTasks} 
+ [2m189[0m │               onOpenChat={handleOpenChat}
+ [2m190[0m │             />
+ [2m191[0m │           )}
+     · [35;1m           ▲[0m
+ [2m192[0m │         </div>
+ [2m193[0m │ 
+ [2m194[0m │         {/* Completed tasks section */}
+     ╰────
+  [31m×[0m Expected ',', got '{'
+     ╭─[[36;1;4m/Users/danielchase/betterish-web/app/dashboard/DashboardClient.js[0m:194:1]
+ [2m191[0m │           )}
+ [2m192[0m │         </div>
+ [2m193[0m │ 
+ [2m194[0m │         {/* Completed tasks section */}
+     · [35;1m        ─[0m
+ [2m195[0m │         {completedTasks && completedTasks.length > 0 && (
+ [2m196[0m │           <div className="mb-8">
+ [2m197[0m │             <div className="flex justify-between items-center mb-4">
+     ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/dashboard/DashboardClient.js
+./app/dashboard/page.js
+ [31m[1m⨯[22m[39m ./app/dashboard/DashboardClient.js
+Error:   [31m×[0m Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+     ╭─[[36;1;4m/Users/danielchase/betterish-web/app/dashboard/DashboardClient.js[0m:200:1]
+ [2m197[0m │               tasks={activeTasks} 
+ [2m198[0m │               onOpenChat={handleOpenChat}
+ [2m199[0m │             />
+ [2m200[0m │           )}
+     · [35;1m           ▲[0m
+ [2m201[0m │         </div>
+ [2m202[0m │ 
+ [2m203[0m │         {/* Completed tasks section */}
+     ╰────
+  [31m×[0m Expected ',', got '{'
+     ╭─[[36;1;4m/Users/danielchase/betterish-web/app/dashboard/DashboardClient.js[0m:203:1]
+ [2m200[0m │           )}
+ [2m201[0m │         </div>
+ [2m202[0m │ 
+ [2m203[0m │         {/* Completed tasks section */}
+     · [35;1m        ─[0m
+ [2m204[0m │         {completedTasks && completedTasks.length > 0 && (
+ [2m205[0m │           <div className="mb-8">
+ [2m206[0m │             <div className="flex justify-between items-center mb-4">
+     ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/dashboard/DashboardClient.js
+./app/dashboard/page.js
+ [32m[1m✓[22m[39m Compiled in 245ms (1056 modules)
+ [32m[1m✓[22m[39m Compiled in 190ms (1056 modules)
+ [32m[1m✓[22m[39m Compiled in 201ms (1056 modules)
+ [32m[1m✓[22m[39m Compiled in 161ms (1056 modules)
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1817ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 1475ms (1041 modules)
+ GET /dashboard [32m200[39m in 1966ms
+ [37m[1m○[22m[39m Compiling /browse ...
+ [32m[1m✓[22m[39m Compiled /browse in 538ms (1052 modules)
+ GET /browse [32m200[39m in 614ms
+ GET /browse [32m200[39m in 11ms
+ [32m[1m✓[22m[39m Compiled /api/ai-checkin in 500ms (1182 modules)
+ POST /api/ai-checkin [32m200[39m in 738ms
+ POST /api/ai-checkin [32m200[39m in 739ms
+ POST /api/ai-checkin [32m200[39m in 24ms
+ GET /dashboard [32m200[39m in 66ms
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpp m run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1838ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 1600ms (1041 modules)
+ GET /dashboard [32m200[39m in 2161ms
+ [37m[1m○[22m[39m Compiling /api/ai-checkin ...
+ [32m[1m✓[22m[39m Compiled /api/ai-checkin in 503ms (1185 modules)
+ POST /api/ai-checkin [32m200[39m in 742ms
+ POST /api/ai-checkin [32m200[39m in 752ms
+ GET /dashboard [32m200[39m in 46ms
+ POST /api/ai-checkin [32m200[39m in 22ms
+ POST /api/ai-checkin [32m200[39m in 24ms
+ POST /api/ai-checkin [32m200[39m in 9ms
+ POST /api/ai-checkin [32m200[39m in 8ms
+ POST /api/ai-checkin [32m200[39m in 4ms
+ POST /api/ai-checkin [32m200[39m in 4ms
+ POST /api/ai-checkin [32m200[39m in 9ms
+ POST /api/ai-checkin [32m200[39m in 11ms
+ [32m[1m✓[22m[39m Compiled /api/sidekick-chat in 358ms (1181 modules)
+📨 Sidekick chat request received
+Task: {
+  id: [32m'HvZBuyuGcMmV79bBUqpk'[39m,
+  title: [32m'Install closet shelving'[39m,
+  category: [32m'home_projects'[39m
+}
+Message: help me with the steps
+User: { id: [32m'1YEUy17ns7gJ8J3VEQWOPcbjqjq2'[39m, tier: [32m'free'[39m }
+🔄 Grok response received: Alright, let's knock this out—I've done a few closets myself, and it's straightforward if you plan ahead. Assuming you're going with basic wire shelving (like ClosetMaid from Home Depot, around $50-100 for a kit), here's the step-by-step:
+
+1. Measure your closet width and height precisely—add a few inches for brackets.
+
+2. Gather tools: level, drill, stud finder, screws/anchors (use toggle bolts if no studs).
+
+3. Mark and install wall brackets or tracks—drill into studs for stability. Level everything.
+
+4. Snap in the shelves and secure with clips. Add end caps for a clean look.
+
+Takes about 1-2 hours. If the walls are wonky, shim the brackets. Check YouTube for "ClosetMaid install tutorial" from The Home Depot channel. Hit a snag? Swing by Home Depot for advice. You've got this!
+Failed to log chat interaction: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at logChatInteraction (app/api/sidekick-chat/route.js:138:17)
+    at POST (app/api/sidekick-chat/route.js:189:10)
+[0m [90m 136 |[39m     [0m
+[0m [90m 137 |[39m     [36mconst[39m logRef [33m=[39m db[33m.[39mcollection([32m'chatLogs'[39m)[33m.[39mdoc([32m`${userId}_${Date.now()}`[39m)[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 138 |[39m     [36mawait[39m logRef[33m.[39m[36mset[39m({[0m
+[0m [90m     |[39m                 [31m[1m^[22m[39m[0m
+[0m [90m 139 |[39m       userId[33m,[39m[0m
+[0m [90m 140 |[39m       taskId[33m,[39m[0m
+[0m [90m 141 |[39m       userMessage[33m,[39m[0m {
+  code: [33m16[39m,
+  details: [32m'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.'[39m,
+  metadata: [36m[Metadata][39m,
+  note: [32m'Exception occurred in retry method that was not classified as transient'[39m
+}
+ POST /api/sidekick-chat [32m200[39m in 21984ms
+ [32m[1m✓[22m[39m Compiled in 183ms (1195 modules)
+ [32m[1m✓[22m[39m Compiled in 350ms (1043 modules)
+ [32m[1m✓[22m[39m Compiled in 127ms (387 modules)
+^C[?25h
+[1G[0K⠙[1G[0K[1m[7m%[27m[1m[0m                                                                                ]7;file://Daniels-MacBook-Pro.local/Users/danielchase/betterish-web[0m[27m[24m[Jdanielchase@Daniels-MacBook-Pro betterish-web % [K[?2004hnnpm run dev[?2004l
+
+> betterish-web@0.1.0 dev
+> next dev
+
+[1G[0K   [1m[38;2;173;127;168m▲ Next.js 15.3.4[39m[22m
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.248:3000
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 1797ms
+ [37m[1m○[22m[39m Compiling /dashboard ...
+ [32m[1m✓[22m[39m Compiled /dashboard in 1359ms (1041 modules)
+ GET /dashboard [32m200[39m in 1861ms
+ [32m[1m✓[22m[39m Compiled /browse in 481ms (1052 modules)
+ GET /browse [32m200[39m in 561ms
+ GET /browse [32m200[39m in 14ms
+ [32m[1m✓[22m[39m Compiled /api/ai-checkin in 362ms (1182 modules)
+ POST /api/ai-checkin [32m200[39m in 592ms
+ POST /api/ai-checkin [32m200[39m in 592ms
+ POST /api/ai-checkin [32m200[39m in 18ms
+ GET /dashboard [32m200[39m in 70ms
+ POST /api/ai-checkin [32m200[39m in 29ms
+ POST /api/ai-checkin [32m200[39m in 29ms
+ POST /api/ai-checkin [32m200[39m in 21ms
+ POST /api/ai-checkin [32m200[39m in 34ms
+ [32m[1m✓[22m[39m Compiled in 332ms (1053 modules)
+ GET /dashboard [32m200[39m in 134ms
+ [32m[1m✓[22m[39m Compiled in 95ms (390 modules)
+ [32m[1m✓[22m[39m Compiled in 85ms (390 modules)
+ [32m[1m✓[22m[39m Compiled in 315ms (1053 modules)
+ [32m[1m✓[22m[39m Compiled in 203ms (1053 modules)
+ [32m[1m✓[22m[39m Compiled in 311ms (1053 modules)
+ [32m[1m✓[22m[39m Compiled /_not-found in 231ms (1043 modules)
+ GET /sw-simple.js [33m404[39m in 343ms
+ [32m[1m✓[22m[39m Compiled in 99ms (393 modules)

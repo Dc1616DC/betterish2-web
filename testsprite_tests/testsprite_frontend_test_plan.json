@@ -1,0 +1,562 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Registration with Valid Inputs",
+    "description": "Verify that a new user can successfully register using valid email and password and completes onboarding preferences.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the registration page."
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid email address and strong password."
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm registration success notification is shown."
+      },
+      {
+        "type": "action",
+        "description": "Complete onboarding preference setup."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is redirected to the dashboard with personalized greeting and preferences applied."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Login with Correct Credentials",
+    "description": "Check login succeeds with valid email and password and loads user session correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid email and password."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "User is authenticated and navigated to the main dashboard."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "User Login with Invalid Credentials",
+    "description": "Ensure login fails gracefully with inappropriate email or password with proper error messages.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page."
+      },
+      {
+        "type": "action",
+        "description": "Input invalid email and/or password."
+      },
+      {
+        "type": "action",
+        "description": "Click login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error message is displayed indicating invalid credentials."
+      },
+      {
+        "type": "assertion",
+        "description": "No user session is created."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Create New Task with Valid Data",
+    "description": "Verify that users can create a new task with mandatory fields and that the task appears in the dashboard.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to task creation form."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid task title, description, priority, and category."
+      },
+      {
+        "type": "action",
+        "description": "Submit the task form."
+      },
+      {
+        "type": "assertion",
+        "description": "Task is added to the task list and visible on the dashboard."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Task Creation with Missing Required Fields",
+    "description": "Check task form validation prevents creation when required fields are missing and shows appropriate error messages.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open task creation form."
+      },
+      {
+        "type": "action",
+        "description": "Leave required fields (e.g., task title) empty."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to submit the form."
+      },
+      {
+        "type": "assertion",
+        "description": "Validation errors are displayed and task is not created."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Edit Existing Task Successfully",
+    "description": "Verify existing tasks can be edited and changes persist and update in real-time across devices.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Select an existing task from the task list."
+      },
+      {
+        "type": "action",
+        "description": "Modify the task fields (e.g., title, priority)."
+      },
+      {
+        "type": "action",
+        "description": "Submit the updated task form."
+      },
+      {
+        "type": "assertion",
+        "description": "Update is reflected immediately in task list and synced across logged-in sessions."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Delete a Task and Confirm Removal",
+    "description": "Ensure users can delete a task and it is removed from all views and synchronized immediately.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Locate a task in the task list."
+      },
+      {
+        "type": "action",
+        "description": "Trigger delete action for the selected task."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm deletion prompt appears."
+      },
+      {
+        "type": "action",
+        "description": "Confirm deletion."
+      },
+      {
+        "type": "assertion",
+        "description": "Task disappears from task list and is removed from backend."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Create and Manage Subtasks within a Project",
+    "description": "Validate that users can add, edit, and complete subtasks within a project and see accurate progress tracking.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open a project card."
+      },
+      {
+        "type": "action",
+        "description": "Create one or more subtasks with valid data."
+      },
+      {
+        "type": "assertion",
+        "description": "Subtasks are listed under the project with correct status."
+      },
+      {
+        "type": "action",
+        "description": "Mark subtasks as completed."
+      },
+      {
+        "type": "assertion",
+        "description": "Project progress bar updates accurately to reflect subtask completion."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "AI Mentor Check-In Responds Appropriately",
+    "description": "Test AI Mentor Check-in conversation providing relevant productivity coaching and smart task suggestions.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to AI Mentor Check-In component."
+      },
+      {
+        "type": "action",
+        "description": "Initiate a check-in conversation."
+      },
+      {
+        "type": "assertion",
+        "description": "AI returns contextually relevant coaching advice based on user input."
+      },
+      {
+        "type": "assertion",
+        "description": "Smart task suggestions are displayed appropriately."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Voice Transcription Creates Accurate Task",
+    "description": "Validate that voice input is transcribed correctly into a new task and saved properly.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access the voice transcription task creation interface."
+      },
+      {
+        "type": "action",
+        "description": "Record a voice task input with clear speech."
+      },
+      {
+        "type": "assertion",
+        "description": "Voice input is transcribed correctly into text."
+      },
+      {
+        "type": "action",
+        "description": "Confirm creation of new task with transcribed content."
+      },
+      {
+        "type": "assertion",
+        "description": "Task appears in the task list immediately."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Activate Emergency Mode and Verify Task Limitations",
+    "description": "Test Emergency Mode activation limits visible and active tasks per specifications and supports focus during high-pressure periods.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enable Emergency Mode from the selector."
+      },
+      {
+        "type": "assertion",
+        "description": "Task list is filtered to curated tasks suitable for emergency mode."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to add non-emergency tasks."
+      },
+      {
+        "type": "assertion",
+        "description": "New non-emergency task creation is restricted or warned."
+      },
+      {
+        "type": "action",
+        "description": "Complete emergency tasks."
+      },
+      {
+        "type": "assertion",
+        "description": "Progress tracking updates correctly and emergency mode can be exited without errors."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Offline Support Allows Access and Edits",
+    "description": "Confirm that mobile and desktop clients retain access to tasks offline and changes synchronize after reconnecting.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Start with a logged-in session on mobile device."
+      },
+      {
+        "type": "action",
+        "description": "Turn off network connectivity."
+      },
+      {
+        "type": "assertion",
+        "description": "User can still view cached task list and project data."
+      },
+      {
+        "type": "action",
+        "description": "Create or edit tasks offline."
+      },
+      {
+        "type": "action",
+        "description": "Restore network connection."
+      },
+      {
+        "type": "assertion",
+        "description": "Offline changes are synchronized to backend and reflected across devices."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Real-Time Synchronization Across Devices",
+    "description": "Ensure that creating, editing, or deleting tasks on one device updates all logged in sessions in real-time without manual refresh.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in to the application simultaneously on two devices."
+      },
+      {
+        "type": "action",
+        "description": "Create a new task on device A."
+      },
+      {
+        "type": "assertion",
+        "description": "New task appears automatically on device B."
+      },
+      {
+        "type": "action",
+        "description": "Edit that task on device B."
+      },
+      {
+        "type": "assertion",
+        "description": "Changes reflect immediately on device A."
+      },
+      {
+        "type": "action",
+        "description": "Delete the task from device A."
+      },
+      {
+        "type": "assertion",
+        "description": "Task is removed from device B in real-time."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Recurring Task Creation and Execution",
+    "description": "Validate recurring tasks are created properly and reoccur as per selected frequency with system reminders.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create a task with recurring option enabled and set frequency (daily, weekly, monthly)."
+      },
+      {
+        "type": "assertion",
+        "description": "Task recurs according to schedule."
+      },
+      {
+        "type": "action",
+        "description": "Complete a recurring task instance."
+      },
+      {
+        "type": "assertion",
+        "description": "Next instance of task is scheduled as per recurring definition."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Pull-to-Refresh Synchronizes Data on Mobile",
+    "description": "Check that pull-to-refresh gesture syncs the latest task and project data on mobile without errors.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the mobile dashboard."
+      },
+      {
+        "type": "action",
+        "description": "Perform a pull-to-refresh gesture."
+      },
+      {
+        "type": "assertion",
+        "description": "Latest data is fetched from backend and UI is updated accordingly."
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Admin Cleanup All Users Functionality",
+    "description": "Verify that admin users can trigger cleanup operations on all users and that the operation completes successfully without errors.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as an admin user."
+      },
+      {
+        "type": "action",
+        "description": "Access admin cleanup interface."
+      },
+      {
+        "type": "action",
+        "description": "Trigger 'Cleanup All Users' operation."
+      },
+      {
+        "type": "assertion",
+        "description": "Operation completes successfully with confirmation message."
+      },
+      {
+        "type": "assertion",
+        "description": "User data is appropriately cleaned without impacting unrelated data or app functionality."
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Security and Access Restrictions on User Sessions",
+    "description": "Ensure unauthorized users cannot access protected routes or data and user sessions expire securely.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to access dashboard and tasks without logging in."
+      },
+      {
+        "type": "assertion",
+        "description": "Access is denied and redirect occurs to login page."
+      },
+      {
+        "type": "action",
+        "description": "Log in and remain inactive until session timeout."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to perform task operations after session timeout."
+      },
+      {
+        "type": "assertion",
+        "description": "User is logged out and redirected with prompt to login again."
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "User Preferences Update Persists Across Sessions",
+    "description": "Test that changes to user preferences are saved correctly and loaded applied on subsequent logins.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open user preferences panel."
+      },
+      {
+        "type": "action",
+        "description": "Modify various preferences such as theme, notification settings, and task default categories."
+      },
+      {
+        "type": "action",
+        "description": "Save preferences and log out."
+      },
+      {
+        "type": "action",
+        "description": "Log back in with same user."
+      },
+      {
+        "type": "assertion",
+        "description": "Previously saved preferences are loaded correctly and UI reflects changes."
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Pattern Tracking Learns and Suggests Intelligently",
+    "description": "Verify AI pattern tracking correctly learns user completion patterns and provides contextual task suggestions.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Complete a series of tasks over multiple days with identifiable patterns."
+      },
+      {
+        "type": "action",
+        "description": "Interact with smart task suggestion interface."
+      },
+      {
+        "type": "assertion",
+        "description": "System suggests tasks that align with learned user behavior and preferences."
+      },
+      {
+        "type": "assertion",
+        "description": "Suggested tasks adapt after changes in user completion habits."
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Debug Interface Displays Live Application State",
+    "description": "Check that developer debug interface shows real-time app state, task data, and error logs without compromising user data privacy.",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access the debug page as a developer or test user."
+      },
+      {
+        "type": "assertion",
+        "description": "Live application state including tasks, user info, and sync status is displayed."
+      },
+      {
+        "type": "assertion",
+        "description": "No sensitive user data like passwords is shown."
+      },
+      {
+        "type": "action",
+        "description": "Trigger controlled errors or state changes and verify debug interface updates accordingly."
+      }
+    ]
+  }
+]

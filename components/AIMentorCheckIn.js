@@ -1,5 +1,5 @@
 /**
- * AI Mentor Daily Check-In Component
+ * Morpheus Daily Check-In Component  
  * Conversational interface for smart task guidance
  */
 
@@ -10,7 +10,7 @@ import { SparklesIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/2
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
 
-export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTasks = [] }) {
+export default function MorpheusCheckIn({ onAddTasks, onEmergencyMode, currentTasks = [] }) {
   const [user] = useAuthState(auth);
   const [checkInResponse, setCheckInResponse] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -99,6 +99,26 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
         setCheckInResponse(null);
         break;
       
+      case 'skip_suggestions':
+        // User chose "Nah I'm good" - just dismiss without adding tasks
+        setIsExpanded(false);
+        setCheckInResponse(null);
+        localStorage.setItem('lastCheckIn', new Date().toDateString());
+        break;
+        
+      case 'seasonal_only':
+        // User chose "Just the urgent stuff" - add only seasonal/essential tasks
+        if (checkInResponse?.suggestions?.length > 0) {
+          const urgentTasks = checkInResponse.suggestions.filter(s => s.isEssential || s.isSeasonal);
+          if (urgentTasks.length > 0) {
+            onAddTasks(urgentTasks);
+          }
+        }
+        setIsExpanded(false);
+        setCheckInResponse(null);
+        localStorage.setItem('lastCheckIn', new Date().toDateString());
+        break;
+      
       default:
         console.log('Unhandled action:', action.type);
     }
@@ -118,7 +138,7 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
           ) : (
             <>
               <ChatBubbleBottomCenterTextIcon className="w-5 h-5 text-blue-600" />
-              <span className="text-blue-700 font-medium">What&apos;s up today?</span>
+              <span className="text-blue-700 font-medium">Get today sorted</span>
               <SparklesIcon className="w-4 h-4 text-blue-500" />
             </>
           )}
@@ -131,11 +151,11 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
 
   return (
     <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      {/* AI Response */}
+      {/* Morpheus Response */}
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-sm font-medium">AI</span>
+            <span className="text-white text-sm font-medium">🧠</span>
           </div>
           <div className="flex-1">
             <p className="text-gray-900 font-medium mb-2">
