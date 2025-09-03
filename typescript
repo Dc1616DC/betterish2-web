@@ -941,3 +941,18 @@ Failed to log chat interaction: Error: 16 UNAUTHENTICATED: Request had invalid a
  [32m[1m✓[22m[39m Compiled in 197ms (1057 modules)
  [32m[1m✓[22m[39m Compiled in 136ms (1057 modules)
  [32m[1m✓[22m[39m Compiled in 175ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 426ms (1057 modules)
+ [37m[1m [22m[39m Reload env: .env.local
+ [32m[1m✓[22m[39m Compiled in 3.7s (1075 modules)
+ [32m[1m✓[22m[39m Compiled /_not-found in 166ms (1047 modules)
+ GET /sw-simple.js [33m404[39m in 285ms
+ [32m[1m✓[22m[39m Compiled in 386ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 162ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 170ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 229ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 150ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 272ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 420ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 248ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 185ms (1057 modules)
+ [32m[1m✓[22m[39m Compiled in 190ms (1057 modules)

@@ -70,6 +70,17 @@ function DashboardContent() {
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
+  // Auto-open walkthrough for new users (no tasks)
+  useEffect(() => {
+    if (!loading && (!tasks || tasks.length === 0)) {
+      // Check if user has seen walkthrough before
+      const hasSeenWalkthrough = localStorage.getItem('hasSeenWalkthrough');
+      if (!hasSeenWalkthrough) {
+        setShowWalkthrough(true);
+      }
+    }
+  }, [loading, tasks]);
+
   // Generate greeting based on time
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -121,7 +132,8 @@ function DashboardContent() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-md mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
+          {/* Desktop layout */}
+          <div className="hidden sm:flex justify-between items-center">
             <div>
               <h1 className="text-xl font-bold text-gray-900">
                 {getGreeting()}
@@ -148,6 +160,38 @@ function DashboardContent() {
                 title="Add new task"
               >
                 <PlusIcon className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile layout - stacked to avoid sign out conflict */}
+          <div className="sm:hidden">
+            <div className="text-center mb-3">
+              <h1 className="text-xl font-bold text-gray-900">
+                {getGreeting()}
+              </h1>
+              <p className="text-sm text-gray-600">
+                {new Date().toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </p>
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => setShowWalkthrough(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+                title="View App Tour"
+              >
+                📖 App Tour
+              </button>
+              <button
+                onClick={() => setShowTaskForm(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+                title="Add new task"
+              >
+                <PlusIcon className="w-4 h-4" /> Add Task
               </button>
             </div>
           </div>
@@ -328,9 +372,13 @@ function DashboardContent() {
 
       <AppWalkthrough
         isVisible={showWalkthrough}
-        onClose={() => setShowWalkthrough(false)}
+        onClose={() => {
+          setShowWalkthrough(false);
+          localStorage.setItem('hasSeenWalkthrough', 'true');
+        }}
         onComplete={() => {
           setShowWalkthrough(false);
+          localStorage.setItem('hasSeenWalkthrough', 'true');
           console.log('Walkthrough completed!');
         }}
       />
@@ -388,10 +436,10 @@ export default function DashboardClient() {
   return (
     <TaskProvider user={user}>
       <div className="relative">
-        {/* Sign out button */}
+        {/* Sign out button - moved to avoid mobile button conflicts */}
         <button
           onClick={handleSignOut}
-          className="absolute top-4 right-4 z-10 text-gray-600 hover:text-gray-900 text-sm"
+          className="absolute top-4 right-4 z-20 text-gray-600 hover:text-gray-900 text-sm bg-white px-2 py-1 rounded shadow-sm border md:bg-transparent md:shadow-none md:border-none"
         >
           Sign Out
         </button>

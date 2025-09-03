@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PlusIcon, XMarkIcon, CheckIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/24/outline';
 import SidekickChat from './SidekickChat';
 
@@ -65,6 +65,14 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
   const [aiBreakdown, setAiBreakdown] = useState(null);
   const [showMorpheusChat, setShowMorpheusChat] = useState(false);
   const [selectedStepForHelp, setSelectedStepForHelp] = useState(null);
+  const breakdownRef = useRef(null);
+
+  // Auto-scroll to breakdown when it opens
+  useEffect(() => {
+    if (task && breakdownRef.current) {
+      breakdownRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [task]);
 
   const predefinedSteps = TASK_BREAKDOWNS[task.title] || [];
   const allSteps = predefinedSteps.length > 0 ? predefinedSteps : (aiSteps.length > 0 ? aiSteps : customSteps);
@@ -160,7 +168,7 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+      <div ref={breakdownRef} className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-800">Break Down Task</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">

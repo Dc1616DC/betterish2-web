@@ -6,7 +6,7 @@
 /* eslint-disable react/no-unescaped-entities */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   ChevronRightIcon, 
   ChevronLeftIcon, 
@@ -20,6 +20,14 @@ import {
 
 export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
+  const walkthroughRef = useRef(null);
+
+  // Auto-scroll to walkthrough when it opens
+  useEffect(() => {
+    if (isVisible && walkthroughRef.current) {
+      walkthroughRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isVisible]);
 
   const steps = [
     {
@@ -334,7 +342,7 @@ export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div ref={walkthroughRef} className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-2">
