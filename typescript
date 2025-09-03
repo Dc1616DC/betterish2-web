@@ -1026,3 +1026,6 @@ Failed to log chat interaction: Error: 16 UNAUTHENTICATED: Request had invalid a
  [32m[1m✓[22m[39m Compiled in 184ms (420 modules)
  [32m[1m✓[22m[39m Compiled /_not-found in 343ms (1086 modules)
  GET /sw-simple.js [33m404[39m in 441ms
+ [32m[1m✓[22m[39m Compiled in 435ms (1096 modules)
+ [32m[1m✓[22m[39m Compiled in 149ms (1096 modules)
+ [32m[1m✓[22m[39m Compiled in 135ms (1096 modules)

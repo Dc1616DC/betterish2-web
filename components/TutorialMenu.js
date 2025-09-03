@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   AcademicCapIcon,
   XMarkIcon,
@@ -47,6 +47,18 @@ export default function TutorialMenu({ isVisible, onClose, onStartTutorial }) {
     }
     return [];
   });
+  
+  const tutorialMenuRef = useRef(null);
+
+  // Auto-scroll to tutorial menu when it opens
+  useEffect(() => {
+    if (isVisible && tutorialMenuRef.current) {
+      tutorialMenuRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    }
+  }, [isVisible]);
 
   const handleStartTutorial = (tutorialKey) => {
     onStartTutorial?.(tutorialKey);
@@ -57,7 +69,7 @@ export default function TutorialMenu({ isVisible, onClose, onStartTutorial }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
+      <div ref={tutorialMenuRef} className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
