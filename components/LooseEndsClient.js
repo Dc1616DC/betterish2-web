@@ -133,7 +133,7 @@ export default function LooseEndsClient() {
 
   if (manualTasks.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-safe-nav">
         <div className="text-center">
           <div className="text-6xl mb-4">🎯</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Looking good!</h1>
@@ -146,8 +146,8 @@ export default function LooseEndsClient() {
   }
 
   return (
-    <div className="mobile-container bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 mobile-content py-8">
+    <div className="mobile-container bg-gray-50 min-h-screen pb-safe-nav">
+      <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Loose Ends</h1>
           <p className="text-gray-600 max-w-md mx-auto">

@@ -139,8 +139,8 @@ export default function SidekickChat({ task, isVisible, onClose, userTier = 'fre
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center p-4 z-50 md:items-center">
-      <div className="bg-white rounded-t-xl md:rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center p-4 z-50 md:items-center pb-safe-nav">
+      <div className="bg-white rounded-t-xl md:rounded-xl shadow-2xl w-full max-w-lg flex flex-col modal-with-nav">
         {/* Header */}
         <div className="p-4 border-b bg-blue-50 rounded-t-xl">
           <div className="flex items-center justify-between mb-2">

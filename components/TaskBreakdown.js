@@ -175,8 +175,8 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
   if (!task) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div ref={breakdownRef} className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 pb-safe-nav">
+      <div ref={breakdownRef} className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg overflow-y-auto modal-with-nav">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-800">Break Down Task</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">

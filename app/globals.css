@@ -69,6 +69,18 @@ body {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(0, 0, 0, 0.05);
+  height: 60px; /* Standard height for nav */
+}
+
+/* Add padding to content to prevent overlap with bottom nav */
+.pb-safe-nav {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; /* 60px nav + 20px extra space */
+}
+
+/* For modal content that needs scroll space */
+.modal-with-nav {
+  max-height: calc(100vh - 80px) !important; /* Account for nav height */
+  margin-bottom: 80px !important;
 }
 
 /* Mobile-first animations */

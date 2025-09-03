@@ -486,8 +486,8 @@ export default function FeatureTutorial({ feature, isVisible, onClose, onComplet
   const IconComponent = tutorialData.icon;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-      <div ref={tutorialRef} className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 pb-safe-nav">
+      <div ref={tutorialRef} className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-y-auto modal-with-nav">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">

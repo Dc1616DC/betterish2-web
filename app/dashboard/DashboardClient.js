@@ -153,7 +153,7 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-safe-nav">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-md mx-auto px-6 py-4">

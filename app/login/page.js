@@ -152,7 +152,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-4">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-4 pb-safe-nav">
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Betterish</h1>
         <p className="text-gray-600 mb-4">Stay on top of life without the nagging.<br/>Get time back for what you love.</p>
