@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { PlusIcon, XMarkIcon, CheckIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/24/outline';
 import SidekickChat from './SidekickChat';
+import { trackFeatureUsage, FEATURES } from '@/lib/featureDiscovery';
 
 const TASK_BREAKDOWNS = {
   'Fix squeaky door hinge': [
@@ -71,6 +72,13 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
   useEffect(() => {
     if (task && breakdownRef.current) {
       breakdownRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Track project breakdown usage
+      const predefinedSteps = TASK_BREAKDOWNS[task.title] || [];
+      trackFeatureUsage(FEATURES.PROJECT_BREAKDOWN, { 
+        taskTitle: task.title,
+        hasPreDefinedSteps: predefinedSteps.length > 0 
+      });
     }
   }, [task]);
 
@@ -266,6 +274,13 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
 
               <button
                 onClick={() => {
+                  // Track step-specific help usage
+                  trackFeatureUsage(FEATURES.STEP_HELP, {
+                    taskTitle: task.title,
+                    step: step,
+                    stepIndex: index
+                  });
+                  
                   setSelectedStepForHelp(step);
                   setShowMorpheusChat(true);
                 }}

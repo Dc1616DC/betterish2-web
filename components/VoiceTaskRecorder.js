@@ -2,10 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { MicrophoneIcon, StopIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/solid';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { trackFeatureUsage, FEATURES } from '@/lib/featureDiscovery';
 
-export default function VoiceTaskRecorder({ userId, onTasksAdded, compact = false }) {
+export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplete, onTaskCreate, compact = false, mode = 'tasks' }) {
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
@@ -84,6 +83,9 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded, compact = fals
   // Start recording function
   const startRecording = async () => {
     try {
+      // Track voice input usage
+      trackFeatureUsage(FEATURES.VOICE_INPUT, { mode, action: 'start_recording' });
+      
       // Reset state before starting a new recording
       resetState();
       setError(null);
@@ -282,6 +284,12 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded, compact = fals
 
   // Extract tasks from transcript
   const extractTasks = (text) => {
+    // If in transcription mode, skip task extraction
+    if (mode === 'transcription') {
+      setIsProcessing(false);
+      return;
+    }
+    
     setIsProcessing(true);
     console.log('[VoiceRecorder] Extracting tasks from transcript...');
     
@@ -373,33 +381,49 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded, compact = fals
     return string.charAt(0).toUpperCase() + string.slice(1);
   };
 
-  // Save extracted tasks to Firebase
+
+  // Save extracted tasks or pass transcription
   const saveTasks = async () => {
     try {
       setIsProcessing(true);
-      console.log('[VoiceRecorder] Saving tasks to Firebase...');
       
-      if (!userId) {
-        throw new Error('User not logged in');
+      // If mode is 'transcription', just pass the transcript back
+      if (mode === 'transcription' && onTranscriptionComplete) {
+        console.log('[VoiceRecorder] Passing transcription to parent...');
+        onTranscriptionComplete(transcript);
+        resetState();
+        setExtractedTasks([]);
+        return;
       }
+      
+      // Otherwise, save tasks
+      console.log('[VoiceRecorder] Saving tasks...');
       
       if (extractedTasks.length === 0) {
         throw new Error('No tasks to save');
       }
       
-      // Add tasks to Firestore
-      const savedTasks = await Promise.all(
-        extractedTasks.map(task => 
-          addDoc(collection(db, 'tasks'), {
-            ...task,
-            userId,
-            createdAt: Timestamp.now(),
-            category: 'voice', // You can adjust this or make it smarter
-          })
-        )
-      );
+      if (!onTaskCreate) {
+        throw new Error('Task creation function not provided');
+      }
       
-      console.log('[VoiceRecorder] Successfully saved', savedTasks.length, 'tasks');
+      // Add tasks using the provided task creation function
+      let savedCount = 0;
+      for (const task of extractedTasks) {
+        try {
+          await onTaskCreate({
+            title: task.title,
+            description: task.detail || '',
+            category: 'personal',
+            priority: 'medium'
+          });
+          savedCount++;
+        } catch (err) {
+          console.error('Failed to save task:', task.title, err);
+        }
+      }
+      
+      console.log('[VoiceRecorder] Successfully saved', savedCount, 'tasks');
       
       // Reset the recorder state
       resetState();
@@ -407,7 +431,7 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded, compact = fals
       
       // Notify parent component
       if (onTasksAdded) {
-        onTasksAdded(savedTasks.length);
+        onTasksAdded(savedCount);
       }
       
     } catch (err) {
@@ -505,17 +529,28 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded, compact = fals
         </div>
       )}
       
-      {/* Extracted Tasks UI */}
-      {!isRecording && !isTranscribing && !isProcessing && extractedTasks.length > 0 && (
+      {/* Results UI - Tasks or Transcription */}
+      {!isRecording && !isTranscribing && !isProcessing && (mode === 'transcription' ? transcript : extractedTasks.length > 0) && (
         <div className="mb-4">
-          <h3 className="text-md font-medium mb-2 text-gray-700">Found {extractedTasks.length} task(s):</h3>
-          <ul className="space-y-2 mb-4">
-            {extractedTasks.map((task, index) => (
-              <li key={index} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                {task.title}
-              </li>
-            ))}
-          </ul>
+          {mode === 'transcription' ? (
+            <>
+              <h3 className="text-md font-medium mb-2 text-gray-700">Transcription:</h3>
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
+                {transcript}
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 className="text-md font-medium mb-2 text-gray-700">Found {extractedTasks.length} task(s):</h3>
+              <ul className="space-y-2 mb-4">
+                {extractedTasks.map((task, index) => (
+                  <li key={index} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    {task.title}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           <div className="flex justify-end space-x-3">
             <button 
               onClick={cancelRecording} 
@@ -528,14 +563,14 @@ export default function VoiceTaskRecorder({ userId, onTasksAdded, compact = fals
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
             >
               <CheckIcon className="w-4 h-4 mr-1" />
-              Add Tasks
+              {mode === 'transcription' ? 'Use This' : 'Add Tasks'}
             </button>
           </div>
         </div>
       )}
       
       {/* Start Recording Button */}
-      {!isRecording && !isTranscribing && !isProcessing && extractedTasks.length === 0 && (
+      {!isRecording && !isTranscribing && !isProcessing && extractedTasks.length === 0 && !transcript && (
         <button
           onClick={startRecording}
           disabled={isPreparing || permissionDenied}

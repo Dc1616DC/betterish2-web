@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -45,8 +46,22 @@ export default function LooseEndsClient() {
           const createdDate = task.createdAt?.toDate() || new Date();
           createdDate.setHours(0, 0, 0, 0);
           
-          if (createdDate < today) {
-            tasks.push(task);
+          // Calculate days old
+          const daysDiff = Math.floor((today - createdDate) / (1000 * 60 * 60 * 24));
+          
+          // Different timeline based on category
+          let daysBeforeLooseEnds = 5; // Default 5 days
+          
+          if (task.category === 'home_projects') {
+            daysBeforeLooseEnds = 7; // 7 days for home projects
+          } else if (task.category === 'baby' || task.category === 'health') {
+            daysBeforeLooseEnds = 3; // 3 days for urgent categories
+          } else if (task.category === 'maintenance') {
+            daysBeforeLooseEnds = 7; // 7 days for seasonal/maintenance
+          }
+          
+          if (daysDiff >= daysBeforeLooseEnds) {
+            tasks.push({ ...task, daysOld: daysDiff });
           }
         }
       });
@@ -106,13 +121,25 @@ export default function LooseEndsClient() {
     setManualTasks((prev) => prev.filter((t) => t.id !== taskId));
   };
 
+  const addBackToTasks = async (taskId) => {
+    const taskRef = doc(db, 'tasks', taskId);
+    // Reset the created date to today to bring it back to active dashboard
+    await updateDoc(taskRef, { 
+      createdAt: Timestamp.now(),
+      dismissed: false 
+    });
+    setManualTasks((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
   if (manualTasks.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🎯</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">All caught up!</h1>
-          <p className="text-gray-600">No loose ends from previous days.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Looking good!</h1>
+          <p className="text-gray-600 max-w-md mx-auto">
+            No loose ends here. You're staying on top of things - that's what being <strong>better-ish</strong> is all about.
+          </p>
         </div>
       </div>
     );
@@ -123,7 +150,10 @@ export default function LooseEndsClient() {
       <div className="max-w-2xl mx-auto px-4 mobile-content py-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Loose Ends</h1>
-          <p className="text-gray-600">Tasks from previous days that need attention</p>
+          <p className="text-gray-600 max-w-md mx-auto">
+            Tasks that have been sitting for a few days. No judgment - life happens. 
+            Let's get <strong>better-ish</strong> at tackling these.
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -136,12 +166,20 @@ export default function LooseEndsClient() {
                     <p className="text-gray-600 text-sm mt-1">{task.detail}</p>
                   )}
                   <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
-                    <span>Created: {task.createdAt?.toDate().toLocaleDateString()}</span>
-                    <span className="capitalize">{task.category}</span>
+                    <span className="flex items-center gap-1">
+                      ⏱️ {task.daysOld} day{task.daysOld !== 1 ? 's' : ''} old
+                    </span>
+                    <span className="capitalize">{task.category?.replace('_', ' ')}</span>
                     <span className="capitalize">{task.priority}</span>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="flex flex-col gap-2 ml-4">
+                  <button
+                    onClick={() => addBackToTasks(task.id)}
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Add Back
+                  </button>
                   <button
                     onClick={() => markTaskDone(task.id)}
                     className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"

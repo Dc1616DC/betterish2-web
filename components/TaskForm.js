@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useTaskForm } from '@/hooks/useTaskForm';
 import { TaskCategory, TaskPriority } from '@/lib/services/TaskService';
+import { trackFeatureUsage, FEATURES } from '@/lib/featureDiscovery';
 
 export default function TaskForm({
   isOpen,
@@ -42,6 +43,15 @@ export default function TaskForm({
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    // Track task creation
+    trackFeatureUsage(FEATURES.TASK_CREATION, { 
+      method: 'form',
+      category: formData.category,
+      priority: formData.priority,
+      isEditing 
+    });
+    
     const result = await handleSubmit(e);
     // Form will be closed by success callback
   };

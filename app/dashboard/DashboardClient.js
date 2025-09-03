@@ -16,6 +16,11 @@ import SidekickChat from '@/components/SidekickChat';
 import MorpheusCheckIn from '@/components/AIMentorCheckIn';
 import AppWalkthrough from '@/components/AppWalkthrough';
 import TaskBreakdown from '@/components/TaskBreakdown';
+import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
+import FeatureTutorial from '@/components/FeatureTutorial';
+import OnboardingTips from '@/components/OnboardingTips';
+import TutorialMenu from '@/components/TutorialMenu';
+import { trackFeatureUsage, FEATURES } from '@/lib/featureDiscovery';
 
 // Mobile detection hook
 function useMediaQuery(query) {
@@ -67,6 +72,8 @@ function DashboardContent() {
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [showTaskBreakdown, setShowTaskBreakdown] = useState(false);
   const [selectedProjectTask, setSelectedProjectTask] = useState(null);
+  const [showTutorialMenu, setShowTutorialMenu] = useState(false);
+  const [currentTutorial, setCurrentTutorial] = useState(null);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -76,6 +83,7 @@ function DashboardContent() {
       // Check if user has seen walkthrough before
       const hasSeenWalkthrough = localStorage.getItem('hasSeenWalkthrough');
       if (!hasSeenWalkthrough) {
+        trackFeatureUsage(FEATURES.WALKTHROUGH, { context: 'auto_open_new_user' });
         setShowWalkthrough(true);
       }
     }
@@ -90,6 +98,13 @@ function DashboardContent() {
   };
 
   const handleOpenChat = (task) => {
+    // Track Morpheus chat usage
+    trackFeatureUsage(FEATURES.MORPHEUS_CHAT, {
+      context: 'task_specific',
+      taskTitle: task?.title,
+      taskCategory: task?.category
+    });
+    
     setSelectedTask(task);
     setShowSidekickChat(true);
   };
@@ -101,6 +116,12 @@ function DashboardContent() {
 
   // AI Mentor handlers
   const handleAddTasks = async (tasks) => {
+    // Track AI task creation
+    trackFeatureUsage(FEATURES.MORPHEUS_CHAT, {
+      context: 'ai_task_creation',
+      tasksCount: tasks.length
+    });
+    
     for (const task of tasks) {
       try {
         // Normalize AI task to match TaskService validation
@@ -121,6 +142,25 @@ function DashboardContent() {
   const handleEmergencyMode = () => {
     // Emergency mode could filter tasks or change view
     console.log('Emergency mode activated');
+  };
+
+  // Tutorial handlers
+  const handleTutorialRequest = (tutorialType) => {
+    setCurrentTutorial(tutorialType);
+  };
+
+  const handleStartTutorial = (tutorialType) => {
+    // Track tutorial usage
+    trackFeatureUsage(FEATURES.TUTORIALS, {
+      tutorialType,
+      context: 'manual_start'
+    });
+    
+    setCurrentTutorial(tutorialType);
+  };
+
+  const closeTutorial = () => {
+    setCurrentTutorial(null);
   };
 
   if (loading) {
@@ -148,11 +188,24 @@ function DashboardContent() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowWalkthrough(true)}
+                onClick={() => {
+                  trackFeatureUsage(FEATURES.WALKTHROUGH, { context: 'manual_open' });
+                  setShowWalkthrough(true);
+                }}
                 className="bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition-colors text-sm"
                 title="View App Tour"
               >
                 📖
+              </button>
+              <button
+                onClick={() => {
+                  trackFeatureUsage(FEATURES.TUTORIALS, { context: 'menu_open' });
+                  setShowTutorialMenu(true);
+                }}
+                className="bg-purple-600 text-white px-3 py-1 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                title="Feature Tutorials"
+              >
+                🎓
               </button>
               <button
                 onClick={() => setShowTaskForm(true)}
@@ -178,17 +231,30 @@ function DashboardContent() {
                 })}
               </p>
             </div>
-            <div className="flex justify-center gap-3">
+            <div className="flex justify-center gap-2 flex-wrap">
               <button
-                onClick={() => setShowWalkthrough(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+                onClick={() => {
+                  trackFeatureUsage(FEATURES.WALKTHROUGH, { context: 'manual_open_mobile' });
+                  setShowWalkthrough(true);
+                }}
+                className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
                 title="View App Tour"
               >
-                📖 App Tour
+                📖 Tour
+              </button>
+              <button
+                onClick={() => {
+                  trackFeatureUsage(FEATURES.TUTORIALS, { context: 'menu_open_mobile' });
+                  setShowTutorialMenu(true);
+                }}
+                className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm flex items-center gap-1"
+                title="Feature Tutorials"
+              >
+                🎓 Learn
               </button>
               <button
                 onClick={() => setShowTaskForm(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+                className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-1"
                 title="Add new task"
               >
                 <PlusIcon className="w-4 h-4" /> Add Task
@@ -224,6 +290,21 @@ function DashboardContent() {
           onAddTasks={handleAddTasks}
           onEmergencyMode={handleEmergencyMode}
           currentTasks={activeTasks || []}
+        />
+      </div>
+
+      {/* Onboarding Tips */}
+      <OnboardingTips onTutorialRequest={handleTutorialRequest} />
+
+      {/* Voice Task Recorder */}
+      <div className="max-w-md mx-auto px-6 pb-4">
+        <VoiceTaskRecorder 
+          onTaskCreate={createTask}
+          onTasksAdded={(count) => {
+            console.log(`Added ${count} tasks via voice`);
+          }}
+          compact={false}
+          mode="tasks"
         />
       </div>
 
@@ -380,6 +461,24 @@ function DashboardContent() {
           setShowWalkthrough(false);
           localStorage.setItem('hasSeenWalkthrough', 'true');
           console.log('Walkthrough completed!');
+        }}
+      />
+
+      {/* Tutorial Menu */}
+      <TutorialMenu
+        isVisible={showTutorialMenu}
+        onClose={() => setShowTutorialMenu(false)}
+        onStartTutorial={handleStartTutorial}
+      />
+
+      {/* Feature Tutorial */}
+      <FeatureTutorial
+        feature={currentTutorial}
+        isVisible={!!currentTutorial}
+        onClose={closeTutorial}
+        onComplete={(feature) => {
+          console.log(`Completed tutorial: ${feature}`);
+          closeTutorial();
         }}
       />
     </div>

@@ -54,11 +54,11 @@ export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
       )
     },
     {
-      title: "This isn't about productivity",
+      title: "This isn't about being perfect",
       content: (
         <div className="text-center space-y-4">
           <div className="text-4xl mb-4">🛡️</div>
-          <h3 className="text-xl font-semibold text-gray-800">It's about disaster prevention</h3>
+          <h3 className="text-xl font-semibold text-gray-800">It's about being better-ish</h3>
           <div className="space-y-4 text-left max-w-lg mx-auto">
             <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
               <p className="font-medium text-red-800">Without proactive maintenance:</p>
@@ -70,12 +70,12 @@ export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
               </ul>
             </div>
             <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-              <p className="font-medium text-green-800">With Betterish:</p>
+              <p className="font-medium text-green-800">Being better-ish means:</p>
               <ul className="mt-2 space-y-1 text-green-700 text-sm">
-                <li>• Get reminded BEFORE things break</li>
-                <li>• Take pressure off your partner</li>
-                <li>• Be the proactive guy, not the reactive one</li>
-                <li>• Small actions prevent big problems</li>
+                <li>• Getting reminded BEFORE things break</li>
+                <li>• Taking pressure off your partner</li>
+                <li>• Being proactive (most of the time)</li>
+                <li>• Small improvements that add up</li>
               </ul>
             </div>
           </div>
@@ -315,9 +315,9 @@ export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
 
           <div className="bg-green-50 p-4 rounded-lg border border-green-200 max-w-md mx-auto">
             <p className="text-green-800 font-medium">
-              "Finally, someone who gets it. This isn't about being perfect - it's about being proactive where it counts."
+              "Finally, someone who gets it. This isn't about being perfect - it's about being better-ish where it counts."
             </p>
-            <p className="text-sm text-green-600 mt-1">- Every dad who's tried this</p>
+            <p className="text-sm text-green-600 mt-1">- Every dad who's figured this out</p>
           </div>
         </div>
       )
