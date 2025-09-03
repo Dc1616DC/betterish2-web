@@ -13,7 +13,7 @@ import TaskList from '@/components/TaskList';
 import TaskForm from '@/components/TaskForm';
 import DashboardLoading from '@/components/DashboardLoading';
 import SidekickChat from '@/components/SidekickChat';
-import MorpheusCheckIn from '@/components/AIMentorCheckIn';
+import MorpheusSmartReminder from '@/components/MorpheusSmartReminder';
 import AppWalkthrough from '@/components/AppWalkthrough';
 import TaskBreakdown from '@/components/TaskBreakdown';
 import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
@@ -114,34 +114,19 @@ function DashboardContent() {
     setShowTaskBreakdown(true);
   };
 
-  // AI Mentor handlers
-  const handleAddTasks = async (tasks) => {
-    // Track AI task creation
+  // Smart reminder handler - single task at a time
+  const handleAddSmartTask = async (task) => {
+    // Track smart reminder usage
     trackFeatureUsage(FEATURES.MORPHEUS_CHAT, {
-      context: 'ai_task_creation',
-      tasksCount: tasks.length
+      context: 'smart_reminder',
+      category: task.category
     });
     
-    for (const task of tasks) {
-      try {
-        // Normalize AI task to match TaskService validation
-        const normalizedTask = {
-          title: task.title,
-          description: task.detail || task.description || '',
-          category: task.category || 'personal', // Default to personal if missing
-          priority: 'medium' // AI suggestions are generally medium priority
-        };
-        
-        await createTask(normalizedTask);
-      } catch (error) {
-        console.error('Failed to add task:', error);
-      }
+    try {
+      await createTask(task);
+    } catch (error) {
+      console.error('Failed to add smart reminder task:', error);
     }
-  };
-
-  const handleEmergencyMode = () => {
-    // Emergency mode could filter tasks or change view
-    console.log('Emergency mode activated');
   };
 
   // Tutorial handlers
@@ -284,12 +269,15 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Morpheus Check-In */}
+      {/* Morpheus Smart Reminder */}
       <div className="max-w-md mx-auto px-6 py-4">
-        <MorpheusCheckIn
-          onAddTasks={handleAddTasks}
-          onEmergencyMode={handleEmergencyMode}
+        <MorpheusSmartReminder
+          onAddTask={handleAddSmartTask}
           currentTasks={activeTasks || []}
+          userProfile={{
+            // Add user profile data here if available
+            babyAge: null // Could be calculated from user data
+          }}
         />
       </div>
 
