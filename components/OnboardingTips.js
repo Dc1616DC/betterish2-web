@@ -28,10 +28,10 @@ const ONBOARDING_TIPS = {
     color: "blue"
   },
   day2: {
-    title: "Meet Morpheus - Your AI Dad Mentor 🧠",
-    content: "That blue card below? That's Morpheus, your AI mentor. He gives personalized advice based on the season, your tasks, and what matters most to dads. Try asking him something!",
-    action: "Chat with Morpheus",
-    actionType: "highlight-morpheus",
+    title: "Meet Your AI Dad Mentor 🧠",
+    content: "That blue card below? That's your AI Dad Mentor. He gives personalized advice based on the season, your tasks, and what matters most to dads. Try asking him something!",
+    action: "Chat with AI Dad Mentor",
+    actionType: "highlight-ai-mentor",
     icon: SparklesIcon,
     color: "purple"
   },
@@ -53,7 +53,7 @@ const ONBOARDING_TIPS = {
   },
   day5: {
     title: "Get Help on Specific Steps 💬",
-    content: "Stuck on a project step? Click the chat icon next to any step to get specific help from Morpheus. He'll give you detailed instructions, tool recommendations, and safety tips.",
+    content: "Stuck on a project step? Click the chat icon next to any step to get specific help from your AI Dad Mentor. He'll give you detailed instructions, tool recommendations, and safety tips.",
     action: "Try step-specific help",
     actionType: "highlight-step-help",
     icon: ChatBubbleBottomCenterTextIcon,
@@ -69,7 +69,7 @@ const ONBOARDING_TIPS = {
   },
   day7: {
     title: "You're Getting Better-ish! 🎉",
-    content: "A week in, and you're already more proactive than most dads. Remember: it's not about being perfect - it's about being better-ish. Keep using Morpheus and breaking down those projects. You've got this!",
+    content: "A week in, and you're already more proactive than most dads. Remember: it's not about being perfect - it's about being better-ish. Keep using your AI Dad Mentor and breaking down those projects. You've got this!",
     action: "Keep being better-ish!",
     actionType: "celebrate",
     icon: HeartIcon,
@@ -117,7 +117,7 @@ export default function OnboardingTips({ onTutorialRequest }) {
     const discoveredFeatures = JSON.parse(localStorage.getItem('discoveredFeatures') || '[]');
     const featureMap = {
       'highlight-add-task': 'task-creation',
-      'highlight-morpheus': 'morpheus-chat',
+      'highlight-ai-mentor': 'ai-dad-mentor',
       'highlight-voice': 'voice-input',
       'highlight-projects': 'project-breakdown',
       'highlight-step-help': 'step-help',
@@ -133,7 +133,7 @@ export default function OnboardingTips({ onTutorialRequest }) {
     if (learnMore) {
       // Request appropriate tutorial based on tip
       const tutorialMap = {
-        'highlight-morpheus': 'morpheus-chat',
+        'highlight-ai-mentor': 'ai-dad-mentor',
         'highlight-voice': 'voice-input',
         'highlight-projects': 'project-breakdown',
         'highlight-step-help': 'project-breakdown'

@@ -96,7 +96,7 @@ const TUTORIAL_FEATURES = {
               </div>
             </div>
             <p className="text-sm text-gray-600 text-center mt-4">
-              <strong>The result gets transcribed and answered by Morpheus!</strong>
+              <strong>The result gets transcribed and answered by your AI Dad Mentor!</strong>
             </p>
           </div>
         )
@@ -290,7 +290,7 @@ const TUTORIAL_FEATURES = {
               </div>
               <div className="bg-green-50 p-3 rounded-lg border border-green-200 mt-4">
                 <p className="text-green-800 text-sm">
-                  <strong>Pro tip:</strong> Morpheus provides step-specific help tailored to your exact question!
+                  <strong>Pro tip:</strong> Your AI Dad Mentor provides step-specific help tailored to your exact question!
                 </p>
               </div>
             </div>
@@ -299,8 +299,8 @@ const TUTORIAL_FEATURES = {
       }
     ]
   },
-  'morpheus-chat': {
-    title: 'AI Mentor (Morpheus) Tutorial',
+  'ai-dad-mentor': {
+    title: 'AI Dad Mentor Tutorial',
     description: 'Get better-ish at working with your AI dad mentor and advisor',
     icon: SparklesIcon,
     steps: [
@@ -313,12 +313,12 @@ const TUTORIAL_FEATURES = {
                 <SparklesIcon className="w-8 h-8 text-white" />
               </div>
               <div className="text-left">
-                <h3 className="text-xl font-semibold text-gray-800">Morpheus</h3>
+                <h3 className="text-xl font-semibold text-gray-800">AI Dad Mentor</h3>
                 <p className="text-gray-600">Your proactive dad mentor</p>
               </div>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 max-w-md mx-auto">
-              <p className="text-blue-800 font-medium mb-2">Morpheus specializes in:</p>
+              <p className="text-blue-800 font-medium mb-2">Your AI Dad Mentor specializes in:</p>
               <ul className="text-sm text-blue-700 space-y-1 text-left">
                 <li>• Seasonal maintenance reminders</li>
                 <li>• Home improvement guidance</li>
@@ -369,7 +369,7 @@ const TUTORIAL_FEATURES = {
                 </div>
               </div>
               <p className="text-sm text-gray-600 text-center">
-                Morpheus proactively suggests tasks based on the season, your situation, and what matters most.
+                Your AI Dad Mentor proactively suggests tasks based on the season, your situation, and what matters most.
               </p>
             </div>
           </div>
@@ -392,7 +392,7 @@ const TUTORIAL_FEATURES = {
                 </ul>
               </div>
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <p className="text-green-800 font-medium mb-2">Morpheus will:</p>
+                <p className="text-green-800 font-medium mb-2">Your AI Dad Mentor will:</p>
                 <ul className="text-sm text-green-700 space-y-1 text-left">
                   <li>• Focus on truly urgent tasks only</li>
                   <li>• Suggest ways to take pressure off your partner</li>
@@ -424,7 +424,7 @@ const TUTORIAL_FEATURES = {
               </div>
               <div className="bg-red-50 p-3 rounded-lg border border-red-200">
                 <p className="text-red-800 font-medium">❌ Vague: "I need help"</p>
-                <p className="text-sm text-red-700">Too general - Morpheus needs context</p>
+                <p className="text-sm text-red-700">Too general - your AI Dad Mentor needs context</p>
               </div>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 max-w-md mx-auto mt-4">

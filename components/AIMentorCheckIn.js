@@ -1,5 +1,5 @@
 /**
- * Morpheus Daily Check-In Component  
+ * AI Dad Mentor Daily Check-In Component  
  * Conversational interface for smart task guidance
  */
 
@@ -10,7 +10,7 @@ import { SparklesIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/2
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
 
-export default function MorpheusCheckIn({ onAddTasks, onEmergencyMode, currentTasks = [] }) {
+export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTasks = [] }) {
   const [user] = useAuthState(auth);
   const [checkInResponse, setCheckInResponse] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -151,7 +151,7 @@ export default function MorpheusCheckIn({ onAddTasks, onEmergencyMode, currentTa
 
   return (
     <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      {/* Morpheus Response */}
+      {/* AI Dad Response */}
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">

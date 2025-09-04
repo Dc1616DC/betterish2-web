@@ -64,7 +64,7 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiBreakdown, setAiBreakdown] = useState(null);
-  const [showMorpheusChat, setShowMorpheusChat] = useState(false);
+  const [showAIMentorChat, setShowAIMentorChat] = useState(false);
   const [selectedStepForHelp, setSelectedStepForHelp] = useState(null);
   const breakdownRef = useRef(null);
 
@@ -201,9 +201,9 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
                 <button
                   onClick={fetchAIBreakdown}
                   className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
-                  title="Get Morpheus breakdown"
+                  title="Get AI Dad Mentor breakdown"
                 >
-                  🧠 Ask Morpheus
+                  🧠 Ask AI Dad Mentor
                 </button>
               )}
               {allSteps.length > 0 && (
@@ -211,10 +211,10 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
                   <button
                     onClick={() => {
                       setSelectedStepForHelp(null);
-                      setShowMorpheusChat(true);
+                      setShowAIMentorChat(true);
                     }}
                     className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200 flex items-center gap-1"
-                    title="Get help from Morpheus"
+                    title="Get help from AI Dad Mentor"
                   >
                     <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
                     Get Help
@@ -230,13 +230,13 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
           {loadingAI && (
             <div className="text-center py-6">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
-              <p className="text-blue-600 text-sm">Morpheus is decoding this project...</p>
+              <p className="text-blue-600 text-sm">AI Dad Mentor is breaking down this project...</p>
             </div>
           )}
 
           {!loadingAI && allSteps.length === 0 && predefinedSteps.length === 0 && (
             <p className="text-gray-500 text-sm py-4 text-center">
-              Click &quot;🧠 Ask Morpheus&quot; above or add your own steps below.
+              Click &quot;🧠 Ask AI Dad Mentor&quot; above or add your own steps below.
             </p>
           )}
 
@@ -282,7 +282,7 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
                   });
                   
                   setSelectedStepForHelp(step);
-                  setShowMorpheusChat(true);
+                  setShowAIMentorChat(true);
                 }}
                 className="flex-shrink-0 text-purple-500 hover:text-purple-700"
                 title="Get help with this step"
@@ -356,8 +356,8 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
         </div>
       </div>
       
-      {/* Morpheus Chat Modal */}
-      {showMorpheusChat && (
+      {/* AI Dad Mentor Chat Modal */}
+      {showAIMentorChat && (
         <SidekickChat
           task={{
             ...task,
@@ -368,9 +368,9 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
               ? `I need help understanding how to: ${selectedStepForHelp}. This is part of the project: ${task.title}`
               : `I need help with this project: ${task.title}. Here are all the steps: ${allSteps.join(', ')}`
           }}
-          isVisible={showMorpheusChat}
+          isVisible={showAIMentorChat}
           onClose={() => {
-            setShowMorpheusChat(false);
+            setShowAIMentorChat(false);
             setSelectedStepForHelp(null);
           }}
         />

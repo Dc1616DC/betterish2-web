@@ -31,9 +31,9 @@ const AVAILABLE_TUTORIALS = {
     duration: '3 min',
     difficulty: 'Easy'
   },
-  'morpheus-chat': {
+  'ai-dad-mentor': {
     title: 'AI Mentor Tutorial',
-    description: 'Get the most from Morpheus, your proactive dad mentor',
+    description: 'Get the most from your AI Dad Mentor for proactive life management',
     icon: SparklesIcon,
     duration: '4 min',
     difficulty: 'Easy'

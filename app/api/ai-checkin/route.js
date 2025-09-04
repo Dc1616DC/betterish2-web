@@ -1,10 +1,10 @@
 /**
- * API endpoint for Morpheus Daily Check-In
+ * API endpoint for AI Dad Mentor Daily Check-In
  * Provides contextual guidance based on user patterns and current situation
  */
 
 import { NextResponse } from 'next/server';
-import { createMorpheus } from '@/lib/aiMentor';
+import { createDadMentor } from '@/lib/aiMentor';
 
 export async function POST(request) {
   try {
@@ -17,11 +17,11 @@ export async function POST(request) {
       );
     }
 
-    const morpheus = createMorpheus();
+    const dadMentor = createDadMentor();
 
     switch (action) {
       case 'check_in':
-        const checkInResponse = await morpheus.morningCheckIn(userId, userTasks);
+        const checkInResponse = await dadMentor.morningCheckIn(userId, userTasks);
         return NextResponse.json(checkInResponse);
 
       case 'break_down':
@@ -31,7 +31,7 @@ export async function POST(request) {
             { status: 400 }
           );
         }
-        const breakdown = await morpheus.breakDownTask(taskTitle);
+        const breakdown = await dadMentor.breakDownTask(taskTitle);
         return NextResponse.json(breakdown);
 
       case 'get_help':
@@ -41,7 +41,7 @@ export async function POST(request) {
             { status: 400 }
           );
         }
-        const help = morpheus.getTaskHelp(taskTitle);
+        const help = dadMentor.getTaskHelp(taskTitle);
         return NextResponse.json(help);
 
       case 'browse_category':
@@ -51,7 +51,7 @@ export async function POST(request) {
             { status: 400 }
           );
         }
-        const browseSuggestions = morpheus.getBrowseSuggestions(category, userTasks);
+        const browseSuggestions = dadMentor.getBrowseSuggestions(category, userTasks);
         return NextResponse.json({ suggestions: browseSuggestions });
 
       default:

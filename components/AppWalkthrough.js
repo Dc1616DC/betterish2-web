@@ -83,7 +83,7 @@ export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
       )
     },
     {
-      title: "Meet Morpheus",
+      title: "Meet your AI Dad Mentor",
       content: (
         <div className="space-y-4">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -91,8 +91,8 @@ export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
               <SparklesIcon className="w-6 h-6 text-white" />
             </div>
             <div className="text-left">
-              <h3 className="font-semibold text-gray-800">Morpheus</h3>
-              <p className="text-sm text-gray-600">Named after the wise guide from The Matrix, he shows you patterns you've been missing</p>
+              <h3 className="font-semibold text-gray-800">Your AI Dad Mentor</h3>
+              <p className="text-sm text-gray-600">Like having a friend who's figured out how to stay ahead of life's curveballs</p>
             </div>
           </div>
           
@@ -103,7 +103,7 @@ export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
               </div>
               <div className="flex-1">
                 <p className="text-gray-900 font-medium mb-2">
-                  "What if I told you... there are patterns you can see before disaster strikes? Here's what needs to happen before winter hits:"
+                  "Alright, winter's coming and you don't want to be the guy whose heat dies on the coldest night. Here's what needs to happen:"
                 </p>
                 <div className="space-y-2 mb-3">
                   <div className="bg-orange-50 rounded-lg p-3">
@@ -128,7 +128,7 @@ export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
           </div>
           
           <p className="text-sm text-gray-600 text-center">
-            <strong>There's a difference between knowing what needs to be done and actually doing it.</strong> Morpheus shows you both.
+            <strong>There's a difference between knowing what needs to be done and actually doing it.</strong> Your AI Dad Mentor helps with both.
           </p>
         </div>
       )
@@ -175,7 +175,7 @@ export default function AppWalkthrough({ isVisible, onClose, onComplete }) {
           </div>
 
           <p className="text-sm text-gray-600 text-center">
-            <strong>What if I told you that overwhelming project is just code waiting to be decoded?</strong> Morpheus breaks it down.
+            <strong>That overwhelming project? It's just a bunch of small steps waiting to be organized.</strong> Your AI Dad Mentor breaks it down.
           </p>
         </div>
       )
