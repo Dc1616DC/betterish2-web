@@ -13,7 +13,7 @@ import TaskList from '@/components/TaskList';
 import TaskForm from '@/components/TaskForm';
 import DashboardLoading from '@/components/DashboardLoading';
 import SidekickChat from '@/components/SidekickChat';
-import MorpheusSmartReminder from '@/components/MorpheusSmartReminder';
+import SmartReminder from '@/components/MorpheusSmartReminder';
 import AppWalkthrough from '@/components/AppWalkthrough';
 import TaskBreakdown from '@/components/TaskBreakdown';
 import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
@@ -75,6 +75,7 @@ function DashboardContent() {
   const [selectedProjectTask, setSelectedProjectTask] = useState(null);
   const [showTutorialMenu, setShowTutorialMenu] = useState(false);
   const [currentTutorial, setCurrentTutorial] = useState(null);
+  const [showPartnerPrompt, setShowPartnerPrompt] = useState(false);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -148,6 +149,44 @@ function DashboardContent() {
   const closeTutorial = () => {
     setCurrentTutorial(null);
   };
+
+  // Partner Mode functionality
+  const checkPartnerPrompt = () => {
+    const lastPrompt = localStorage.getItem('lastPartnerPrompt');
+    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    
+    if (!lastPrompt || parseInt(lastPrompt) < oneWeekAgo) {
+      setShowPartnerPrompt(true);
+    }
+  };
+
+  const handlePartnerPromptDismiss = () => {
+    localStorage.setItem('lastPartnerPrompt', Date.now().toString());
+    setShowPartnerPrompt(false);
+  };
+
+  const handleAddPartnerTask = async (taskTitle) => {
+    try {
+      await createTask({
+        title: taskTitle,
+        category: 'relationship',
+        priority: 'medium',
+        source: 'partner',
+        partnerRequested: true
+      });
+      setShowPartnerPrompt(false);
+      localStorage.setItem('lastPartnerPrompt', Date.now().toString());
+    } catch (error) {
+      console.error('Failed to add partner task:', error);
+    }
+  };
+
+  // Check for partner prompt on load
+  useEffect(() => {
+    if (!loading && activeTasks) {
+      checkPartnerPrompt();
+    }
+  }, [loading, activeTasks]);
 
   if (loading) {
     return <DashboardLoading />;
@@ -270,9 +309,9 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Morpheus Smart Reminder */}
+      {/* Smart Reminder */}
       <div className="max-w-md mx-auto px-6 py-4">
-        <MorpheusSmartReminder
+        <SmartReminder
           onAddTask={handleAddSmartTask}
           currentTasks={activeTasks || []}
           userProfile={{
@@ -353,6 +392,63 @@ function DashboardContent() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Partner Mode Prompt */}
+        {showPartnerPrompt && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-lg p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🤝</span>
+                  <h3 className="font-semibold text-gray-900">Weekly Partner Check-in</h3>
+                </div>
+                <button
+                  onClick={handlePartnerPromptDismiss}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-gray-700 mb-4">
+                Hey, ask your partner what 1-2 things they need you to handle this week. 
+                Marriage points = completed partner tasks.
+              </p>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="What did they ask you to do?"
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && e.target.value.trim()) {
+                      handleAddPartnerTask(e.target.value.trim());
+                      e.target.value = '';
+                    }
+                  }}
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const input = document.querySelector('input[placeholder="What did they ask you to do?"]');
+                      if (input.value.trim()) {
+                        handleAddPartnerTask(input.value.trim());
+                        input.value = '';
+                      }
+                    }}
+                    className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 text-sm"
+                  >
+                    Add Task
+                  </button>
+                  <button
+                    onClick={handlePartnerPromptDismiss}
+                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm"
+                  >
+                    Skip This Week
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

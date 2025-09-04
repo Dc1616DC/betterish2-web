@@ -273,7 +273,7 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       setIsTranscribing(false);
       
       // Extract tasks from transcript
-      extractTasks(data.text);
+      await extractTasks(data.text);
       
     } catch (err) {
       console.error('[VoiceRecorder] Transcription error:', err);
@@ -283,7 +283,7 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
   };
 
   // Extract tasks from transcript
-  const extractTasks = (text) => {
+  const extractTasks = async (text) => {
     // If in transcription mode, skip task extraction
     if (mode === 'transcription') {
       setIsProcessing(false);
@@ -366,8 +366,14 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       }
       
       console.log('[VoiceRecorder] Extracted tasks:', tasks.length);
-      setExtractedTasks(tasks);
-      setIsProcessing(false);
+      
+      // For tasks mode, automatically save tasks to main list
+      if (mode === 'tasks' && tasks.length > 0 && onTaskCreate) {
+        await autoSaveTasks(tasks);
+      } else {
+        setExtractedTasks(tasks);
+        setIsProcessing(false);
+      }
       
     } catch (err) {
       console.error('[VoiceRecorder] Task extraction error:', err);
@@ -438,6 +444,55 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       console.error('[VoiceRecorder] Error saving tasks:', err);
       setIsProcessing(false);
       setError(`Failed to save tasks: ${err.message}`);
+    }
+  };
+
+  // Auto-save tasks directly to main list (no UI preview)
+  const autoSaveTasks = async (tasks) => {
+    try {
+      console.log('[VoiceRecorder] Auto-saving tasks to main list...');
+      
+      if (!onTaskCreate) {
+        throw new Error('Task creation function not provided');
+      }
+      
+      let savedCount = 0;
+      for (const task of tasks) {
+        try {
+          await onTaskCreate({
+            title: task.title,
+            description: task.detail || '',
+            category: task.category || 'personal',
+            priority: task.priority || 'medium',
+            source: 'voice'
+          });
+          savedCount++;
+        } catch (taskError) {
+          console.error('Failed to create individual task:', taskError);
+        }
+      }
+      
+      // Track the feature usage
+      trackFeatureUsage(FEATURES.VOICE_INPUT, { 
+        tasksCreated: savedCount,
+        mode: 'auto_save'
+      });
+      
+      // Call callback if provided
+      if (onTasksAdded) {
+        onTasksAdded(savedCount);
+      }
+      
+      console.log(`[VoiceRecorder] Auto-saved ${savedCount} tasks`);
+      
+      // Reset the component
+      resetState();
+      setExtractedTasks([]);
+      
+    } catch (err) {
+      console.error('[VoiceRecorder] Auto-save error:', err);
+      setError(`Failed to save tasks: ${err.message}`);
+      setIsProcessing(false);
     }
   };
 
@@ -529,28 +584,13 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
         </div>
       )}
       
-      {/* Results UI - Tasks or Transcription */}
-      {!isRecording && !isTranscribing && !isProcessing && (mode === 'transcription' ? transcript : extractedTasks.length > 0) && (
+      {/* Results UI - Transcription Mode Only */}
+      {!isRecording && !isTranscribing && !isProcessing && mode === 'transcription' && transcript && (
         <div className="mb-4">
-          {mode === 'transcription' ? (
-            <>
-              <h3 className="text-md font-medium mb-2 text-gray-700">Transcription:</h3>
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
-                {transcript}
-              </div>
-            </>
-          ) : (
-            <>
-              <h3 className="text-md font-medium mb-2 text-gray-700">Found {extractedTasks.length} task(s):</h3>
-              <ul className="space-y-2 mb-4">
-                {extractedTasks.map((task, index) => (
-                  <li key={index} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                    {task.title}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+          <h3 className="text-md font-medium mb-2 text-gray-700">Transcription:</h3>
+          <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
+            {transcript}
+          </div>
           <div className="flex justify-end space-x-3">
             <button 
               onClick={cancelRecording} 
@@ -563,14 +603,14 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
             >
               <CheckIcon className="w-4 h-4 mr-1" />
-              {mode === 'transcription' ? 'Use This' : 'Add Tasks'}
+              Use This
             </button>
           </div>
         </div>
       )}
       
       {/* Start Recording Button */}
-      {!isRecording && !isTranscribing && !isProcessing && extractedTasks.length === 0 && !transcript && (
+      {!isRecording && !isTranscribing && !isProcessing && !transcript && (
         <button
           onClick={startRecording}
           disabled={isPreparing || permissionDenied}

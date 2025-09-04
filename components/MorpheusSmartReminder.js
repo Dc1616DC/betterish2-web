@@ -1,6 +1,6 @@
 /**
- * Morpheus Smart Reminder Component
- * Intelligent, pattern-based reminders that catch things before they become problems
+ * Smart Reminder Component
+ * Dad-friendly reminders that catch things before they become expensive problems
  */
 
 /* eslint-disable react/no-unescaped-entities */
@@ -174,7 +174,7 @@ const SMART_REMINDERS = {
   ]
 };
 
-export default function MorpheusSmartReminder({ onAddTask, currentTasks = [], userProfile = {} }) {
+export default function SmartReminder({ onAddTask, currentTasks = [], userProfile = {} }) {
   const [todaysReminder, setTodaysReminder] = useState(null);
   const [isDismissed, setIsDismissed] = useState(false);
   const [hasActed, setHasActed] = useState(false);

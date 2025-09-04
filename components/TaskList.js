@@ -173,7 +173,9 @@ const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenCha
     <div
       className={`relative rounded-lg border-2 transition-all duration-200 ${getBackgroundColor()} ${
         isProcessing ? 'opacity-50' : ''
-      } ${isCompleted ? 'bg-gray-50 border-gray-300' : ''}`}
+      } ${isCompleted ? 'bg-gray-50 border-gray-300' : ''} ${
+        task.partnerRequested && !isCompleted ? 'ring-2 ring-pink-200 border-pink-300' : ''
+      }`}
     >
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
@@ -214,6 +216,15 @@ const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenCha
                 'bg-green-100 text-green-800'
               }`}>
                 {getPriorityLabel(task.priority)}
+              </span>
+            )}
+            {task.partnerRequested && (
+              <span className={`inline-block text-xs px-2 py-1 rounded-full ${
+                isCompleted 
+                  ? 'bg-gray-100 text-gray-500' 
+                  : 'bg-pink-100 text-pink-800'
+              }`}>
+                🤝 Partner Request
               </span>
             )}
           </div>
