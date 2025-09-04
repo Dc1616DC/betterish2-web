@@ -297,7 +297,9 @@ export default function SmartReminder({ onAddTask, currentTasks = [], userProfil
 
   const handleRemindLater = () => {
     setIsDismissed(true);
-    // Don't mark as shown today, so it can appear tomorrow
+    // Mark as shown today so it doesn't reappear on refresh
+    // It will appear again tomorrow
+    localStorage.setItem('morpheusLastShown', new Date().toDateString());
   };
 
   if (isDismissed || !todaysReminder || hasActed) {
@@ -327,7 +329,7 @@ export default function SmartReminder({ onAddTask, currentTasks = [], userProfil
           <div className="flex-1">
             <div className="flex items-start justify-between mb-2">
               <h3 className="font-semibold text-gray-900">
-                Morpheus noticed something...
+                Your AI Dad Mentor noticed something...
               </h3>
               <span className="text-xs text-gray-500">
                 {todaysReminder.type === 'seasonal' && '🍂 Seasonal'}

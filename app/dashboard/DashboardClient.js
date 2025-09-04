@@ -13,7 +13,7 @@ import TaskList from '@/components/TaskList';
 import TaskForm from '@/components/TaskForm';
 import DashboardLoading from '@/components/DashboardLoading';
 import SidekickChat from '@/components/SidekickChat';
-import SmartReminder from '@/components/MorpheusSmartReminder';
+import SmartReminder from '@/components/AIDadMentorReminder';
 import AppWalkthrough from '@/components/AppWalkthrough';
 import TaskBreakdown from '@/components/TaskBreakdown';
 import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
