@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useCallback, memo } from 'react';
-import { useSwipeGesture } from '@/hooks/useSwipeGesture';
+import { useState, useCallback, memo, useEffect, useRef } from 'react';
 import { useDebounceCallback } from '@/hooks/useDebounce';
 import { useTasks } from '@/hooks/useTasks';
 import { TaskCategory, TaskPriority } from '@/lib/services/TaskService';
+import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import TaskBreakdown from './TaskBreakdown';
 
 // Helper functions for display labels
@@ -127,28 +127,24 @@ const TaskList = memo(function TaskList({
 });
 
 const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenChat, isProcessing }) {
-  const [swipeRevealed, setSwipeRevealed] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
 
-  const swipeGesture = useSwipeGesture({
-    onSwipeRight: () => {
-      setSwipeRevealed('complete');
-      setTimeout(() => onAction(task.id, 'complete'), 150);
-    },
-    onSwipeLeft: () => {
-      setSwipeRevealed('snooze');
-      setTimeout(() => onAction(task.id, 'snooze'), 150);
-    },
-    onSwipeFarLeft: () => {
-      setSwipeRevealed('delete');
-      setTimeout(() => onAction(task.id, 'delete'), 150);
-    },
-    isDisabled: isProcessing,
-  });
-
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
+  
   const getBackgroundColor = () => {
-    if (swipeRevealed === 'complete') return 'bg-green-100 border-green-300';
-    if (swipeRevealed === 'snooze') return 'bg-yellow-100 border-yellow-300';
-    if (swipeRevealed === 'delete') return 'bg-red-100 border-red-300';
     return 'bg-white border-gray-200';
   };
 
@@ -178,10 +174,6 @@ const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenCha
       className={`relative rounded-lg border-2 transition-all duration-200 ${getBackgroundColor()} ${
         isProcessing ? 'opacity-50' : ''
       } ${isCompleted ? 'bg-gray-50 border-gray-300' : ''}`}
-      style={{
-        transform: `translateX(${swipeGesture.swipeDistance}px)`,
-      }}
-      {...swipeGesture.handlers}
     >
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
@@ -227,46 +219,72 @@ const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenCha
           </div>
           
           {!isCompleted && (
-            <div className="flex space-x-2">
-              <button
-                onClick={() => onBreakdown(task)}
-                disabled={isProcessing}
-                className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
-                title="Break down task into steps"
-              >
-                📋
-              </button>
-              {onOpenChat && (
-                <button
-                  onClick={() => onOpenChat(task)}
-                  disabled={isProcessing}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
-                  title="Get AI help with this task"
-                >
-                  💭
-                </button>
-              )}
+            <div className="flex items-center space-x-2">
+              {/* Complete button - most important action */}
               <button
                 onClick={() => onAction(task.id, 'complete')}
                 disabled={isProcessing}
-                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+                className="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
+                title="Complete task"
               >
                 ✓
               </button>
-              <button
-                onClick={() => onAction(task.id, 'snooze')}
-                disabled={isProcessing}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
-              >
-                💤
-              </button>
-              <button
-                onClick={() => onAction(task.id, 'delete')}
-                disabled={isProcessing}
-                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
-              >
-                🗑️
-              </button>
+              
+              {/* Menu dropdown for other actions */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  disabled={isProcessing}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
+                  title="More options"
+                >
+                  <EllipsisVerticalIcon className="w-4 h-4" />
+                </button>
+                
+                {/* Dropdown menu */}
+                {showMenu && (
+                  <div className="absolute right-0 top-10 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-40">
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        onBreakdown(task);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      📋 Break Down
+                    </button>
+                    {onOpenChat && (
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          onOpenChat(task);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        💭 Ask AI
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        onAction(task.id, 'snooze');
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      💤 Snooze
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        onAction(task.id, 'delete');
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center gap-2 border-t border-gray-100"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           

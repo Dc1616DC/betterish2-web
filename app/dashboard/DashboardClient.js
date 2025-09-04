@@ -46,7 +46,8 @@ function DashboardContent() {
     loading, 
     error,
     clearError,
-    createTask 
+    createTask,
+    deleteTask 
   } = useTasks();
 
   // Helper function to identify project tasks (tasks that would benefit from breakdown)
@@ -324,9 +325,18 @@ function DashboardContent() {
                   <div key={task.id} className="bg-white border border-purple-200 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-medium text-gray-900">{task.title}</h3>
-                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
-                        Project
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                          Project
+                        </span>
+                        <button
+                          onClick={() => deleteTask(task.id)}
+                          className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors"
+                          title="Dismiss project"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                     {task.description && (
                       <p className="text-sm text-gray-600 mb-2">{task.description}</p>

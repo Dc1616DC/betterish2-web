@@ -29,46 +29,29 @@ const CATEGORY_COLORS = {
   work: { bg: 'bg-gray-500', light: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' }
 };
 
-// Simplified task card for mobile with swipe gestures and long-press snooze/reminder
+// Simplified task card for mobile with button controls
 function TaskCard({ task, onComplete, onDismiss, onSnooze, onUndo, onSetReminder, onOpenChat, isFirst, functions, user, userTier }) {
-  const [swiped, setSwiped] = useState(false);
-  const [swipeDirection, setSwipeDirection] = useState(null);
   const [justCompleted, setJustCompleted] = useState(false);
-  const [startX, setStartX] = useState(null);
-  const [currentX, setCurrentX] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [showSnoozeMenu, setShowSnoozeMenu] = useState(false);
   const [showReminderMenu, setShowReminderMenu] = useState(false);
   const [showTimeMenu, setShowTimeMenu] = useState(false);
-  const [longPressTimer, setLongPressTimer] = useState(null);
-  const [isLongPress, setIsLongPress] = useState(false);
   const colors = CATEGORY_COLORS[task.category] || CATEGORY_COLORS.work;
   
   // Get reminder info for display
   const reminderInfo = getReminderInfo(task);
   
   const handleComplete = () => {
-    setSwiped(true);
-    setSwipeDirection('complete');
     setJustCompleted(true);
-    setTimeout(() => {
-      onComplete(task.id);
-      // Show undo option for 5 seconds after completion
-      setTimeout(() => setJustCompleted(false), 5000);
-    }, 300);
+    onComplete(task.id);
+    // Show undo option for 5 seconds after completion
+    setTimeout(() => setJustCompleted(false), 5000);
   };
   
   const handleDismiss = () => {
-    setSwiped(true);
-    setSwipeDirection('dismiss');
-    setTimeout(() => {
-      if (onDismiss) onDismiss(task.id);
-    }, 300);
+    if (onDismiss) onDismiss(task.id);
   };
   
   const handleUndo = () => {
-    setSwiped(false);
-    setSwipeDirection(null);
     setJustCompleted(false);
     if (onUndo) onUndo(task.id);
   };
@@ -121,90 +104,6 @@ function TaskCard({ task, onComplete, onDismiss, onSnooze, onUndo, onSetReminder
     }
   };
 
-  // Touch handlers for swipe gestures and long press
-  const handleTouchStart = (e) => {
-    setStartX(e.touches[0].clientX);
-    setCurrentX(e.touches[0].clientX);
-    setIsDragging(false);
-    setIsLongPress(false);
-    
-    // Start long press timer (500ms)
-    const timer = setTimeout(() => {
-      setIsLongPress(true);
-      setShowTimeMenu(true);
-      // Haptic feedback for long press
-      if ('vibrate' in navigator) {
-        navigator.vibrate(50);
-      }
-    }, 500);
-    setLongPressTimer(timer);
-  };
-
-  const handleTouchMove = (e) => {
-    if (!startX) return;
-    
-    const currentPos = e.touches[0].clientX;
-    const movement = Math.abs(currentPos - startX);
-    
-    // Cancel long press if user moves more than 10px
-    if (movement > 10 && longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-    
-    setCurrentX(currentPos);
-    setIsDragging(true);
-  };
-
-  const handleTouchEnd = () => {
-    // Clear long press timer
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-
-    // Don't process swipe if long press menu is open
-    if (isLongPress || showTimeMenu || showSnoozeMenu || showReminderMenu) {
-      setStartX(null);
-      setCurrentX(null);
-      setIsDragging(false);
-      setIsLongPress(false);
-      return;
-    }
-
-    if (!startX || !currentX || !isDragging) {
-      setStartX(null);
-      setCurrentX(null);
-      setIsDragging(false);
-      return;
-    }
-
-    const diffX = currentX - startX;
-    const threshold = 100; // Minimum swipe distance
-
-    if (Math.abs(diffX) > threshold) {
-      if (diffX > 0) {
-        // Swipe right - complete
-        handleComplete();
-      } else {
-        // Swipe left - dismiss
-        handleDismiss();
-      }
-    }
-
-    setStartX(null);
-    setCurrentX(null);
-    setIsDragging(false);
-  };
-
-  // Calculate swipe offset for visual feedback
-  const getSwipeOffset = () => {
-    if (!startX || !currentX || !isDragging) return 0;
-    return currentX - startX;
-  };
-
-  const swipeOffset = getSwipeOffset();
-  const showSwipeHint = isDragging && Math.abs(swipeOffset) > 20;
 
   return (
     <div className="relative">
@@ -360,36 +259,13 @@ function TaskCard({ task, onComplete, onDismiss, onSnooze, onUndo, onSetReminder
         </>
       )}
 
-      {/* Swipe action indicators */}
-      {showSwipeHint && !showSnoozeMenu && (
-        <>
-          {swipeOffset > 0 && (
-            <div className="absolute left-0 top-0 bottom-0 w-full bg-green-500 rounded-2xl flex items-center justify-start pl-6 z-0">
-              <div className="text-white font-semibold">Complete ✓</div>
-            </div>
-          )}
-          {swipeOffset < 0 && (
-            <div className="absolute left-0 top-0 bottom-0 w-full bg-red-500 rounded-2xl flex items-center justify-end pr-6 z-0">
-              <div className="text-white font-semibold">Dismiss ✕</div>
-            </div>
-          )}
-        </>
-      )}
 
       <div 
         className={`
           relative bg-white rounded-2xl shadow-sm border transition-all duration-300 z-10
           ${isFirst ? 'scale-105 shadow-lg' : 'scale-100'}
           ${task.completed ? 'opacity-50' : 'opacity-100'}
-          ${swiped && swipeDirection === 'complete' ? 'translate-x-full opacity-0' : ''}
-          ${swiped && swipeDirection === 'dismiss' ? '-translate-x-full opacity-0' : ''}
         `}
-        style={{
-          transform: isDragging ? `translateX(${Math.max(-150, Math.min(150, swipeOffset))}px)` : undefined
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {/* Color indicator bar */}
         <div className={`absolute left-0 top-0 bottom-0 w-1 ${colors.bg} rounded-l-2xl`} />
@@ -427,7 +303,29 @@ function TaskCard({ task, onComplete, onDismiss, onSnooze, onUndo, onSetReminder
               </div>
             </div>
             
-            {/* Remove the button entirely for incomplete tasks */}
+            {/* Action buttons for incomplete tasks */}
+            {!task.completed && (
+              <div className="flex-shrink-0 flex gap-2 ml-3">
+                <button
+                  onClick={() => setShowTimeMenu(true)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"
+                  title="Options"
+                >
+                  <span className="text-sm">⋯</span>
+                </button>
+                <button
+                  onClick={handleComplete}
+                  className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center hover:bg-green-600"
+                  title="Complete"
+                >
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            
+            {/* Completed state */}
             {task.completed && (
               <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center ml-3">
                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -788,11 +686,10 @@ export default function MobileDashboard({
           </div>
         )}
         
-        {/* Swipe instructions */}
+        {/* Task instructions */}
         {todayTasks.length > 0 && (
           <div className="mt-8 text-center text-xs text-gray-400 px-4 space-y-1">
-            <p>💡 Swipe right to complete • Swipe left to dismiss</p>
-            <p>Long press for snooze or reminder</p>
+            <p>💡 Tap checkmark to complete • Tap menu (⋯) for options</p>
           </div>
         )}
       </div>
