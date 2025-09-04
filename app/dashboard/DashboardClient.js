@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MicrophoneIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { initializeFirebaseClient } from '@/lib/firebase-client';
 
@@ -68,6 +68,7 @@ function DashboardContent() {
   };
   
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [showSidekickChat, setShowSidekickChat] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
@@ -240,14 +241,13 @@ function DashboardContent() {
                 >
                   <PlusIcon className="w-5 h-5" />
                 </button>
-                <VoiceTaskRecorder 
-                  onTaskCreate={createTask}
-                  onTasksAdded={(count) => {
-                    console.log(`Added ${count} tasks via voice`);
-                  }}
-                  compact={true}
-                  mode="tasks"
-                />
+                <button
+                  onClick={() => setShowVoiceRecorder(true)}
+                  className="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-colors"
+                  title="Record voice task"
+                >
+                  <MicrophoneIcon className="w-5 h-5" />
+                </button>
               </div>
             </div>
           </div>
@@ -295,14 +295,13 @@ function DashboardContent() {
                 >
                   <PlusIcon className="w-4 h-4" /> Add Task
                 </button>
-                <VoiceTaskRecorder 
-                  onTaskCreate={createTask}
-                  onTasksAdded={(count) => {
-                    console.log(`Added ${count} tasks via voice`);
-                  }}
-                  compact={true}
-                  mode="tasks"
-                />
+                <button
+                  onClick={() => setShowVoiceRecorder(true)}
+                  className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
+                  title="Record voice task"
+                >
+                  <MicrophoneIcon className="w-4 h-4" /> Voice
+                </button>
               </div>
             </div>
           </div>
@@ -527,6 +526,32 @@ function DashboardContent() {
         isOpen={showTaskForm}
         onClose={() => setShowTaskForm(false)}
       />
+
+      {/* Voice Recorder Modal */}
+      {showVoiceRecorder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-800">Record Voice Task</h3>
+              <button 
+                onClick={() => setShowVoiceRecorder(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <VoiceTaskRecorder 
+              onTaskCreate={createTask}
+              onTasksAdded={(count) => {
+                console.log(`Added ${count} tasks via voice`);
+                setShowVoiceRecorder(false);
+              }}
+              compact={false}
+              mode="tasks"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Sidekick Chat Modal */}
       {showSidekickChat && (
