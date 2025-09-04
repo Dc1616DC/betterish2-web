@@ -232,13 +232,23 @@ function DashboardContent() {
               >
                 🎓
               </button>
-              <button
-                onClick={() => setShowTaskForm(true)}
-                className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
-                title="Add new task"
-              >
-                <PlusIcon className="w-5 h-5" />
-              </button>
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => setShowTaskForm(true)}
+                  className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
+                  title="Add new task"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                </button>
+                <VoiceTaskRecorder 
+                  onTaskCreate={createTask}
+                  onTasksAdded={(count) => {
+                    console.log(`Added ${count} tasks via voice`);
+                  }}
+                  compact={true}
+                  mode="tasks"
+                />
+              </div>
             </div>
           </div>
 
@@ -277,13 +287,23 @@ function DashboardContent() {
               >
                 🎓 Learn
               </button>
-              <button
-                onClick={() => setShowTaskForm(true)}
-                className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-1"
-                title="Add new task"
-              >
-                <PlusIcon className="w-4 h-4" /> Add Task
-              </button>
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => setShowTaskForm(true)}
+                  className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-1"
+                  title="Add new task"
+                >
+                  <PlusIcon className="w-4 h-4" /> Add Task
+                </button>
+                <VoiceTaskRecorder 
+                  onTaskCreate={createTask}
+                  onTasksAdded={(count) => {
+                    console.log(`Added ${count} tasks via voice`);
+                  }}
+                  compact={true}
+                  mode="tasks"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -324,17 +344,7 @@ function DashboardContent() {
       {/* Onboarding Tips */}
       <OnboardingTips onTutorialRequest={handleTutorialRequest} />
 
-      {/* Voice Task Recorder */}
-      <div className="max-w-md mx-auto px-6 pb-4">
-        <VoiceTaskRecorder 
-          onTaskCreate={createTask}
-          onTasksAdded={(count) => {
-            console.log(`Added ${count} tasks via voice`);
-          }}
-          compact={false}
-          mode="tasks"
-        />
-      </div>
+      {/* Voice recording is now integrated with Add Task buttons above */}
 
       {/* Main content */}
       <div className="max-w-md mx-auto px-6 py-6">
