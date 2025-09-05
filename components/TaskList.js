@@ -35,6 +35,7 @@ function getPriorityLabel(priority) {
 const TaskList = memo(function TaskList({ 
   tasks, 
   onOpenChat = null,
+  onSetReminder = null,
   loading = false 
 }) {
   const [processingTasks, setProcessingTasks] = useState(new Set());
@@ -106,6 +107,7 @@ const TaskList = memo(function TaskList({
             onAction={debouncedHandleTaskAction}
             onBreakdown={(task) => setBreakdownTask(task)}
             onOpenChat={onOpenChat}
+            onSetReminder={onSetReminder}
             isProcessing={processingTasks.has(task.id)}
           />
         ))}
@@ -126,7 +128,7 @@ const TaskList = memo(function TaskList({
   );
 });
 
-const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenChat, isProcessing }) {
+const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenChat, onSetReminder, isProcessing }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
   
@@ -283,6 +285,17 @@ const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenCha
                       className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                     >
                       💤 Snooze
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowMenu(false);
+                        if (onSetReminder) {
+                          onSetReminder(task);
+                        }
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      ⏰ Set Reminder
                     </button>
                     <button
                       onClick={() => {
