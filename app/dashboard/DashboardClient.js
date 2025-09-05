@@ -19,6 +19,7 @@ import TaskBreakdown from '@/components/TaskBreakdown';
 import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
 import FeatureTutorial from '@/components/FeatureTutorial';
 import OnboardingTips from '@/components/OnboardingTips';
+import OnboardingQuestionnaire from '@/components/OnboardingQuestionnaire';
 import TutorialMenu from '@/components/TutorialMenu';
 import { trackFeatureUsage, FEATURES } from '@/lib/featureDiscovery';
 
@@ -77,6 +78,7 @@ function DashboardContent() {
   const [showTutorialMenu, setShowTutorialMenu] = useState(false);
   const [currentTutorial, setCurrentTutorial] = useState(null);
   const [showPartnerPrompt, setShowPartnerPrompt] = useState(false);
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -590,8 +592,29 @@ function DashboardContent() {
           setShowWalkthrough(false);
           localStorage.setItem('hasSeenWalkthrough', 'true');
           console.log('Walkthrough completed!');
+          // Show questionnaire after walkthrough completes
+          if (!localStorage.getItem('userProfile')) {
+            setShowQuestionnaire(true);
+          }
         }}
       />
+
+      {/* Onboarding Questionnaire */}
+      {showQuestionnaire && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <OnboardingQuestionnaire
+              onComplete={(profile) => {
+                console.log('Profile saved:', profile);
+                setShowQuestionnaire(false);
+              }}
+              onSkip={() => {
+                setShowQuestionnaire(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Tutorial Menu */}
       <TutorialMenu
