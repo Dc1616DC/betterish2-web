@@ -21,6 +21,9 @@ function BrowseContent() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('seasonal');
   const [addedTasks, setAddedTasks] = useState(new Set());
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
+  const [refreshController, setRefreshController] = useState(null);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
 
   // Categories for browsing
   const categories = [
@@ -72,14 +75,23 @@ function BrowseContent() {
   const fetchSuggestions = async (category) => {
     setLoadingSuggestions(true);
     try {
+      // Get user profile from localStorage
+      const userProfile = localStorage.getItem('userProfile');
+      const profile = userProfile ? JSON.parse(userProfile) : null;
+      
+      // Get current user ID from auth
+      const auth = initializeFirebaseClient().auth;
+      const userId = auth.currentUser?.uid || 'browse-user';
+      
       const response = await fetch('/api/ai-checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'browse-user',
+          userId,
           action: 'browse_category',
           category,
-          userTasks: activeTasks || []
+          userTasks: activeTasks || [],
+          userProfile: profile // Pass user profile for personalization
         })
       });
 
@@ -137,6 +149,63 @@ function BrowseContent() {
     };
     return defaults[category] || defaults['seasonal'];
   };
+
+  // Initialize dynamic refresh system
+  useEffect(() => {
+    let refreshSystem = null;
+    
+    const initializeRefresh = async () => {
+      try {
+        const { initializeDynamicRefresh } = await import('@/lib/dynamicTaskRefresh');
+        const { auth } = initializeFirebaseClient();
+        const userId = auth.currentUser?.uid || 'browse-user';
+        
+        refreshSystem = initializeDynamicRefresh(userId, {
+          onTimeBasedRefresh: (data) => {
+            if (data.category === selectedCategory && autoRefreshEnabled) {
+              console.log('Time-based refresh:', data.reason);
+              setSuggestions(data.newTasks);
+              setLastRefresh(Date.now());
+            }
+          },
+          
+          onTaskCompletionRefresh: (data) => {
+            if (data.category === selectedCategory && autoRefreshEnabled) {
+              console.log('Task completion refresh:', data.reason);
+              setSuggestions(data.newTasks);
+              setLastRefresh(Date.now());
+            }
+          },
+          
+          onContextChangeRefresh: (data) => {
+            if (data.category === selectedCategory && autoRefreshEnabled) {
+              console.log('Context change refresh:', data.reason);
+              setSuggestions(data.newTasks);
+              setLastRefresh(Date.now());
+            }
+          },
+          
+          onPatternLearningRefresh: (data) => {
+            console.log('Achievement unlocked:', data.message);
+            // Could show achievement notification
+          }
+        });
+        
+        setRefreshController(refreshSystem);
+        
+      } catch (error) {
+        console.error('Failed to initialize dynamic refresh:', error);
+      }
+    };
+    
+    initializeRefresh();
+    
+    return () => {
+      if (refreshSystem?.cleanup) {
+        refreshSystem.cleanup();
+      }
+    };
+  }, [selectedCategory, autoRefreshEnabled]);
 
   // Handle category change
   useEffect(() => {
@@ -213,8 +282,29 @@ function BrowseContent() {
       // Add as single task
       await createTask(taskData);
       setAddedTasks(prev => new Set([...prev, suggestion.title]));
+      
+      // Trigger task completion refresh for related categories
+      if (refreshController?.onTaskCompleted) {
+        refreshController.onTaskCompleted(taskData);
+      }
     } catch (error) {
       console.error('Failed to add task:', error);
+    }
+  };
+
+  // Manual refresh handler
+  const handleManualRefresh = async () => {
+    if (refreshController?.refreshNow) {
+      setLoadingSuggestions(true);
+      try {
+        const freshTasks = await refreshController.refreshNow(selectedCategory);
+        setSuggestions(freshTasks);
+        setLastRefresh(Date.now());
+      } catch (error) {
+        console.error('Manual refresh failed:', error);
+      } finally {
+        setLoadingSuggestions(false);
+      }
     }
   };
 
@@ -227,8 +317,38 @@ function BrowseContent() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Browse Tasks</h1>
-          <p className="text-sm text-gray-600 mt-1">AI-powered suggestions based on what matters now</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Browse Tasks</h1>
+              <p className="text-sm text-gray-600 mt-1">
+                AI-powered suggestions based on what matters now
+                {lastRefresh && (
+                  <span className="ml-2 text-xs text-green-600">
+                    • Updated {new Date(lastRefresh).toLocaleTimeString()}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                  autoRefreshEnabled 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                {autoRefreshEnabled ? '🔄 Auto' : '⏸️ Manual'}
+              </button>
+              <button
+                onClick={handleManualRefresh}
+                disabled={loadingSuggestions}
+                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors disabled:opacity-50"
+              >
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

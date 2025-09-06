@@ -8,7 +8,7 @@ import { createDadMentor } from '@/lib/aiMentor';
 
 export async function POST(request) {
   try {
-    const { userId, action = 'check_in', taskTitle = null, userTasks = [], category = null } = await request.json();
+    const { userId, action = 'check_in', taskTitle = null, userTasks = [], category = null, userProfile = null } = await request.json();
     
     if (!userId) {
       return NextResponse.json(
@@ -51,7 +51,8 @@ export async function POST(request) {
             { status: 400 }
           );
         }
-        const browseSuggestions = dadMentor.getBrowseSuggestions(category, userTasks);
+        // Pass user profile for deep personalization
+        const browseSuggestions = await dadMentor.getBrowseSuggestions(category, userTasks, userProfile);
         return NextResponse.json({ suggestions: browseSuggestions });
 
       default:

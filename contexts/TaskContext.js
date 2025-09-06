@@ -250,12 +250,44 @@ export function TaskProvider({ children, user }) {
 
   // Complete task
   const completeTask = useCallback(async (taskId) => {
-    return updateTask(taskId, {
+    const task = state.allTasks.find(t => t.id === taskId);
+    
+    // If this is a project with subtasks, preserve the subtask states
+    const updateData = {
       status: TaskStatus.COMPLETED,
       completed: true,
       completedAt: new Date()
-    });
-  }, [updateTask]);
+    };
+    
+    // Preserve subtasks if they exist (for projects)
+    if (task?.subtasks) {
+      updateData.subtasks = task.subtasks;
+    }
+    
+    const updatedTask = await updateTask(taskId, updateData);
+    
+    // Trigger dynamic refresh system for task completion
+    try {
+      const { dynamicRefresh } = await import('@/lib/dynamicTaskRefresh');
+      await dynamicRefresh.handleTaskCompletion(user?.uid, task, {
+        onTaskCompletionRefresh: (data) => {
+          // Notify registered callbacks (like Browse section)
+          if (window.taskCompletionCallbacks) {
+            window.taskCompletionCallbacks.forEach(callback => callback(data));
+          }
+        },
+        onPatternLearningRefresh: (data) => {
+          // Show achievement notifications
+          console.log('Achievement unlocked:', data.message);
+          // Could show toast notification here
+        }
+      });
+    } catch (refreshError) {
+      console.error('Error triggering refresh after completion:', refreshError);
+    }
+    
+    return updatedTask;
+  }, [updateTask, state.allTasks, user]);
 
   // Uncomplete task
   const uncompleteTask = useCallback(async (taskId) => {

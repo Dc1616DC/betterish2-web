@@ -16,6 +16,8 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
   const [loading, setLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+  const [refreshController, setRefreshController] = useState(null);
+  const [lastRefresh, setLastRefresh] = useState(null);
 
   // Check if user has already checked in today
   useEffect(() => {
@@ -23,6 +25,73 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
     const today = new Date().toDateString();
     setHasCheckedInToday(lastCheckIn === today);
   }, []);
+
+  // Initialize dynamic refresh for check-ins
+  useEffect(() => {
+    let refreshSystem = null;
+    
+    const initializeRefresh = async () => {
+      try {
+        const { initializeDynamicRefresh } = await import('@/lib/dynamicTaskRefresh');
+        
+        if (user?.uid) {
+          refreshSystem = initializeDynamicRefresh(user.uid, {
+            onTimeBasedRefresh: (data) => {
+              console.log('Check-in refresh triggered:', data.reason);
+              // Auto-refresh check-in when context changes significantly
+              if (isExpanded && checkInResponse) {
+                performCheckIn('check_in');
+              }
+              setLastRefresh(Date.now());
+            },
+            
+            onContextChangeRefresh: (data) => {
+              console.log('Context changed, updating check-in:', data.reason);
+              // If check-in is visible, update it with new context
+              if (isExpanded && checkInResponse) {
+                performCheckIn('check_in');
+              }
+              setLastRefresh(Date.now());
+            },
+            
+            onTaskCompletionRefresh: (data) => {
+              console.log('Task completed, refreshing check-in:', data.reason);
+              // When user completes a task, offer new relevant suggestions
+              if (isExpanded && checkInResponse) {
+                performCheckIn('check_in');
+              }
+              setLastRefresh(Date.now());
+            },
+            
+            onPatternLearningRefresh: (data) => {
+              console.log('Achievement unlocked:', data.message);
+              // Show achievement in check-in if it's visible
+              if (isExpanded && data.message) {
+                setCheckInResponse(prev => ({
+                  ...prev,
+                  message: `${data.message} \n\n${prev.message}`,
+                  type: 'achievement'
+                }));
+              }
+            }
+          });
+          
+          setRefreshController(refreshSystem);
+        }
+        
+      } catch (error) {
+        console.error('Failed to initialize check-in refresh:', error);
+      }
+    };
+    
+    initializeRefresh();
+    
+    return () => {
+      if (refreshSystem?.cleanup) {
+        refreshSystem.cleanup();
+      }
+    };
+  }, [user?.uid, isExpanded, checkInResponse]);
 
   const performCheckIn = async (action = 'check_in', taskTitle = null) => {
     if (!user?.uid) return;
