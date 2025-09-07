@@ -180,6 +180,7 @@ export function TaskProvider({ children, user }) {
   const projects = state.allTasks.filter(task => 
     task.isProject && 
     task.status !== TaskStatus.ARCHIVED && 
+    task.status !== TaskStatus.COMPLETED &&
     !task.deleted
   );
 
