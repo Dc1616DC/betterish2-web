@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { PlusIcon, XMarkIcon, CheckIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/24/outline';
 import SidekickChat from './SidekickChat';
 import { trackFeatureUsage, FEATURES } from '@/lib/featureDiscovery';
+import { useTasks } from '@/hooks/useTasks';
 
 const TASK_BREAKDOWNS = {
   'Fix squeaky door hinge': [
@@ -66,7 +67,10 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
   const [aiBreakdown, setAiBreakdown] = useState(null);
   const [showAIMentorChat, setShowAIMentorChat] = useState(false);
   const [selectedStepForHelp, setSelectedStepForHelp] = useState(null);
+  const [updating, setUpdating] = useState(false);
   const breakdownRef = useRef(null);
+  
+  const { updateTask, convertToProject } = useTasks();
 
   // Auto-scroll to breakdown when it opens
   useEffect(() => {
@@ -84,6 +88,23 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
 
   const predefinedSteps = TASK_BREAKDOWNS[task.title] || [];
   const allSteps = predefinedSteps.length > 0 ? predefinedSteps : (aiSteps.length > 0 ? aiSteps : customSteps);
+  
+  // Initialize with existing subtasks if this is already a project
+  useEffect(() => {
+    if (task?.subtasks && task.subtasks.length > 0) {
+      const existingSteps = task.subtasks.map(subtask => subtask.title);
+      const completedIndices = new Set();
+      
+      task.subtasks.forEach((subtask, index) => {
+        if (subtask.completed) {
+          completedIndices.add(index);
+        }
+      });
+      
+      setCustomSteps(existingSteps);
+      setCompletedSteps(completedIndices);
+    }
+  }, [task]);
 
   // Fetch AI breakdown when component loads and no predefined steps exist
   useEffect(() => {
@@ -134,25 +155,93 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
     }
   };
 
-  const addCustomStep = () => {
-    if (newStep.trim()) {
-      setCustomSteps([...customSteps, newStep.trim()]);
+  const addCustomStep = async () => {
+    if (!newStep.trim() || updating) return;
+    setUpdating(true);
+    
+    try {
+      const newStepTitle = newStep.trim();
+      const updatedSteps = [...customSteps, newStepTitle];
+      
+      // Update local state immediately
+      setCustomSteps(updatedSteps);
       setNewStep('');
+      
+      // Save to database if task is already a project
+      if (task.isProject && task.subtasks) {
+        const newSubtask = {
+          id: task.subtasks.length + 1,
+          title: newStepTitle,
+          completed: false,
+          completedAt: null
+        };
+        
+        await updateTask(task.id, {
+          subtasks: [...task.subtasks, newSubtask]
+        });
+      }
+    } catch (error) {
+      console.error('Error adding custom step:', error);
+      // Revert local state on error
+      setCustomSteps(customSteps);
+      setNewStep(newStep);
+    } finally {
+      setUpdating(false);
     }
   };
 
-  const toggleStep = (stepIndex) => {
-    const newCompleted = new Set(completedSteps);
-    if (completedSteps.has(stepIndex)) {
-      newCompleted.delete(stepIndex);
-    } else {
-      newCompleted.add(stepIndex);
-    }
-    setCompletedSteps(newCompleted);
+  const toggleStep = async (stepIndex) => {
+    if (updating) return;
+    setUpdating(true);
     
-    // If all steps are completed, notify parent
-    if (newCompleted.size === allSteps.length && allSteps.length > 0) {
-      onSubtaskComplete?.(task.id);
+    try {
+      const newCompleted = new Set(completedSteps);
+      const wasCompleted = completedSteps.has(stepIndex);
+      
+      if (wasCompleted) {
+        newCompleted.delete(stepIndex);
+      } else {
+        newCompleted.add(stepIndex);
+      }
+      
+      // Update local state immediately for responsive UI
+      setCompletedSteps(newCompleted);
+      
+      // Convert task to project if it's not already one, or update existing project
+      if (!task.isProject) {
+        // Create subtasks array from current steps
+        const subtasks = allSteps.map((step, index) => ({
+          id: index + 1,
+          title: step,
+          completed: newCompleted.has(index),
+          completedAt: newCompleted.has(index) ? new Date() : null
+        }));
+        
+        await convertToProject(task.id, subtasks);
+      } else {
+        // Update existing project's subtasks
+        const updatedSubtasks = [...(task.subtasks || [])];
+        if (updatedSubtasks[stepIndex]) {
+          updatedSubtasks[stepIndex].completed = !wasCompleted;
+          updatedSubtasks[stepIndex].completedAt = !wasCompleted ? new Date() : null;
+          
+          await updateTask(task.id, {
+            subtasks: updatedSubtasks,
+            lastActivityAt: new Date()
+          });
+        }
+      }
+      
+      // If all steps are completed, notify parent to complete the whole project
+      if (newCompleted.size === allSteps.length && allSteps.length > 0) {
+        onSubtaskComplete?.(task.id);
+      }
+    } catch (error) {
+      console.error('Error updating subtask:', error);
+      // Revert local state on error
+      setCompletedSteps(completedSteps);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -251,7 +340,8 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
             >
               <button
                 onClick={() => toggleStep(index)}
-                className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                disabled={updating}
+                className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors disabled:opacity-50 ${
                   completedSteps.has(index)
                     ? 'bg-green-500 border-green-500 text-white'
                     : 'border-gray-300 hover:border-green-400'
@@ -318,7 +408,7 @@ export default function TaskBreakdown({ task, onSubtaskComplete, onClose }) {
               />
               <button
                 onClick={addCustomStep}
-                disabled={!newStep.trim()}
+                disabled={!newStep.trim() || updating}
                 className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <PlusIcon className="w-4 h-4" />
