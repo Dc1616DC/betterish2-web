@@ -1,8 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 
-export default function LoadingSpinner({ size = 'medium', text = 'Loading...' }) {
+interface LoadingSpinnerProps {
+  size?: 'small' | 'medium' | 'large';
+  text?: string;
+}
+
+export default function LoadingSpinner({ size = 'medium', text = 'Loading...' }: LoadingSpinnerProps) {
   const sizes = {
     small: 'h-4 w-4',
     medium: 'h-8 w-8', 

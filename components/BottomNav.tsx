@@ -2,11 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import React from 'react';
 
-export default function BottomNav() {
+interface NavItem {
+  href: string;
+  label: string;
+  emoji: string;
+}
+
+export default function BottomNav(): JSX.Element {
   const pathname = usePathname();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard', emoji: '🏠' },
     { href: '/browse', label: 'Browse', emoji: '🗂️' },
     { href: '/loose-ends', label: 'Loose Ends', emoji: '🧵' }, // Updated here

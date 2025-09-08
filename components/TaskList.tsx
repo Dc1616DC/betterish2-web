@@ -3,13 +3,13 @@
 import { useState, useCallback, memo, useEffect, useRef } from 'react';
 import { useDebounceCallback } from '@/hooks/useDebounce';
 import { useTasks } from '@/hooks/useTasks';
-import { TaskCategory, TaskPriority } from '@/lib/services/TaskService';
+import { TaskCategory, TaskPriority, Task, TaskId } from '@/types/models';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import TaskBreakdown from './TaskBreakdown';
 
 // Helper functions for display labels
-function getCategoryLabel(category) {
-  const labels = {
+function getCategoryLabel(category: TaskCategory): string {
+  const labels: Record<TaskCategory, string> = {
     [TaskCategory.PERSONAL]: '🧘 Personal Time',
     [TaskCategory.HOUSEHOLD]: '🏠 Household', 
     [TaskCategory.HOME_PROJECTS]: '🔨 Home Projects',
@@ -23,8 +23,8 @@ function getCategoryLabel(category) {
   return labels[category] || category;
 }
 
-function getPriorityLabel(priority) {
-  const labels = {
+function getPriorityLabel(priority: TaskPriority): string {
+  const labels: Record<TaskPriority, string> = {
     [TaskPriority.LOW]: '🟢 Low',
     [TaskPriority.MEDIUM]: '🟡 Medium', 
     [TaskPriority.HIGH]: '🔴 High'
@@ -32,19 +32,31 @@ function getPriorityLabel(priority) {
   return labels[priority] || priority;
 }
 
+interface TaskListProps {
+  tasks: Task[];
+  onOpenChat?: ((task: Task) => void) | null;
+  onSetReminder?: ((task: Task) => void) | null;
+  loading?: boolean;
+}
+
+interface TaskWithPartnerRequested extends Task {
+  partnerRequested?: boolean;
+  detail?: string;
+}
+
 const TaskList = memo(function TaskList({ 
   tasks, 
   onOpenChat = null,
   onSetReminder = null,
   loading = false 
-}) {
-  const [processingTasks, setProcessingTasks] = useState(new Set());
-  const [breakdownTask, setBreakdownTask] = useState(null);
+}: TaskListProps) {
+  const [processingTasks, setProcessingTasks] = useState<Set<TaskId>>(new Set());
+  const [breakdownTask, setBreakdownTask] = useState<Task | null>(null);
   
   // Use our centralized task operations
   const { completeTask, deleteTask, snoozeTask } = useTasks();
 
-  const handleTaskAction = useCallback(async (taskId, action) => {
+  const handleTaskAction = useCallback(async (taskId: TaskId, action: 'complete' | 'snooze' | 'delete') => {
     if (processingTasks.has(taskId)) return; // Prevent double-clicks
     
     setProcessingTasks(prev => new Set(prev).add(taskId));
@@ -103,7 +115,7 @@ const TaskList = memo(function TaskList({
         {tasks.map(task => (
           <TaskItem 
             key={task.id}
-            task={task}
+            task={task as TaskWithPartnerRequested}
             onAction={debouncedHandleTaskAction}
             onBreakdown={(task) => setBreakdownTask(task)}
             onOpenChat={onOpenChat}
@@ -117,7 +129,7 @@ const TaskList = memo(function TaskList({
       {breakdownTask && (
         <TaskBreakdown
           task={breakdownTask}
-          onSubtaskComplete={(taskId) => {
+          onSubtaskComplete={(taskId: TaskId) => {
             setBreakdownTask(null);
             debouncedHandleTaskAction(taskId, 'complete');
           }}
@@ -128,14 +140,30 @@ const TaskList = memo(function TaskList({
   );
 });
 
-const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenChat, onSetReminder, isProcessing }) {
+interface TaskItemProps {
+  task: TaskWithPartnerRequested;
+  onAction: (taskId: TaskId, action: 'complete' | 'snooze' | 'delete') => void;
+  onBreakdown: (task: Task) => void;
+  onOpenChat?: ((task: Task) => void) | null;
+  onSetReminder?: ((task: Task) => void) | null;
+  isProcessing: boolean;
+}
+
+const TaskItem = memo(function TaskItem({ 
+  task, 
+  onAction, 
+  onBreakdown, 
+  onOpenChat, 
+  onSetReminder, 
+  isProcessing 
+}: TaskItemProps) {
   const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   
   // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowMenu(false);
       }
     };
@@ -150,12 +178,12 @@ const TaskItem = memo(function TaskItem({ task, onAction, onBreakdown, onOpenCha
     return 'bg-white border-gray-200';
   };
 
-  const getTaskAgeLabel = (createdAt) => {
+  const getTaskAgeLabel = (createdAt: Date): string => {
     if (!createdAt) return '';
     
     const now = new Date();
-    const taskDate = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
-    const diffInHours = Math.floor((now - taskDate) / (1000 * 60 * 60));
+    const taskDate = (createdAt as any).toDate ? (createdAt as any).toDate() : new Date(createdAt);
+    const diffInHours = Math.floor((now.getTime() - taskDate.getTime()) / (1000 * 60 * 60));
     
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;

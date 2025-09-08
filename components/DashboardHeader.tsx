@@ -1,32 +1,79 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ExclamationTriangleIcon, ArrowPathIcon, PlusIcon, ArrowRightOnRectangleIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import StreakBanner from '@/components/StreakBanner';
 import SmartReminders from '@/components/SmartReminders';
 import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
+import { Task, User } from '@/types/models';
+import { BaseProps } from '@/types/components';
 
-export default function DashboardHeader({
+export interface DashboardHeaderProps extends BaseProps {
+  dateStr: string;
+  greeting: string;
+  user: User | null;
+  emergencyModeActive?: boolean;
+  onClearEmergencyMode?: () => void;
+  tasks: Task[];
+  completionHistory?: any[]; // Will be typed later when the structure is known
+  onReminderAction?: (action: string, data?: any) => void;
+  loading?: boolean;
+  onRefresh: () => void;
+  onAddTask: () => void;
+  onVoiceTasksAdded?: (tasks: Task[]) => void;
+  showMoreOptions?: boolean;
+  onToggleMoreOptions: () => void;
+  onLogout?: () => void;
+  onCleanupTasks?: () => void;
+}
+
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   dateStr,
   greeting,
   user,
-  emergencyModeActive,
+  emergencyModeActive = false,
   onClearEmergencyMode,
   tasks,
   completionHistory,
   onReminderAction,
-  loading,
+  loading = false,
   onRefresh,
   onAddTask,
   onVoiceTasksAdded,
-  showMoreOptions,
+  showMoreOptions = false,
   onToggleMoreOptions,
   onLogout,
-  onCleanupTasks
-}) {
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  onCleanupTasks,
+  className,
+  children,
+  'data-testid': testId
+}) => {
+  const [showUserMenu, setShowUserMenu] = useState<boolean>(false);
+
+  const handleUserMenuToggle = () => {
+    setShowUserMenu(!showUserMenu);
+  };
+
+  const handleBackdropClick = () => {
+    setShowUserMenu(false);
+  };
+
+  const handleCleanupTasks = () => {
+    setShowUserMenu(false);
+    if (onCleanupTasks) {
+      onCleanupTasks();
+    }
+  };
+
+  const handleLogout = () => {
+    setShowUserMenu(false);
+    if (onLogout) {
+      onLogout();
+    }
+  };
+
   return (
-    <>
+    <div className={className} data-testid={testId}>
       {/* Header with date and greeting */}
       <div className="mb-6 relative">
         <div className="flex items-start justify-between">
@@ -38,9 +85,10 @@ export default function DashboardHeader({
           {/* User Menu */}
           <div className="relative">
             <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
+              onClick={handleUserMenuToggle}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               title="User menu"
+              aria-label="User menu"
             >
               <UserCircleIcon className="w-8 h-8 text-gray-600" />
             </button>
@@ -50,22 +98,22 @@ export default function DashboardHeader({
                 {/* Backdrop to close menu */}
                 <div 
                   className="fixed inset-0 z-10" 
-                  onClick={() => setShowUserMenu(false)}
+                  onClick={handleBackdropClick}
+                  aria-label="Close menu"
                 />
                 
                 {/* Menu dropdown */}
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
                   <div className="p-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">{user?.displayName || 'User'}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.displayName || 'User'}
+                    </p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
                   
                   {/* Temporary cleanup button */}
                   <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      if (onCleanupTasks) onCleanupTasks();
-                    }}
+                    onClick={handleCleanupTasks}
                     className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors flex items-center gap-2 text-orange-600 hover:text-orange-700"
                     title="Clean up corrupted template tasks that may be causing errors"
                   >
@@ -74,10 +122,7 @@ export default function DashboardHeader({
                   </button>
                   
                   <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      if (onLogout) onLogout();
-                    }}
+                    onClick={handleLogout}
                     className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors flex items-center gap-2 text-red-600 hover:text-red-700"
                   >
                     <ArrowRightOnRectangleIcon className="w-5 h-5" />
@@ -100,12 +145,14 @@ export default function DashboardHeader({
             <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />
             <span className="text-red-800 font-medium">Emergency Mode Active</span>
           </div>
-          <button
-            onClick={onClearEmergencyMode}
-            className="text-red-600 hover:text-red-800 text-sm transition-colors"
-          >
-            Exit
-          </button>
+          {onClearEmergencyMode && (
+            <button
+              onClick={onClearEmergencyMode}
+              className="text-red-600 hover:text-red-800 text-sm transition-colors"
+            >
+              Exit
+            </button>
+          )}
         </div>
       )}
 
@@ -130,6 +177,7 @@ export default function DashboardHeader({
                 disabled={loading}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-700"
                 title="Refresh all tasks"
+                aria-label="Refresh all tasks"
               >
                 <ArrowPathIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -155,8 +203,9 @@ export default function DashboardHeader({
             {user?.uid && (
               <div className="flex-shrink-0">
                 <VoiceTaskRecorder
-                  userId={user.uid}
                   onTasksAdded={onVoiceTasksAdded}
+                  onTranscriptionComplete={() => {}}
+                  onTaskCreate={() => {}}
                   compact={true}
                 />
               </div>
@@ -164,6 +213,10 @@ export default function DashboardHeader({
           </div>
         </div>
       )}
-    </>
+      
+      {children}
+    </div>
   );
-}
+};
+
+export default DashboardHeader;

@@ -1,16 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useTaskForm } from '@/hooks/useTaskForm';
-import { TaskCategory, TaskPriority } from '@/lib/services/TaskService';
+import { TaskCategory, TaskPriority } from '@/types/models';
+import { TaskFormProps } from '@/types/components';
 import { trackFeatureUsage, FEATURES } from '@/lib/featureDiscovery';
 
-export default function TaskForm({
+const TaskForm: React.FC<TaskFormProps> = ({
   isOpen,
   onClose,
   initialTask = null,
-  mode = 'create' // 'create' or 'edit'
-}) {
+  mode = 'create',
+  defaultCategory,
+  defaultPriority,
+  showAdvancedOptions = false,
+  onSubmit,
+  onCancel,
+  className,
+  children,
+  'data-testid': testId
+}) => {
   const {
     formData,
     errors,
@@ -24,8 +33,11 @@ export default function TaskForm({
     handleSubmit,
     resetForm,
     clearErrors
-  } = useTaskForm(initialTask, (result) => {
+  } = useTaskForm(initialTask, async (result) => {
     // Success callback - close form
+    if (onSubmit) {
+      await onSubmit(result);
+    }
     onClose();
   });
 
@@ -41,7 +53,7 @@ export default function TaskForm({
 
   if (!isOpen) return null;
 
-  const handleFormSubmit = async (e) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     // Track task creation
@@ -62,12 +74,26 @@ export default function TaskForm({
       if (!isEditing) {
         resetForm();
       }
+      if (onCancel) {
+        onCancel();
+      }
       onClose();
     }
   };
 
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleSelectChange('category', e.target.value);
+  };
+
+  const handlePriorityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleSelectChange('priority', e.target.value);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 pb-safe-nav">
+    <div 
+      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 pb-safe-nav ${className || ''}`}
+      data-testid={testId}
+    >
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md modal-with-nav">
         <h3 className="font-semibold text-gray-800 mb-4">
           {isEditing ? 'Edit Task' : 'Add New Task'}
@@ -88,12 +114,13 @@ export default function TaskForm({
               type="text"
               name="title"
               placeholder="What needs to be done?"
-              value={formData.title}
+              value={formData.title || ''}
               onChange={handleInputChange}
               onBlur={handleInputChange}
               autoFocus
               disabled={isSubmitting}
               maxLength={100}
+              required
             />
             {errors.title && (
               <p className="text-red-600 text-sm mt-1">{errors.title}</p>
@@ -105,10 +132,10 @@ export default function TaskForm({
               className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
                 errors.description ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
-              rows="3"
+              rows={3}
               name="description"
               placeholder="Any details? (optional)"
-              value={formData.description}
+              value={formData.description || ''}
               onChange={handleInputChange}
               onBlur={handleInputChange}
               disabled={isSubmitting}
@@ -117,18 +144,22 @@ export default function TaskForm({
             {errors.description && (
               <p className="text-red-600 text-sm mt-1">{errors.description}</p>
             )}
-            <p className="text-gray-500 text-xs mt-1">{formData.description.length}/500 characters</p>
+            <p className="text-gray-500 text-xs mt-1">
+              {(formData.description || '').length}/500 characters
+            </p>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category
+              </label>
               <select
                 className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   errors.category ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
-                value={formData.category}
-                onChange={(e) => handleSelectChange('category', e.target.value)}
+                value={formData.category || defaultCategory || TaskCategory.PERSONAL}
+                onChange={handleCategoryChange}
                 disabled={isSubmitting}
               >
                 <option value={TaskCategory.PERSONAL}>🧘 Personal Time</option>
@@ -147,13 +178,15 @@ export default function TaskForm({
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Priority
+              </label>
               <select
                 className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   errors.priority ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
-                value={formData.priority}
-                onChange={(e) => handleSelectChange('priority', e.target.value)}
+                value={formData.priority || defaultPriority || TaskPriority.MEDIUM}
+                onChange={handlePriorityChange}
                 disabled={isSubmitting}
               >
                 <option value={TaskPriority.LOW}>🟢 Low</option>
@@ -182,7 +215,7 @@ export default function TaskForm({
             >
               {isSubmitting ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                   <span>{isEditing ? 'Updating...' : 'Adding...'}</span>
                 </>
               ) : (
@@ -191,7 +224,11 @@ export default function TaskForm({
             </button>
           </div>
         </form>
+        
+        {children}
       </div>
     </div>
   );
-}
+};
+
+export default TaskForm;
