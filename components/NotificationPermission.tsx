@@ -20,7 +20,7 @@ const NotificationPermission: React.FC<NotificationPermissionProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [isRequesting, setIsRequesting] = useState<boolean>(false);
-  const { permission, requestPermission, isSupported } = useNotifications(messaging, user, db);
+  const { permission, requestPermission, isSupported } = useNotifications(messaging, user as any, db);
 
   // Don't show if notifications aren't supported or already granted/denied
   if (!isSupported || permission !== 'default' || !isVisible) {

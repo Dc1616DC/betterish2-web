@@ -156,7 +156,7 @@ export default function VoiceTaskRecorder({
       const updateAudioLevel = (): void => {
         if (!analyserRef.current || !dataArrayRef.current) return;
         
-        analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current as any);
         const average = dataArrayRef.current.reduce((acc, val) => acc + val, 0) / bufferLength;
         const normalized = Math.min(100, average * 2); // Scale for better visual feedback
         setAudioLevel(normalized);
