@@ -17,57 +17,59 @@ import {
   orderBy, 
   limit,
   serverTimestamp,
-  writeBatch 
+  writeBatch,
+  Firestore,
+  DocumentData,
+  QuerySnapshot,
+  DocumentSnapshot,
+  Timestamp
 } from 'firebase/firestore';
+import { Task, TaskId, UserId, TaskCategory, TaskPriority, TaskStatus, TaskSource, Subtask } from '../../types/models';
 
-// Task Status Constants
-export const TaskStatus = {
-  ACTIVE: 'active',
-  COMPLETED: 'completed', 
-  SNOOZED: 'snoozed',
-  ARCHIVED: 'archived'
-};
+// Task Status Constants (using enum from types)
+export { TaskStatus, TaskCategory, TaskPriority, TaskSource } from '../../types/models';
 
-// Task Categories
-export const TaskCategory = {
-  PERSONAL: 'personal',
-  HOUSEHOLD: 'household',
-  WORK: 'work',
-  BABY: 'baby',
-  RELATIONSHIP: 'relationship', 
-  HEALTH: 'health',
-  EVENTS: 'events',
-  MAINTENANCE: 'maintenance',
-  HOME_PROJECTS: 'home_projects'
-};
+// Task filters interface
+export interface TaskFilters {
+  status?: TaskStatus;
+  category?: TaskCategory;
+  isProject?: boolean;
+  limit?: number;
+}
 
-// Task Priority
-export const TaskPriority = {
-  LOW: 'low',
-  MEDIUM: 'medium',
-  HIGH: 'high'
-};
+// Task creation data interface
+export interface CreateTaskData {
+  title: string;
+  description?: string;
+  category?: TaskCategory;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  isProject?: boolean;
+  subtasks?: Subtask[];
+  source?: TaskSource;
+  tags?: string[];
+}
 
-// Task Sources
-export const TaskSource = {
-  MANUAL: 'manual',
-  AI_MENTOR: 'ai_mentor',
-  VOICE: 'voice',
-  TEMPLATE: 'template'
-};
+// Task validation result
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
 
 class TaskService {
-  constructor(db) {
+  private db: Firestore;
+  private readonly collection = 'tasks';
+
+  constructor(db: Firestore) {
     this.db = db;
-    this.collection = 'tasks';
   }
 
   // =============================================
   // VALIDATION HELPERS
   // =============================================
 
-  validateTaskData(taskData) {
-    const errors = [];
+  validateTaskData(taskData: CreateTaskData): ValidationResult {
+    const errors: string[] = [];
 
     // Title validation
     if (!taskData.title?.trim()) {
@@ -91,13 +93,14 @@ class TaskService {
       errors.push('Invalid task priority');
     }
 
-    if (errors.length > 0) {
-      throw new Error(`Validation failed: ${errors.join(', ')}`);
-    }
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
   }
 
   // Clean and normalize task data
-  normalizeTaskData(rawData) {
+  private normalizeTaskData(rawData: Partial<CreateTaskData>): CreateTaskData {
     return {
       title: rawData.title?.trim(),
       description: rawData.description?.trim() || '',
@@ -115,12 +118,16 @@ class TaskService {
   // CREATE OPERATIONS
   // =============================================
 
-  async createTask(userId, taskData) {
+  async createTask(userId: UserId, taskData: CreateTaskData): Promise<Task> {
     if (!this.db) throw new Error('Database not initialized');
     if (!userId) throw new Error('User ID is required');
 
     const normalizedData = this.normalizeTaskData(taskData);
-    this.validateTaskData(normalizedData);
+    const validation = this.validateTaskData(normalizedData);
+    
+    if (!validation.isValid) {
+      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+    }
 
     // Check for duplicates (same title in last hour)
     await this.checkForDuplicates(userId, normalizedData.title);
@@ -147,15 +154,18 @@ class TaskService {
         id: docRef.id,
         ...taskDoc,
         createdAt: new Date(),
-        updatedAt: new Date()
-      };
+        updatedAt: new Date(),
+        category: taskDoc.category as TaskCategory,
+        priority: taskDoc.priority as TaskPriority,
+        status: taskDoc.status as TaskStatus
+      } as Task;
     } catch (error) {
       console.error('❌ Error creating task:', error);
       throw new Error(`Failed to create task: ${error.message}`);
     }
   }
 
-  async checkForDuplicates(userId, title) {
+  private async checkForDuplicates(userId: UserId, title: string): Promise<void> {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     
     const q = query(
@@ -176,7 +186,7 @@ class TaskService {
   // READ OPERATIONS
   // =============================================
 
-  async getTasks(userId, filters = {}) {
+  async getTasks(userId: UserId, filters: TaskFilters = {}): Promise<Task[]> {
     if (!this.db) throw new Error('Database not initialized');
     if (!userId) throw new Error('User ID is required');
 
@@ -210,8 +220,8 @@ class TaskService {
       const snapshot = await getDocs(q);
       const tasks = [];
 
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
+      snapshot.docs.forEach(docSnap => {
+        const data: DocumentData = docSnap.data();
         
         // Skip deleted, dismissed, and template tasks
         if (data.deleted || data.dismissed || this.isTemplateTask(data)) {
@@ -219,7 +229,7 @@ class TaskService {
         }
 
         tasks.push({
-          id: doc.id,
+          id: docSnap.id,
           ...data,
           // Convert Firestore timestamps to Date objects
           createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
@@ -238,7 +248,7 @@ class TaskService {
   }
 
   // Get active tasks (not completed, not snoozed, not archived)
-  async getActiveTasks(userId) {
+  async getActiveTasks(userId: UserId): Promise<Task[]> {
     const tasks = await this.getTasks(userId, { status: TaskStatus.ACTIVE });
     
     // Filter out snoozed tasks that haven't reached their snooze time
@@ -252,7 +262,7 @@ class TaskService {
   }
 
   // Get completed tasks
-  async getCompletedTasks(userId, limitCount = 50) {
+  async getCompletedTasks(userId: UserId, limitCount = 50): Promise<Task[]> {
     return this.getTasks(userId, { 
       status: TaskStatus.COMPLETED,
       limit: limitCount 
@@ -260,12 +270,12 @@ class TaskService {
   }
 
   // Get projects only
-  async getProjects(userId) {
+  async getProjects(userId: UserId): Promise<Task[]> {
     return this.getTasks(userId, { isProject: true });
   }
 
   // Get past promises (incomplete tasks older than 1 day)
-  async getPastPromises(userId) {
+  async getPastPromises(userId: UserId): Promise<Task[]> {
     const allTasks = await this.getTasks(userId, { status: TaskStatus.ACTIVE });
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
@@ -280,21 +290,24 @@ class TaskService {
   // UPDATE OPERATIONS  
   // =============================================
 
-  async updateTask(taskId, updates) {
+  async updateTask(taskId: TaskId, updates: Partial<Task>): Promise<Task> {
     if (!this.db) throw new Error('Database not initialized');
     if (!taskId) throw new Error('Task ID is required');
 
     // Validate updates if they contain validated fields
     if (updates.title !== undefined || updates.category !== undefined || updates.priority !== undefined) {
-      const tempData = { 
+      const tempData: CreateTaskData = { 
         title: updates.title || 'temp',
         category: updates.category || TaskCategory.PERSONAL,
         priority: updates.priority || TaskPriority.MEDIUM
       };
-      this.validateTaskData(tempData);
+      const validation = this.validateTaskData(tempData);
+      if (!validation.isValid) {
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      }
     }
 
-    const updateData = {
+    const updateData: Record<string, any> = {
       ...updates,
       updatedAt: serverTimestamp()
     };
@@ -323,7 +336,7 @@ class TaskService {
           updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt),
           completedAt: data.completedAt?.toDate?.() || null,
           snoozedUntil: data.snoozedUntil?.toDate?.() || null
-        };
+        } as Task;
       }
       
       throw new Error('Task not found after update');
@@ -334,16 +347,16 @@ class TaskService {
   }
 
   // Complete a task
-  async completeTask(taskId) {
+  async completeTask(taskId: TaskId): Promise<Task> {
     return this.updateTask(taskId, {
       status: TaskStatus.COMPLETED,
       completed: true,
-      completedAt: serverTimestamp()
+      completedAt: serverTimestamp() as any
     });
   }
 
   // Uncomplete a task  
-  async uncompleteTask(taskId) {
+  async uncompleteTask(taskId: TaskId): Promise<Task> {
     return this.updateTask(taskId, {
       status: TaskStatus.ACTIVE,
       completed: false,
@@ -352,7 +365,7 @@ class TaskService {
   }
 
   // Snooze a task
-  async snoozeTask(taskId, until) {
+  async snoozeTask(taskId: TaskId, until: Date): Promise<Task> {
     return this.updateTask(taskId, {
       status: TaskStatus.SNOOZED,
       snoozedUntil: until
@@ -360,7 +373,7 @@ class TaskService {
   }
 
   // Archive a task (soft delete)
-  async archiveTask(taskId) {
+  async archiveTask(taskId: TaskId): Promise<Task> {
     return this.updateTask(taskId, {
       status: TaskStatus.ARCHIVED
     });
@@ -370,7 +383,7 @@ class TaskService {
   // DELETE OPERATIONS
   // =============================================
 
-  async deleteTask(taskId) {
+  async deleteTask(taskId: TaskId): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
     if (!taskId) throw new Error('Task ID is required');
 
@@ -389,7 +402,7 @@ class TaskService {
   }
 
   // Hard delete (permanent removal)
-  async permanentlyDeleteTask(taskId) {
+  async permanentlyDeleteTask(taskId: TaskId): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
     if (!taskId) throw new Error('Task ID is required');
 
@@ -408,7 +421,7 @@ class TaskService {
   // BULK OPERATIONS
   // =============================================
 
-  async completeTasks(taskIds) {
+  async completeTasks(taskIds: TaskId[]): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
     if (!Array.isArray(taskIds) || taskIds.length === 0) {
       throw new Error('Task IDs array is required');
@@ -436,7 +449,7 @@ class TaskService {
     }
   }
 
-  async archiveTasks(taskIds) {
+  async archiveTasks(taskIds: TaskId[]): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
     if (!Array.isArray(taskIds) || taskIds.length === 0) {
       throw new Error('Task IDs array is required');
@@ -467,12 +480,14 @@ class TaskService {
   // PROJECT OPERATIONS
   // =============================================
 
-  async convertToProject(taskId, subtasks = []) {
-    const subtaskData = subtasks.map((subtask, index) => ({
+  async convertToProject(taskId: TaskId, subtasks: Partial<Subtask>[] = []): Promise<Task> {
+    const subtaskData: Subtask[] = subtasks.map((subtask, index) => ({
       id: index + 1,
-      title: subtask.title?.trim(),
+      title: subtask.title?.trim() || '',
       completed: false,
-      completedAt: null
+      completedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     }));
 
     return this.updateTask(taskId, {
@@ -482,16 +497,18 @@ class TaskService {
     });
   }
 
-  async addSubtask(projectId, subtaskData) {
+  async addSubtask(projectId: TaskId, subtaskData: Partial<Subtask>): Promise<Task> {
     const project = await this.getTask(projectId);
     if (!project) throw new Error('Project not found');
     if (!project.isProject) throw new Error('Task is not a project');
 
-    const newSubtask = {
+    const newSubtask: Subtask = {
       id: (project.subtasks?.length || 0) + 1,
-      title: subtaskData.title?.trim(),
+      title: subtaskData.title?.trim() || '',
       completed: false,
-      completedAt: null
+      completedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     const updatedSubtasks = [...(project.subtasks || []), newSubtask];
@@ -503,7 +520,7 @@ class TaskService {
     });
   }
 
-  async updateSubtask(projectId, subtaskId, updates) {
+  async updateSubtask(projectId: TaskId, subtaskId: number, updates: Partial<Subtask>): Promise<Task> {
     const project = await this.getTask(projectId);
     if (!project) throw new Error('Project not found');
     if (!project.isProject) throw new Error('Task is not a project');
@@ -527,7 +544,7 @@ class TaskService {
     });
   }
 
-  calculateProjectProgress(subtasks) {
+  private calculateProjectProgress(subtasks: Subtask[]): number {
     if (!subtasks || subtasks.length === 0) return 0;
     
     const completedCount = subtasks.filter(st => st.completed).length;
@@ -538,7 +555,7 @@ class TaskService {
   // UTILITY METHODS
   // =============================================
 
-  async getTask(taskId) {
+  async getTask(taskId: TaskId): Promise<Task | null> {
     if (!this.db) throw new Error('Database not initialized');
     if (!taskId) throw new Error('Task ID is required');
 
@@ -555,7 +572,7 @@ class TaskService {
           updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt),
           completedAt: data.completedAt?.toDate?.() || null,
           snoozedUntil: data.snoozedUntil?.toDate?.() || null
-        };
+        } as Task;
       }
       
       return null;
@@ -566,7 +583,7 @@ class TaskService {
   }
 
   // Check if task is a template/legacy task
-  isTemplateTask(taskData) {
+  private isTemplateTask(taskData: DocumentData): boolean {
     if (!taskData.title) return false;
     
     const templatePrefixes = [
@@ -580,7 +597,7 @@ class TaskService {
   }
 
   // Search tasks by title/description
-  async searchTasks(userId, searchQuery) {
+  async searchTasks(userId: UserId, searchQuery: string): Promise<Task[]> {
     const allTasks = await this.getTasks(userId);
     const query = searchQuery.toLowerCase();
     
@@ -593,10 +610,10 @@ class TaskService {
 }
 
 // Export singleton instance factory
-let taskServiceInstance = null;
+let taskServiceInstance: TaskService | null = null;
 
-export function createTaskService(db) {
-  if (!taskServiceInstance || taskServiceInstance.db !== db) {
+export function createTaskService(db: Firestore): TaskService {
+  if (!taskServiceInstance || taskServiceInstance['db'] !== db) {
     taskServiceInstance = new TaskService(db);
   }
   return taskServiceInstance;
