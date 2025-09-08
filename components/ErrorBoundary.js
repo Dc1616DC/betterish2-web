@@ -1,52 +1,132 @@
 'use client';
 
-import { Component } from 'react';
+import React from 'react';
+import { logError, ErrorTypes, ErrorSeverity } from '@/lib/errorHandler';
 
-class ErrorBoundary extends Component {
+class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      errorId: null
+    };
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    // In production, you might want to log this to an error reporting service
-    if (process.env.NODE_ENV === 'production') {
-      // Log to error reporting service
+    // Log the error using our centralized error handler
+    const errorData = logError(error, {
+      type: ErrorTypes.RUNTIME,
+      severity: ErrorSeverity.HIGH,
+      componentStack: errorInfo.componentStack,
+      errorBoundary: this.props.name || 'ErrorBoundary',
+      props: this.props.context || {}
+    });
+
+    this.setState({
+      error,
+      errorInfo,
+      errorId: errorData.id
+    });
+
+    // Call optional error callback
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo, errorData);
     }
   }
 
+  handleRetry = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      errorId: null
+    });
+
+    // Call optional retry callback
+    if (this.props.onRetry) {
+      this.props.onRetry();
+    }
+  };
+
   render() {
     if (this.state.hasError) {
+      // Custom fallback UI
+      if (this.props.fallback) {
+        return this.props.fallback(this.state.error, this.handleRetry);
+      }
+
+      // Default fallback UI
       return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
-            <div className="text-red-600 text-6xl mb-4">⚠️</div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+          <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-6 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">
               Something went wrong
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {this.props.fallbackMessage || 'An unexpected error occurred. Please try refreshing the page.'}
+            </h1>
+            
+            <p className="text-gray-600 mb-6">
+              {this.props.fallbackMessage || "We're sorry, but something unexpected happened. Our team has been notified."}
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors"
-            >
-              Refresh Page
-            </button>
+
             {process.env.NODE_ENV === 'development' && (
-              <details className="mt-4 text-left">
-                <summary className="text-sm text-gray-500 cursor-pointer">
+              <details className="text-left mb-6 bg-gray-50 rounded-lg p-4">
+                <summary className="cursor-pointer font-medium text-gray-700 mb-2">
                   Error Details (Development)
                 </summary>
-                <pre className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded overflow-auto">
-                  {this.state.error?.stack}
-                </pre>
+                <div className="text-sm text-gray-600 space-y-2">
+                  <div>
+                    <strong>Message:</strong> {this.state.error?.message}
+                  </div>
+                  <div>
+                    <strong>Error ID:</strong> {this.state.errorId}
+                  </div>
+                  {this.state.error?.stack && (
+                    <div>
+                      <strong>Stack:</strong>
+                      <pre className="text-xs bg-white p-2 rounded mt-1 overflow-x-auto">
+                        {this.state.error.stack}
+                      </pre>
+                    </div>
+                  )}
+                </div>
               </details>
             )}
+
+            <div className="space-y-3">
+              <button
+                onClick={this.handleRetry}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
+              
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Reload Page
+              </button>
+              
+              {this.props.showHomeLink !== false && (
+                <a
+                  href="/"
+                  className="block w-full bg-gray-50 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-center"
+                >
+                  Go Home
+                </a>
+              )}
+            </div>
           </div>
         </div>
       );
@@ -55,5 +135,27 @@ class ErrorBoundary extends Component {
     return this.props.children;
   }
 }
+
+/**
+ * Higher-order component for wrapping components with error boundary
+ */
+export const withErrorBoundary = (Component, options = {}) => {
+  const WrappedComponent = (props) => (
+    <ErrorBoundary
+      name={options.name || Component.displayName || Component.name}
+      context={options.context}
+      onError={options.onError}
+      onRetry={options.onRetry}
+      fallback={options.fallback}
+      showHomeLink={options.showHomeLink}
+      fallbackMessage={options.fallbackMessage}
+    >
+      <Component {...props} />
+    </ErrorBoundary>
+  );
+
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+  return WrappedComponent;
+};
 
 export default ErrorBoundary;

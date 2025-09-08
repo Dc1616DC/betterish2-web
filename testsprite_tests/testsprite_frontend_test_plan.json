@@ -1,67 +1,91 @@
 [
   {
     "id": "TC001",
-    "title": "User Registration with Valid Inputs",
-    "description": "Verify that a new user can successfully register using valid email and password and completes onboarding preferences.",
+    "title": "Firebase Authentication with Email/Password - Success",
+    "description": "Verify user can successfully sign up and log in using valid email and password credentials via Firebase Authentication.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to the registration page."
+        "description": "Navigate to login/signup page."
       },
       {
         "type": "action",
-        "description": "Enter a valid email address and strong password."
+        "description": "Input valid email and password credentials."
       },
       {
         "type": "action",
-        "description": "Submit the registration form."
+        "description": "Click the sign up button."
       },
       {
         "type": "assertion",
-        "description": "Confirm registration success notification is shown."
+        "description": "User account is created and user is logged in."
       },
       {
         "type": "action",
-        "description": "Complete onboarding preference setup."
+        "description": "Log out from the app."
+      },
+      {
+        "type": "action",
+        "description": "Input the same valid email and password on login form."
+      },
+      {
+        "type": "action",
+        "description": "Click login button."
       },
       {
         "type": "assertion",
-        "description": "Verify user is redirected to the dashboard with personalized greeting and preferences applied."
+        "description": "User is successfully logged in."
       }
     ]
   },
   {
     "id": "TC002",
-    "title": "User Login with Correct Credentials",
-    "description": "Check login succeeds with valid email and password and loads user session correctly.",
-    "category": "functional",
+    "title": "Firebase Authentication with Email/Password - Failure",
+    "description": "Verify login/sign up failure scenarios for invalid or missing email/password credentials.",
+    "category": "error handling",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to the login page."
+        "description": "Navigate to signup page."
       },
       {
         "type": "action",
-        "description": "Enter valid email and password."
+        "description": "Input invalid email format or empty password."
       },
       {
         "type": "action",
-        "description": "Click the login button."
+        "description": "Click sign up button."
       },
       {
         "type": "assertion",
-        "description": "User is authenticated and navigated to the main dashboard."
+        "description": "Display proper error message for invalid input."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to login page."
+      },
+      {
+        "type": "action",
+        "description": "Input non-registered email or incorrect password."
+      },
+      {
+        "type": "action",
+        "description": "Click login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Display authentication failure message without logging in."
       }
     ]
   },
   {
     "id": "TC003",
-    "title": "User Login with Invalid Credentials",
-    "description": "Ensure login fails gracefully with inappropriate email or password with proper error messages.",
-    "category": "error handling",
+    "title": "Firebase Authentication with Google Login - Success",
+    "description": "Verify user can successfully authenticate via Google OAuth login using Firebase Authentication.",
+    "category": "functional",
     "priority": "High",
     "steps": [
       {
@@ -70,492 +94,488 @@
       },
       {
         "type": "action",
-        "description": "Input invalid email and/or password."
+        "description": "Click Google login button."
       },
       {
         "type": "action",
-        "description": "Click login button."
+        "description": "Complete Google account OAuth authorization flow."
       },
       {
         "type": "assertion",
-        "description": "Verify error message is displayed indicating invalid credentials."
-      },
-      {
-        "type": "assertion",
-        "description": "No user session is created."
+        "description": "User is successfully authenticated and logged in using Google account."
       }
     ]
   },
   {
     "id": "TC004",
-    "title": "Create New Task with Valid Data",
-    "description": "Verify that users can create a new task with mandatory fields and that the task appears in the dashboard.",
+    "title": "Onboarding Questionnaire Data Collection and Storage",
+    "description": "Validate the onboarding multi-step questionnaire collects user family info, homeownership, priorities, and location correctly and stores data for AI customization.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to task creation form."
+        "description": "Launch app after fresh signup and authentication."
       },
       {
         "type": "action",
-        "description": "Enter valid task title, description, priority, and category."
-      },
-      {
-        "type": "action",
-        "description": "Submit the task form."
+        "description": "Complete each onboarding step with valid data: family makeup, housing status, priorities, location."
       },
       {
         "type": "assertion",
-        "description": "Task is added to the task list and visible on the dashboard."
+        "description": "All questionnaire inputs accept valid data and prevent incomplete progression."
+      },
+      {
+        "type": "action",
+        "description": "Finish onboarding flow."
+      },
+      {
+        "type": "assertion",
+        "description": "Collected data is correctly stored in user profile in database."
       }
     ]
   },
   {
     "id": "TC005",
-    "title": "Task Creation with Missing Required Fields",
-    "description": "Check task form validation prevents creation when required fields are missing and shows appropriate error messages.",
-    "category": "error handling",
-    "priority": "High",
+    "title": "App Walkthrough Trigger and Completion",
+    "description": "Verify the 6-step app walkthrough automatically triggers for new users and records progress correctly.",
+    "category": "functional",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Open task creation form."
-      },
-      {
-        "type": "action",
-        "description": "Leave required fields (e.g., task title) empty."
-      },
-      {
-        "type": "action",
-        "description": "Attempt to submit the form."
+        "description": "Sign up and log in as a new user."
       },
       {
         "type": "assertion",
-        "description": "Validation errors are displayed and task is not created."
+        "description": "App walkthrough sequence is displayed immediately."
+      },
+      {
+        "type": "action",
+        "description": "Navigate through all 6 walkthrough steps."
+      },
+      {
+        "type": "assertion",
+        "description": "Walkthrough progress is tracked and completion is recorded to prevent repeating on next app open."
       }
     ]
   },
   {
     "id": "TC006",
-    "title": "Edit Existing Task Successfully",
-    "description": "Verify existing tasks can be edited and changes persist and update in real-time across devices.",
+    "title": "Browse Task Categories Including Projects & Fixes",
+    "description": "Validate browsing task categories loads correctly, projects & fixes category displays large projects with AI-generated subtask breakdowns.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Select an existing task from the task list."
-      },
-      {
-        "type": "action",
-        "description": "Modify the task fields (e.g., title, priority)."
-      },
-      {
-        "type": "action",
-        "description": "Submit the updated task form."
+        "description": "Navigate to browse tasks page after login."
       },
       {
         "type": "assertion",
-        "description": "Update is reflected immediately in task list and synced across logged-in sessions."
+        "description": "Task categories including 'Projects & Fixes' are visible."
+      },
+      {
+        "type": "action",
+        "description": "Select 'Projects & Fixes' category."
+      },
+      {
+        "type": "assertion",
+        "description": "Large home maintenance projects are listed with AI-generated subtasks displayed."
+      },
+      {
+        "type": "action",
+        "description": "Expand a project to view detailed AI breakdown of subtasks."
+      },
+      {
+        "type": "assertion",
+        "description": "Subtasks correctly represent achievable steps for weekend completion."
       }
     ]
   },
   {
     "id": "TC007",
-    "title": "Delete a Task and Confirm Removal",
-    "description": "Ensure users can delete a task and it is removed from all views and synchronized immediately.",
+    "title": "Task CRUD Operations and Status Management",
+    "description": "Verify creation, reading, updating, completion, snoozing, and bulk management of tasks functions correctly with proper status tracking.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Locate a task in the task list."
-      },
-      {
-        "type": "action",
-        "description": "Trigger delete action for the selected task."
+        "description": "Create a new task with valid details."
       },
       {
         "type": "assertion",
-        "description": "Confirm deletion prompt appears."
+        "description": "Task is saved and visible in task list."
       },
       {
         "type": "action",
-        "description": "Confirm deletion."
+        "description": "Update the task's title, description, and due date."
       },
       {
         "type": "assertion",
-        "description": "Task disappears from task list and is removed from backend."
+        "description": "Updates are saved and correctly displayed."
+      },
+      {
+        "type": "action",
+        "description": "Mark task as completed."
+      },
+      {
+        "type": "assertion",
+        "description": "Task status changes to completed."
+      },
+      {
+        "type": "action",
+        "description": "Snooze a task to postpone its due date."
+      },
+      {
+        "type": "assertion",
+        "description": "Task due date is updated appropriately."
+      },
+      {
+        "type": "action",
+        "description": "Select multiple tasks and perform bulk status update or deletion."
+      },
+      {
+        "type": "assertion",
+        "description": "Bulk action executes correctly on selected tasks."
       }
     ]
   },
   {
     "id": "TC008",
-    "title": "Create and Manage Subtasks within a Project",
-    "description": "Validate that users can add, edit, and complete subtasks within a project and see accurate progress tracking.",
+    "title": "AI-Powered Dynamic Task Generation Based on User Context",
+    "description": "Verify tasks generated dynamically adjust accurately according to user family data, location, time, and behavioral patterns.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Open a project card."
+        "description": "Load user profile with defined family context, location, and behavioral patterns."
       },
       {
         "type": "action",
-        "description": "Create one or more subtasks with valid data."
+        "description": "Trigger dynamic task refresh system."
       },
       {
         "type": "assertion",
-        "description": "Subtasks are listed under the project with correct status."
-      },
-      {
-        "type": "action",
-        "description": "Mark subtasks as completed."
+        "description": "AI-generated tasks reflect user’s family makeup and regional considerations."
       },
       {
         "type": "assertion",
-        "description": "Project progress bar updates accurately to reflect subtask completion."
+        "description": "Tasks adjust per time of day and detected behavior patterns, e.g., preferred task times."
       }
     ]
   },
   {
     "id": "TC009",
-    "title": "AI Mentor Check-In Responds Appropriately",
-    "description": "Test AI Mentor Check-in conversation providing relevant productivity coaching and smart task suggestions.",
+    "title": "Daily AI Check-in Conversational Guidance",
+    "description": "Validate daily AI check-in provides relevant, motivating, and context-aware task suggestions without errors.",
     "category": "functional",
-    "priority": "Medium",
+    "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to AI Mentor Check-In component."
-      },
-      {
-        "type": "action",
-        "description": "Initiate a check-in conversation."
+        "description": "Trigger daily AI check-in session."
       },
       {
         "type": "assertion",
-        "description": "AI returns contextually relevant coaching advice based on user input."
+        "description": "Conversational AI mentor provides task suggestions based on current context."
       },
       {
         "type": "assertion",
-        "description": "Smart task suggestions are displayed appropriately."
+        "description": "Motivational messages are relevant and empathetic."
+      },
+      {
+        "type": "assertion",
+        "description": "No errors occur during conversation."
       }
     ]
   },
   {
     "id": "TC010",
-    "title": "Voice Transcription Creates Accurate Task",
-    "description": "Validate that voice input is transcribed correctly into a new task and saved properly.",
+    "title": "Voice Task Creation via Speech-to-Text",
+    "description": "Verify users can record a voice task, and the transcription is accurate and saved as a new task entry.",
     "category": "functional",
-    "priority": "Medium",
+    "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Access the voice transcription task creation interface."
+        "description": "Activate voice task recorder feature."
       },
       {
         "type": "action",
-        "description": "Record a voice task input with clear speech."
+        "description": "Speak a task description clearly."
       },
       {
         "type": "assertion",
-        "description": "Voice input is transcribed correctly into text."
-      },
-      {
-        "type": "action",
-        "description": "Confirm creation of new task with transcribed content."
+        "description": "Speech is recorded and sent for transcription."
       },
       {
         "type": "assertion",
-        "description": "Task appears in the task list immediately."
+        "description": "Transcribed text is displayed and user confirms to save task."
+      },
+      {
+        "type": "assertion",
+        "description": "New task is created with transcribed text as title or description."
       }
     ]
   },
   {
     "id": "TC011",
-    "title": "Activate Emergency Mode and Verify Task Limitations",
-    "description": "Test Emergency Mode activation limits visible and active tasks per specifications and supports focus during high-pressure periods.",
+    "title": "Emergency Mode Activation and Simplified UI",
+    "description": "Verify that Emergency Mode activates appropriately upon overwhelm detection and simplifies task view to reduce user stress.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Enable Emergency Mode from the selector."
+        "description": "Simulate high-stress user activity or manually activate Emergency Mode."
       },
       {
         "type": "assertion",
-        "description": "Task list is filtered to curated tasks suitable for emergency mode."
+        "description": "App enters Emergency Mode with simplified task management interface."
+      },
+      {
+        "type": "assertion",
+        "description": "Complex or numerous tasks are collapsed or filtered to reduce clutter."
       },
       {
         "type": "action",
-        "description": "Attempt to add non-emergency tasks."
+        "description": "Exit Emergency Mode."
       },
       {
         "type": "assertion",
-        "description": "New non-emergency task creation is restricted or warned."
-      },
-      {
-        "type": "action",
-        "description": "Complete emergency tasks."
-      },
-      {
-        "type": "assertion",
-        "description": "Progress tracking updates correctly and emergency mode can be exited without errors."
+        "description": "UI returns to normal comprehensive task management view."
       }
     ]
   },
   {
     "id": "TC012",
-    "title": "Offline Support Allows Access and Edits",
-    "description": "Confirm that mobile and desktop clients retain access to tasks offline and changes synchronize after reconnecting.",
+    "title": "Smart Push Notifications Delivery and Contextual Accuracy",
+    "description": "Validate push notifications are sent on time, contain relevant contextual reminders or achievement updates based on user behavior and task status.",
     "category": "functional",
     "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Start with a logged-in session on mobile device."
-      },
-      {
-        "type": "action",
-        "description": "Turn off network connectivity."
+        "description": "Trigger task reminder and achievement events in test environment."
       },
       {
         "type": "assertion",
-        "description": "User can still view cached task list and project data."
-      },
-      {
-        "type": "action",
-        "description": "Create or edit tasks offline."
-      },
-      {
-        "type": "action",
-        "description": "Restore network connection."
+        "description": "Push notifications are received on device timely."
       },
       {
         "type": "assertion",
-        "description": "Offline changes are synchronized to backend and reflected across devices."
+        "description": "Notifications content reflects accurate task context or achievement status."
       }
     ]
   },
   {
     "id": "TC013",
-    "title": "Real-Time Synchronization Across Devices",
-    "description": "Ensure that creating, editing, or deleting tasks on one device updates all logged in sessions in real-time without manual refresh.",
-    "category": "functional",
-    "priority": "High",
+    "title": "Mobile Dashboard Responsiveness and Touch Navigation",
+    "description": "Verify dashboard renders correctly on various mobile devices and screen sizes, and touch interactions are smooth and intuitive.",
+    "category": "ui",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Log in to the application simultaneously on two devices."
-      },
-      {
-        "type": "action",
-        "description": "Create a new task on device A."
+        "description": "Open app dashboard on multiple mobile devices and screen simulators."
       },
       {
         "type": "assertion",
-        "description": "New task appears automatically on device B."
+        "description": "Layout and components adjust responsively to screen size."
       },
       {
         "type": "action",
-        "description": "Edit that task on device B."
+        "description": "Perform touch navigation gestures such as taps, swipes, and scrolling."
       },
       {
         "type": "assertion",
-        "description": "Changes reflect immediately on device A."
-      },
-      {
-        "type": "action",
-        "description": "Delete the task from device A."
-      },
-      {
-        "type": "assertion",
-        "description": "Task is removed from device B in real-time."
+        "description": "All touch interactions respond without lag or errors."
       }
     ]
   },
   {
     "id": "TC014",
-    "title": "Recurring Task Creation and Execution",
-    "description": "Validate recurring tasks are created properly and reoccur as per selected frequency with system reminders.",
+    "title": "Achievement System Tracking and Feature Unlocks",
+    "description": "Verify achievement streaks, milestone rewards, and subsequent feature unlocks function correctly based on user task completion behaviors.",
     "category": "functional",
     "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Create a task with recurring option enabled and set frequency (daily, weekly, monthly)."
+        "description": "Complete tasks repeatedly to trigger achievement streaks."
       },
       {
         "type": "assertion",
-        "description": "Task recurs according to schedule."
+        "description": "Achievement streak counters increment correctly."
       },
       {
         "type": "action",
-        "description": "Complete a recurring task instance."
+        "description": "Reach milestone thresholds."
       },
       {
         "type": "assertion",
-        "description": "Next instance of task is scheduled as per recurring definition."
+        "description": "Milestone rewards are granted and visible in achievement dashboard."
+      },
+      {
+        "type": "assertion",
+        "description": "Appropriate features are unlocked after milestones."
       }
     ]
   },
   {
     "id": "TC015",
-    "title": "Pull-to-Refresh Synchronizes Data on Mobile",
-    "description": "Check that pull-to-refresh gesture syncs the latest task and project data on mobile without errors.",
+    "title": "Sidekick AI Chat Responsiveness and Task Suggestions",
+    "description": "Validate Sidekick AI chat provides relevant productivity advice and task suggestions promptly in response to user inputs.",
     "category": "functional",
     "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Open the mobile dashboard."
+        "description": "Open Sidekick AI chat feature."
       },
       {
         "type": "action",
-        "description": "Perform a pull-to-refresh gesture."
+        "description": "Input common user queries or requests related to tasks or productivity."
       },
       {
         "type": "assertion",
-        "description": "Latest data is fetched from backend and UI is updated accordingly."
+        "description": "Sidekick AI responds correctly with relevant task suggestions or advice."
+      },
+      {
+        "type": "assertion",
+        "description": "Responses are timely and free from errors."
       }
     ]
   },
   {
     "id": "TC016",
-    "title": "Admin Cleanup All Users Functionality",
-    "description": "Verify that admin users can trigger cleanup operations on all users and that the operation completes successfully without errors.",
+    "title": "Seasonal and Regional Task Suggestions Accuracy",
+    "description": "Verify that seasonal task intelligence updates task suggestions appropriately based on user's regional weather patterns and state.",
     "category": "functional",
-    "priority": "High",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Log in as an admin user."
+        "description": "Set user location to various regional states with different seasonal conditions."
       },
       {
         "type": "action",
-        "description": "Access admin cleanup interface."
-      },
-      {
-        "type": "action",
-        "description": "Trigger 'Cleanup All Users' operation."
+        "description": "Trigger task suggestion refresh."
       },
       {
         "type": "assertion",
-        "description": "Operation completes successfully with confirmation message."
-      },
-      {
-        "type": "assertion",
-        "description": "User data is appropriately cleaned without impacting unrelated data or app functionality."
+        "description": "Suggested seasonal tasks match expected tasks for given region and season."
       }
     ]
   },
   {
     "id": "TC017",
-    "title": "Security and Access Restrictions on User Sessions",
-    "description": "Ensure unauthorized users cannot access protected routes or data and user sessions expire securely.",
-    "category": "security",
-    "priority": "High",
+    "title": "Relationship and Child Age-Specific Task Suggestions",
+    "description": "Verify personalized task suggestions reflect spouse/partner names and family context including children’s ages and developmental milestones.",
+    "category": "functional",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Attempt to access dashboard and tasks without logging in."
-      },
-      {
-        "type": "assertion",
-        "description": "Access is denied and redirect occurs to login page."
+        "description": "Input family context including partner name and children’s ages in onboarding."
       },
       {
         "type": "action",
-        "description": "Log in and remain inactive until session timeout."
-      },
-      {
-        "type": "action",
-        "description": "Attempt to perform task operations after session timeout."
+        "description": "Trigger dynamic task generation."
       },
       {
         "type": "assertion",
-        "description": "User is logged out and redirected with prompt to login again."
+        "description": "Task suggestions include relationship-focused and age-appropriate child tasks."
       }
     ]
   },
   {
     "id": "TC018",
-    "title": "User Preferences Update Persists Across Sessions",
-    "description": "Test that changes to user preferences are saved correctly and loaded applied on subsequent logins.",
+    "title": "Homeowner vs Renter Task Filtering",
+    "description": "Validate task filtering shows relevant tasks based on user's housing situation selected during onboarding.",
     "category": "functional",
     "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Open user preferences panel."
+        "description": "Complete onboarding with housing status set as homeowner."
       },
       {
         "type": "action",
-        "description": "Modify various preferences such as theme, notification settings, and task default categories."
-      },
-      {
-        "type": "action",
-        "description": "Save preferences and log out."
-      },
-      {
-        "type": "action",
-        "description": "Log back in with same user."
+        "description": "View task lists."
       },
       {
         "type": "assertion",
-        "description": "Previously saved preferences are loaded correctly and UI reflects changes."
+        "description": "Maintenance and improvement tasks relevant to homeowners are displayed."
+      },
+      {
+        "type": "action",
+        "description": "Repeat onboarding as renter."
+      },
+      {
+        "type": "action",
+        "description": "View task lists again."
+      },
+      {
+        "type": "assertion",
+        "description": "Tasks irrelevant to renters are filtered out accordingly."
       }
     ]
   },
   {
     "id": "TC019",
-    "title": "Pattern Tracking Learns and Suggests Intelligently",
-    "description": "Verify AI pattern tracking correctly learns user completion patterns and provides contextual task suggestions.",
+    "title": "Dynamic Task Refresh with Context and Behavioral Shifts",
+    "description": "Verify the dynamic task refresh system updates tasks in real-time upon changes in time, completion events, or shifts in behavioral patterns.",
     "category": "functional",
-    "priority": "Medium",
+    "priority": "High",
     "steps": [
       {
         "type": "action",
-        "description": "Complete a series of tasks over multiple days with identifiable patterns."
+        "description": "Complete a task and observe task list refresh."
+      },
+      {
+        "type": "assertion",
+        "description": "New task suggestions reflect completion and updated priorities."
       },
       {
         "type": "action",
-        "description": "Interact with smart task suggestion interface."
+        "description": "Change system time or user location context."
       },
       {
         "type": "assertion",
-        "description": "System suggests tasks that align with learned user behavior and preferences."
+        "description": "Task list updates to reflect new contextual data."
+      },
+      {
+        "type": "action",
+        "description": "Trigger changes in detected behavioral patterns (e.g., preferred task time)."
       },
       {
         "type": "assertion",
-        "description": "Suggested tasks adapt after changes in user completion habits."
+        "description": "Task suggestions adapt accordingly on next refresh."
       }
     ]
   },
   {
     "id": "TC020",
-    "title": "Debug Interface Displays Live Application State",
-    "description": "Check that developer debug interface shows real-time app state, task data, and error logs without compromising user data privacy.",
+    "title": "Task Analytics and Dashboard Performance Tracking",
+    "description": "Validate task completion statistics, productivity insights, and personal performance data render accurately in dashboard components.",
     "category": "functional",
-    "priority": "Low",
+    "priority": "Medium",
     "steps": [
       {
         "type": "action",
-        "description": "Access the debug page as a developer or test user."
-      },
-      {
-        "type": "assertion",
-        "description": "Live application state including tasks, user info, and sync status is displayed."
-      },
-      {
-        "type": "assertion",
-        "description": "No sensitive user data like passwords is shown."
+        "description": "Complete multiple tasks over several days."
       },
       {
         "type": "action",
-        "description": "Trigger controlled errors or state changes and verify debug interface updates accordingly."
+        "description": "Open dashboard statistics and quick overview components."
+      },
+      {
+        "type": "assertion",
+        "description": "Completion rates, streaks, productivity charts, and insights display accurately reflecting user data."
       }
     ]
   }

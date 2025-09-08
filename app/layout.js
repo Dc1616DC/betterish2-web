@@ -2,6 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ErrorNotification from "@/components/ErrorNotification";
+import GlobalErrorHandler from "@/components/GlobalErrorHandler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -100,8 +102,10 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ErrorBoundary fallbackMessage="Something went wrong with the app. Please refresh the page.">
+          <GlobalErrorHandler />
           {children}
           <BottomNav />
+          <ErrorNotification />
         </ErrorBoundary>
       </body>
     </html>

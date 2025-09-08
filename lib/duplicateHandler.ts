@@ -1,8 +1,46 @@
-import { collection, query, where, getDocs, deleteDoc, doc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc, Timestamp, DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
+// Types
+export interface DuplicateHandlerOptions {
+  autoDelete?: boolean;     // Set to true to auto-delete
+  timeWindow?: number;      // Hours to look back
+  requireExactMatch?: boolean; // Require exact title AND detail match
+  dryRun?: boolean;         // Just return duplicates, don't delete
+}
+
+export interface Task {
+  id: string;
+  title?: string;
+  detail?: string;
+  userId?: string;
+  createdAt: Date;
+  completedAt?: Date | null;
+  dismissed?: boolean;
+  status?: string;
+  [key: string]: any;
+}
+
+export interface DuplicateGroup {
+  key: string;
+  keepTask: Task;
+  duplicateTasks: Task[];
+}
+
+export interface DuplicateResults {
+  found: number;
+  totalDuplicates: number;
+  deleted: number;
+  groups: DuplicateGroup[];
+  error?: string;
+  message?: string;
+}
+
 // Safe duplicate detection and cleanup
-export async function findAndHandleDuplicates(userId, options = {}) {
+export async function findAndHandleDuplicates(
+  userId: string, 
+  options: DuplicateHandlerOptions = {}
+): Promise<DuplicateResults> {
   const {
     autoDelete = false,           // Set to true to auto-delete
     timeWindow = 24,              // Hours to look back
@@ -27,14 +65,14 @@ export async function findAndHandleDuplicates(userId, options = {}) {
     const allTasks = [];
 
     snapshot.docs.forEach(docSnap => {
-      const data = docSnap.data();
+      const data: DocumentData = docSnap.data();
       
       // Skip completed or dismissed tasks
       if (data.completedAt || data.dismissed || data.status === 'dismissed') {
         return;
       }
 
-      const task = {
+      const task: Task = {
         id: docSnap.id,
         ...data,
         createdAt: data.createdAt.toDate()
@@ -54,7 +92,7 @@ export async function findAndHandleDuplicates(userId, options = {}) {
     });
 
     // Find groups with duplicates
-    const duplicateGroups = [];
+    const duplicateGroups: DuplicateGroup[] = [];
     for (const [key, tasks] of taskGroups) {
       if (tasks.length > 1) {
         // Sort by creation time - keep the MOST RECENT
@@ -69,7 +107,7 @@ export async function findAndHandleDuplicates(userId, options = {}) {
     }
 
     // Process duplicates
-    const results = {
+    const results: DuplicateResults = {
       found: duplicateGroups.length,
       totalDuplicates: duplicateGroups.reduce((sum, group) => sum + group.duplicateTasks.length, 0),
       deleted: 0,
@@ -94,12 +132,18 @@ export async function findAndHandleDuplicates(userId, options = {}) {
 
   } catch (error) {
     console.error('Error finding duplicates:', error);
-    return { error: error.message, found: 0, deleted: 0 };
+    return { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      found: 0, 
+      deleted: 0,
+      totalDuplicates: 0,
+      groups: []
+    };
   }
 }
 
 // Safe wrapper for automatic cleanup
-export async function cleanupDuplicatesIfSafe(userId) {
+export async function cleanupDuplicatesIfSafe(userId: string): Promise<DuplicateResults> {
   // First, do a dry run to see what we'd find
   const dryRun = await findAndHandleDuplicates(userId, {
     dryRun: true,
@@ -121,7 +165,7 @@ export async function cleanupDuplicatesIfSafe(userId) {
 }
 
 // Manual duplicate resolution for user review
-export async function getDuplicatesForReview(userId) {
+export async function getDuplicatesForReview(userId: string): Promise<DuplicateResults> {
   return await findAndHandleDuplicates(userId, {
     dryRun: true,
     timeWindow: 168, // Look back 1 week

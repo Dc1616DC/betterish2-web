@@ -9,6 +9,7 @@
 import { createContext, useContext, useReducer, useCallback, useEffect, useState } from 'react';
 import { createTaskService, TaskStatus } from '@/lib/services/TaskService';
 import { initializeFirebaseClient } from '@/lib/firebase-client';
+import { handleFirebaseError, logError, ErrorTypes } from '@/lib/errorHandler';
 
 // =============================================
 // CONTEXT SETUP
@@ -155,7 +156,10 @@ export function TaskProvider({ children, user }) {
         const service = createTaskService(db);
         setTaskService(service);
       } catch (error) {
-        console.error('Failed to initialize TaskService:', error);
+        handleFirebaseError(error, {
+          operation: 'initializeTaskService',
+          component: 'TaskContext'
+        });
         dispatch({ type: TaskActionTypes.SET_ERROR, payload: 'Failed to initialize task service' });
       }
     }
@@ -208,7 +212,11 @@ export function TaskProvider({ children, user }) {
       const tasks = await taskService.getTasks(user.uid);
       dispatch({ type: TaskActionTypes.SET_TASKS, payload: tasks });
     } catch (error) {
-      console.error('Error loading tasks:', error);
+      handleFirebaseError(error, {
+        operation: 'loadTasks',
+        component: 'TaskContext',
+        userId: user.uid
+      });
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
     }
   }, [taskService, user]);

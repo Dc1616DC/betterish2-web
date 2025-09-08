@@ -1077,3 +1077,348 @@ Require stack:
  [32m[1m✓[22m[39m Compiled in 105ms (666 modules)
  [32m[1m✓[22m[39m Compiled in 224ms (666 modules)
  [32m[1m✓[22m[39m Compiled in 137ms (666 modules)
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 618ms (1378 modules)
+ [31m[1m⨯[22m[39m Error: ENOENT: no such file or directory, open '/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:229:47)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:232:3) {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'[39m
+}
+ [32m[1m✓[22m[39m Compiled /_error in 304ms (1421 modules)
+ GET /sw-simple.js [31m500[39m in 995ms
+ GET /sw-simple.js [33m404[39m in 249ms
+ GET /sw-simple.js [33m404[39m in 82ms
+ [32m[1m✓[22m[39m Compiled in 798ms (1386 modules)
+ [32m[1m✓[22m[39m Compiled in 316ms (665 modules)
+ [32m[1m✓[22m[39m Compiled in 144ms (665 modules)
+ [32m[1m✓[22m[39m Compiled in 115ms (665 modules)
+ [32m[1m✓[22m[39m Compiled in 270ms (665 modules)
+ [32m[1m✓[22m[39m Compiled in 113ms (665 modules)
+ [32m[1m✓[22m[39m Compiled in 92ms (665 modules)
+ [32m[1m✓[22m[39m Compiled in 88ms (665 modules)
+ [32m[1m✓[22m[39m Compiled in 647ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 176ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 198ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 722ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 560ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 336ms (1390 modules)
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 667ms (1380 modules)
+ [31m[1m⨯[22m[39m Error: ENOENT: no such file or directory, open '/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:229:47)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:232:3) {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'[39m
+}
+ [32m[1m✓[22m[39m Compiled /_error in 281ms (1423 modules)
+ GET /sw-simple.js [31m500[39m in 1045ms
+ GET /sw-simple.js [33m404[39m in 260ms
+ GET /sw-simple.js [33m404[39m in 80ms
+ GET /sw-simple.js [33m404[39m in 186ms
+ [32m[1m✓[22m[39m Compiled in 394ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 141ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 301ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 218ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 107ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 999ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 336ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 384ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 525ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 765ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 589ms (1390 modules)
+ [31m[1m⨯[22m[39m ./components/VoiceTaskRecorder.js
+Error:   [31m×[0m await isn't allowed in non-async function
+     ╭─[[36;1;4m/Users/danielchase/betterish-web/components/VoiceTaskRecorder.js[0m:372:1]
+ [2m369[0m │       
+ [2m370[0m │       // For tasks mode, automatically save tasks to main list
+ [2m371[0m │       if (mode === 'tasks' && tasks.length > 0 && onTaskCreate) {
+ [2m372[0m │         await autoSaveTasks(tasks);
+     · [35;1m        ─────[0m
+ [2m373[0m │       } else {
+ [2m374[0m │         setExtractedTasks(tasks);
+ [2m375[0m │         setIsProcessing(false);
+     ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/VoiceTaskRecorder.js
+./app/dashboard/DashboardClient.js
+./app/dashboard/page.js
+ [31m[1m⨯[22m[39m ./components/VoiceTaskRecorder.js
+Error:   [31m×[0m await isn't allowed in non-async function
+     ╭─[[36;1;4m/Users/danielchase/betterish-web/components/VoiceTaskRecorder.js[0m:372:1]
+ [2m369[0m │       
+ [2m370[0m │       // For tasks mode, automatically save tasks to main list
+ [2m371[0m │       if (mode === 'tasks' && tasks.length > 0 && onTaskCreate) {
+ [2m372[0m │         await autoSaveTasks(tasks);
+     · [35;1m        ─────[0m
+ [2m373[0m │       } else {
+ [2m374[0m │         setExtractedTasks(tasks);
+ [2m375[0m │         setIsProcessing(false);
+     ╰────
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/VoiceTaskRecorder.js
+./app/dashboard/DashboardClient.js
+./app/dashboard/page.js
+ [32m[1m✓[22m[39m Compiled in 373ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 332ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 615ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 104ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 97ms (667 modules)
+ [32m[1m✓[22m[39m Compiled /_not-found in 383ms (1380 modules)
+ [31m[1m⨯[22m[39m Error: ENOENT: no such file or directory, open '/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:229:47)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:232:3) {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'[39m
+}
+ [32m[1m✓[22m[39m Compiled /_error in 258ms (1423 modules)
+ GET /sw-simple.js [31m500[39m in 736ms
+ [32m[1m✓[22m[39m Compiled in 161ms (671 modules)
+ [32m[1m✓[22m[39m Compiled in 105ms (671 modules)
+ [32m[1m✓[22m[39m Compiled in 112ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 99ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 95ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 174ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 99ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 94ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 427ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 366ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 425ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 203ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 648ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 491ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 295ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 861ms (1390 modules)
+ [31m[1m⨯[22m[39m ./app/dashboard/DashboardClient.js:16:1
+[31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/AIDadMentorReminder[39m'
+[0m [90m 14 |[39m [36mimport[39m [33mDashboardLoading[39m [36mfrom[39m [32m'@/components/DashboardLoading'[39m[33m;[39m[0m
+[0m [90m 15 |[39m [36mimport[39m [33mSidekickChat[39m [36mfrom[39m [32m'@/components/SidekickChat'[39m[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 16 |[39m [36mimport[39m [33mSmartReminder[39m [36mfrom[39m [32m'@/components/AIDadMentorReminder'[39m[33m;[39m[0m
+[0m [90m    |[39m [31m[1m^[22m[39m[0m
+[0m [90m 17 |[39m [36mimport[39m [33mAppWalkthrough[39m [36mfrom[39m [32m'@/components/AppWalkthrough'[39m[33m;[39m[0m
+[0m [90m 18 |[39m [36mimport[39m [33mTaskBreakdown[39m [36mfrom[39m [32m'@/components/TaskBreakdown'[39m[33m;[39m[0m
+[0m [90m 19 |[39m [36mimport[39m [33mVoiceTaskRecorder[39m [36mfrom[39m [32m'@/components/VoiceTaskRecorder'[39m[33m;[39m[0m
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/dashboard/page.js
+ [32m[1m✓[22m[39m Compiled in 183ms (1390 modules)
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 938ms (1380 modules)
+ [31m[1m⨯[22m[39m Error: ENOENT: no such file or directory, open '/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:229:47)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:232:3) {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'[39m
+}
+ [32m[1m✓[22m[39m Compiled /_error in 278ms (1423 modules)
+ GET /sw-simple.js [31m500[39m in 1335ms
+ GET /sw-simple.js [33m404[39m in 187ms
+ GET /sw-simple.js [33m404[39m in 85ms
+ [32m[1m✓[22m[39m Compiled in 797ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 756ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 629ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 312ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 385ms (1390 modules)
+ [32m[1m✓[22m[39m Compiled in 304ms (1390 modules)
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 732ms (1380 modules)
+ [31m[1m⨯[22m[39m Error: ENOENT: no such file or directory, open '/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:229:47)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:232:3) {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'[39m
+}
+ [32m[1m✓[22m[39m Compiled /_error in 199ms (1423 modules)
+ GET /sw-simple.js [31m500[39m in 1043ms
+ [32m[1m✓[22m[39m Compiled in 554ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 273ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 195ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 206ms (667 modules)
+ [32m[1m✓[22m[39m Compiled in 948ms (1398 modules)
+ [32m[1m✓[22m[39m Compiled in 329ms (1398 modules)
+ [32m[1m✓[22m[39m Compiled in 731ms (1398 modules)
+ [37m[1m○[22m[39m Compiling /_not-found ...
+ [32m[1m✓[22m[39m Compiled /_not-found in 8.2s (1388 modules)
+ [31m[1m⨯[22m[39m Error: Cannot find module './243.js'
+Require stack:
+- /Users/danielchase/betterish-web/.next/server/webpack-runtime.js
+- /Users/danielchase/betterish-web/.next/server/app/_not-found/page.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/require.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/load-components.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/utils.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/options.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/index.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-server.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/start-server.js
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:23:3657)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:23:3703) {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [36m[Array][39m
+}
+ [37m[1m○[22m[39m Compiling /_error ...
+ [32m[1m✓[22m[39m Compiled /_error in 6.2s (1431 modules)
+ GET /sw-simple.js [31m500[39m in 16796ms
+ [31m[1m⨯[22m[39m Error: Cannot find module './243.js'
+Require stack:
+- /Users/danielchase/betterish-web/.next/server/webpack-runtime.js
+- /Users/danielchase/betterish-web/.next/server/app/_not-found/page.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/require.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/load-components.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/utils.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/options.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/index.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-server.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/start-server.js
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:23:3657)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:23:3703) {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [36m[Array][39m
+}
+ GET /sw-simple.js [31m500[39m in 391ms
+ [31m[1m⨯[22m[39m Error: Cannot find module './243.js'
+Require stack:
+- /Users/danielchase/betterish-web/.next/server/webpack-runtime.js
+- /Users/danielchase/betterish-web/.next/server/app/_not-found/page.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/require.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/load-components.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/utils.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/options.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/index.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-server.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/start-server.js
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:23:3657)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:23:3703) {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [36m[Array][39m
+}
+ GET /sw-simple.js [31m500[39m in 177ms
+ [31m[1m⨯[22m[39m Error: Cannot find module './243.js'
+Require stack:
+- /Users/danielchase/betterish-web/.next/server/webpack-runtime.js
+- /Users/danielchase/betterish-web/.next/server/app/_not-found/page.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/require.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/load-components.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/utils.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/options.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/swc/index.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/router-server.js
+- /Users/danielchase/betterish-web/node_modules/next/dist/server/lib/start-server.js
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:23:3657)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:23:3703) {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: [36m[Array][39m
+}
+ GET /sw-simple.js [31m500[39m in 91ms
+ [32m[1m✓[22m[39m Compiled in 1466ms (671 modules)
+ [32m[1m✓[22m[39m Compiled in 821ms (671 modules)
+ [32m[1m✓[22m[39m Compiled in 600ms (1398 modules)
+ [32m[1m✓[22m[39m Compiled in 186ms (1398 modules)
+ [32m[1m✓[22m[39m Compiled in 301ms (1398 modules)
+ [32m[1m✓[22m[39m Compiled in 168ms (1398 modules)
+ [32m[1m✓[22m[39m Compiled in 100ms (671 modules)
+ [32m[1m✓[22m[39m Compiled /_not-found in 253ms (1388 modules)
+ [31m[1m⨯[22m[39m Error: ENOENT: no such file or directory, open '/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'
+    at __webpack_require__.f.require (.next/server/webpack-runtime.js:198:28)
+    at <unknown> (.next/server/webpack-runtime.js:111:40)
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (.next/server/webpack-runtime.js:162:22)
+    at <unknown> (.next/server/app/_not-found/page.js:229:47)
+    at Object.<anonymous> (.next/server/app/_not-found/page.js:232:3) {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/Users/danielchase/betterish-web/.next/server/vendor-chunks/next.js'[39m
+}
+ [32m[1m✓[22m[39m Compiled /_error in 226ms (1431 modules)
+ GET /sw-simple.js [31m500[39m in 539ms
+ GET /sw-simple.js [33m404[39m in 297ms
+ GET /sw-simple.js [33m404[39m in 106ms
+ GET /sw-simple.js [33m404[39m in 2246ms

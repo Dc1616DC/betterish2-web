@@ -1,0 +1,823 @@
+{
+  "totalFiles": 249,
+  "totalLines": 25731,
+  "fileTypes": {
+    ".md": 22,
+    ".txt": 1,
+    ".js": 117,
+    ".bak": 2,
+    ".ico": 1,
+    ".css": 1,
+    ".json": 16,
+    ".mjs": 3,
+    ".log": 2,
+    ".toml": 1,
+    ".svg": 6,
+    ".png": 11,
+    ".sh": 2,
+    ".py": 62,
+    ".html": 1,
+    "": 1
+  },
+  "components": [
+    {
+      "name": "MobileDashboard.js",
+      "lines": 717,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 35
+    },
+    {
+      "name": "VoiceTaskRecorder.js",
+      "lines": 654,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 79
+    },
+    {
+      "name": "FeatureTutorial.js",
+      "lines": 568,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 10
+    },
+    {
+      "name": "TaskBreakdown.js",
+      "lines": 470,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 35
+    },
+    {
+      "name": "EventReminder.js",
+      "lines": 426,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 34
+    },
+    {
+      "name": "AppWalkthrough.js",
+      "lines": 417,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 8
+    },
+    {
+      "name": "AIDadMentorReminder.js",
+      "lines": 392,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 21
+    },
+    {
+      "name": "OnboardingQuestionnaire.js",
+      "lines": 367,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 8
+    },
+    {
+      "name": "AIMentorCheckIn.js",
+      "lines": 353,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 27
+    },
+    {
+      "name": "TaskList.js",
+      "lines": 342,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 28
+    },
+    {
+      "name": "PersonalEventsSetup.js",
+      "lines": 329,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 18
+    },
+    {
+      "name": "RelationshipTracker.js",
+      "lines": 261,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 31
+    },
+    {
+      "name": "NotificationSettings.js",
+      "lines": 260,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 10
+    },
+    {
+      "name": "OnboardingTips.js",
+      "lines": 250,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 11
+    },
+    {
+      "name": "DashboardStats.js",
+      "lines": 246,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 19
+    },
+    {
+      "name": "RecurringTaskManager.js",
+      "lines": 246,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 5
+    },
+    {
+      "name": "SidekickChat.js",
+      "lines": 236,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 15
+    },
+    {
+      "name": "QuickOverview.js",
+      "lines": 229,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 20
+    },
+    {
+      "name": "ProjectBreakdown.js",
+      "lines": 218,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 9
+    },
+    {
+      "name": "LooseEndsClient.js",
+      "lines": 203,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 20
+    },
+    {
+      "name": "TaskForm.js",
+      "lines": 198,
+      "hasState": false,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 10
+    },
+    {
+      "name": "SmartReminders.js",
+      "lines": 191,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 18
+    },
+    {
+      "name": "TutorialMenu.js",
+      "lines": 183,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 8
+    },
+    {
+      "name": "EmergencyMode.js",
+      "lines": 181,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 5
+    },
+    {
+      "name": "ProjectCard.js",
+      "lines": 175,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 7
+    },
+    {
+      "name": "DashboardHeader.js",
+      "lines": 170,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 5
+    },
+    {
+      "name": "MobileTaskForm.js",
+      "lines": 160,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 4
+    },
+    {
+      "name": "RelationshipSuggestionOptions.js",
+      "lines": 154,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 9
+    },
+    {
+      "name": "SubscriptionModal.js",
+      "lines": 153,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 3
+    },
+    {
+      "name": "EnergyLevelSelector.js",
+      "lines": 120,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 6
+    },
+    {
+      "name": "UserPreferences.js",
+      "lines": 115,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 6
+    },
+    {
+      "name": "MobileProjectCard.js",
+      "lines": 111,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 4
+    },
+    {
+      "name": "TaskErrorBoundary.js",
+      "lines": 111,
+      "hasState": false,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 3
+    },
+    {
+      "name": "PastPromises.js",
+      "lines": 105,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 6
+    },
+    {
+      "name": "Toast.js",
+      "lines": 83,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 9
+    },
+    {
+      "name": "DebugPanel.js",
+      "lines": 73,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 2
+    },
+    {
+      "name": "NotificationPermission.js",
+      "lines": 73,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": false,
+      "complexity": 5
+    },
+    {
+      "name": "DashboardLoading.js",
+      "lines": 61,
+      "hasState": false,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 1
+    },
+    {
+      "name": "ErrorBoundary.js",
+      "lines": 59,
+      "hasState": false,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 2
+    },
+    {
+      "name": "StreakBanner.js",
+      "lines": 59,
+      "hasState": true,
+      "hasEffects": true,
+      "isClient": true,
+      "complexity": 12
+    },
+    {
+      "name": "AddTaskForm.js",
+      "lines": 52,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 3
+    },
+    {
+      "name": "TaskActions.js",
+      "lines": 45,
+      "hasState": false,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 2
+    },
+    {
+      "name": "BottomNav.js",
+      "lines": 34,
+      "hasState": false,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 2
+    },
+    {
+      "name": "LoadingSpinner.js",
+      "lines": 19,
+      "hasState": true,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 1
+    },
+    {
+      "name": "PullToRefresh.js",
+      "lines": 11,
+      "hasState": false,
+      "hasEffects": false,
+      "isClient": true,
+      "complexity": 1
+    },
+    {
+      "name": "EmergencyModeSelector.js",
+      "lines": 1,
+      "hasState": false,
+      "hasEffects": false,
+      "isClient": false,
+      "complexity": 0
+    }
+  ],
+  "apis": [
+    {
+      "path": "app/api/admin/cleanup-all-users/route.js",
+      "methods": [
+        "POST"
+      ],
+      "hasAuth": true,
+      "usesAI": false,
+      "complexity": 18
+    },
+    {
+      "path": "app/api/ai/breakdown/route.js",
+      "methods": [
+        "POST"
+      ],
+      "hasAuth": true,
+      "usesAI": true,
+      "complexity": 9
+    },
+    {
+      "path": "app/api/ai-checkin/route.js",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "hasAuth": false,
+      "usesAI": false,
+      "complexity": 6
+    },
+    {
+      "path": "app/api/auth/login/route.js",
+      "methods": [
+        "POST"
+      ],
+      "hasAuth": true,
+      "usesAI": false,
+      "complexity": 3
+    },
+    {
+      "path": "app/api/auth/logout/route.js",
+      "methods": [
+        "POST"
+      ],
+      "hasAuth": false,
+      "usesAI": false,
+      "complexity": 1
+    },
+    {
+      "path": "app/api/sidekick-chat/route.js",
+      "methods": [
+        "POST"
+      ],
+      "hasAuth": true,
+      "usesAI": false,
+      "complexity": 14
+    },
+    {
+      "path": "app/api/transcribe/route.js",
+      "methods": [
+        "POST"
+      ],
+      "hasAuth": false,
+      "usesAI": true,
+      "complexity": 7
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useDebounce.js",
+      "type": "utility"
+    },
+    {
+      "name": "useErrorHandler.js",
+      "type": "utility"
+    },
+    {
+      "name": "useNotifications.js",
+      "type": "utility"
+    },
+    {
+      "name": "useSwipeGesture.js",
+      "type": "utility"
+    },
+    {
+      "name": "useTaskForm.js",
+      "type": "utility"
+    },
+    {
+      "name": "useTasks.js",
+      "type": "utility"
+    }
+  ],
+  "contexts": [
+    {
+      "name": "TaskContext.js",
+      "providers": 4,
+      "hooks": 28,
+      "complexity": 40
+    }
+  ],
+  "services": [],
+  "issues": [],
+  "patterns": {},
+  "dependencies": [
+    "@heroicons/react",
+    "dotenv",
+    "firebase",
+    "firebase-admin",
+    "next",
+    "openai",
+    "react",
+    "react-dom",
+    "react-firebase-hooks",
+    "server-only"
+  ],
+  "complexity": {},
+  "projectName": "betterish-web",
+  "version": "0.1.0",
+  "devDependencies": [
+    "@eslint/eslintrc",
+    "@next/bundle-analyzer",
+    "@tailwindcss/postcss",
+    "eslint",
+    "eslint-config-next",
+    "node-fetch",
+    "tailwindcss"
+  ],
+  "architecture": {
+    "framework": "Next.js 14 (App Router)",
+    "ui": "React 18",
+    "styling": "Tailwind CSS",
+    "database": "Firebase Firestore",
+    "auth": "Firebase Auth",
+    "ai": "OpenAI GPT-3.5",
+    "deployment": "Vercel",
+    "patterns": [
+      "Context API for state management",
+      "Custom hooks pattern",
+      "Service layer abstraction",
+      "Component-based architecture"
+    ]
+  },
+  "database": {
+    "type": "Firebase Firestore",
+    "operations": [
+      {
+        "file": "DashboardClient.backup.js",
+        "reads": 14,
+        "writes": 17,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "analyze-for-grok.js",
+        "reads": 2,
+        "writes": 3,
+        "deletes": 1,
+        "batches": 0
+      },
+      {
+        "file": "app/dashboard/DashboardClient.original.js",
+        "reads": 7,
+        "writes": 18,
+        "deletes": 2,
+        "batches": 0
+      },
+      {
+        "file": "app/dashboard/DashboardClientNew.js",
+        "reads": 6,
+        "writes": 9,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "app/debug/page.js",
+        "reads": 2,
+        "writes": 0,
+        "deletes": 2,
+        "batches": 0
+      },
+      {
+        "file": "app/super-admin/page.js",
+        "reads": 2,
+        "writes": 0,
+        "deletes": 2,
+        "batches": 0
+      },
+      {
+        "file": "cleanup-problematic-tasks.js",
+        "reads": 2,
+        "writes": 0,
+        "deletes": 2,
+        "batches": 0
+      },
+      {
+        "file": "components/AddTaskForm.js",
+        "reads": 0,
+        "writes": 2,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/DashboardStats.js",
+        "reads": 4,
+        "writes": 0,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/EventReminder.js",
+        "reads": 2,
+        "writes": 2,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/LooseEndsClient.js",
+        "reads": 2,
+        "writes": 4,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/MobileProjectCard.js",
+        "reads": 0,
+        "writes": 2,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/PersonalEventsSetup.js",
+        "reads": 2,
+        "writes": 2,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/ProjectCard.js",
+        "reads": 0,
+        "writes": 3,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/QuickOverview.js",
+        "reads": 3,
+        "writes": 0,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/RelationshipSuggestionOptions.js",
+        "reads": 0,
+        "writes": 2,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/StreakBanner.js",
+        "reads": 2,
+        "writes": 0,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "components/UserPreferences.js",
+        "reads": 2,
+        "writes": 2,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "debug-tasks.js",
+        "reads": 2,
+        "writes": 1,
+        "deletes": 1,
+        "batches": 0
+      },
+      {
+        "file": "hooks/useNotifications.js",
+        "reads": 0,
+        "writes": 2,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "lib/databaseCleanup.js",
+        "reads": 3,
+        "writes": 2,
+        "deletes": 2,
+        "batches": 0
+      },
+      {
+        "file": "lib/duplicateHandler.js",
+        "reads": 2,
+        "writes": 0,
+        "deletes": 2,
+        "batches": 0
+      },
+      {
+        "file": "lib/patternTracking.js",
+        "reads": 4,
+        "writes": 8,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "lib/reminders.js",
+        "reads": 0,
+        "writes": 1,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "lib/services/TaskService.js",
+        "reads": 6,
+        "writes": 4,
+        "deletes": 2,
+        "batches": 0
+      },
+      {
+        "file": "lib/subscription.js",
+        "reads": 4,
+        "writes": 8,
+        "deletes": 0,
+        "batches": 0
+      },
+      {
+        "file": "scripts/cleanup-corrupted-tasks.js",
+        "reads": 2,
+        "writes": 2,
+        "deletes": 2,
+        "batches": 0
+      }
+    ],
+    "collections": [
+      "tasks"
+    ]
+  },
+  "security": {
+    "issues": [
+      {
+        "file": "analyze-for-grok.js",
+        "issue": "Uses dangerouslySetInnerHTML",
+        "severity": "medium"
+      },
+      {
+        "file": "analyze-for-grok.js",
+        "issue": "Uses eval()",
+        "severity": "high"
+      },
+      {
+        "file": "app/api/ai/breakdown/route.js",
+        "issue": "Possible API key in code",
+        "severity": "high"
+      },
+      {
+        "file": "app/api/sidekick-chat/route.js",
+        "issue": "Possible API key in code",
+        "severity": "high"
+      },
+      {
+        "file": "app/api/transcribe/route.js",
+        "issue": "Possible API key in code",
+        "severity": "high"
+      },
+      {
+        "file": "app/layout.js",
+        "issue": "Uses dangerouslySetInnerHTML",
+        "severity": "medium"
+      },
+      {
+        "file": "app/login/page.js",
+        "issue": "Possible API key in code",
+        "severity": "high"
+      },
+      {
+        "file": "cleanup-problematic-tasks.js",
+        "issue": "Possible API key in code",
+        "severity": "high"
+      },
+      {
+        "file": "lib/firebase-client.js",
+        "issue": "Possible API key in code",
+        "severity": "high"
+      },
+      {
+        "file": "lib/firebase.js",
+        "issue": "Possible API key in code",
+        "severity": "high"
+      },
+      {
+        "file": "public/firebase-messaging-sw.js",
+        "issue": "Possible API key in code",
+        "severity": "high"
+      },
+      {
+        "file": "scripts/cleanup-corrupted-tasks.js",
+        "issue": "Possible API key in code",
+        "severity": "high"
+      }
+    ],
+    "hasEnvFile": true,
+    "usesHTTPS": true,
+    "hasAuthentication": true
+  },
+  "performance": {
+    "memoization": 14,
+    "lazyLoading": 3,
+    "codeSpitting": 0,
+    "imageOptimization": 1,
+    "debouncing": 3
+  },
+  "quality": {
+    "avgComponentSize": 215,
+    "avgComplexity": 12,
+    "documentationLevel": 0,
+    "testCoverage": 0,
+    "hasTests": false
+  },
+  "dependencyAnalysis": {
+    "total": 10,
+    "dev": 7,
+    "key": {
+      "react": "^19.0.0",
+      "next": "15.3.4",
+      "firebase": "^11.9.1",
+      "openai": "^5.8.2",
+      "tailwindcss": "^4"
+    }
+  }
+}
