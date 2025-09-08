@@ -11,19 +11,138 @@ import {
   setDoc,
   serverTimestamp,
   arrayUnion,
-  increment
+  increment,
+  Timestamp,
+  DocumentReference,
+  DocumentSnapshot
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { Task, TaskCategory, UserId } from '../types/models';
+
+// Pattern tracking interfaces
+export interface CategoryUsage {
+  relationship: Timestamp | null;
+  household: Timestamp | null;
+  baby: Timestamp | null;
+  home_projects: Timestamp | null;
+  health: Timestamp | null;
+  personal: Timestamp | null;
+  maintenance: Timestamp | null;
+  work: Timestamp | null;
+  [key: string]: Timestamp | null;
+}
+
+export interface CompletionsByTime {
+  [key: string]: number; // "8": 5, "20": 12
+}
+
+export interface SuggestionHistory {
+  [suggestionId: string]: {
+    timestamp: Timestamp;
+    accepted: boolean;
+    category: string;
+  };
+}
+
+export interface DurationPreference {
+  short?: number;
+  medium?: number;
+  long?: number;
+}
+
+export interface BehavioralPatterns {
+  initialized: boolean;
+  createdAt: Timestamp;
+  schemaVersion: number;
+  
+  // Category usage tracking
+  categoryLastUsed: CategoryUsage;
+  
+  // Completion patterns
+  completionsByHour: CompletionsByTime;
+  completionsByDay: CompletionsByTime;
+  completionsByCategory: CompletionsByTime;
+  
+  // Task patterns
+  averageTasksPerDay: number;
+  taskCompletionRate: number;
+  preferredTaskDuration: 'short' | 'medium' | 'long';
+  durationPreference?: DurationPreference;
+  totalTasksCompleted?: number;
+  
+  // Behavioral patterns
+  overwhelmDays: string[];
+  productiveDays: string[];
+  streakDays: number;
+  lastActiveDate: Timestamp | null;
+  emergencyModeCount?: number;
+  
+  // Project patterns
+  activeProjects: string[];
+  abandonedProjects: string[];
+  projectCompletionRate: number;
+  
+  // Interaction patterns
+  suggestionsAccepted: number;
+  suggestionsDismissed: number;
+  suggestionHistory?: SuggestionHistory;
+  checkInsCompleted: number;
+  preferredCheckInTime: number | null;
+  lastCheckIn?: Timestamp;
+  
+  // Seasonal patterns
+  seasonalTasksCompleted: string[];
+  missedSeasonalTasks: string[];
+}
+
+export interface PatternInsights {
+  mostProductiveHour: number | null;
+  mostProductiveDay: number | null;
+  neglectedCategories: string[];
+  preferredTaskSize: 'short' | 'medium' | 'long';
+  isOverwhelmed: boolean;
+  suggestionsEffectiveness: number;
+}
+
+export interface UserPatternsWithInsights extends BehavioralPatterns {
+  insights: PatternInsights;
+}
+
+export interface Suggestion {
+  id: string;
+  category: TaskCategory | string;
+  title: string;
+  description?: string;
+  [key: string]: any;
+}
+
+export interface AIContext {
+  isNewUser: boolean;
+  hasPatterns: boolean;
+  isOverwhelmed?: boolean;
+  isProductive?: boolean;
+  neglectedCategories?: string[];
+  favoriteCategories?: string[];
+  currentHour?: number;
+  mostProductiveHour?: number | null;
+  dayOfWeek?: number;
+  mostProductiveDay?: number | null;
+  preferredTaskSize?: 'short' | 'medium' | 'long';
+  acceptanceRate?: number;
+  lastActive?: Timestamp | null;
+  streakDays?: number;
+  todayCompletions?: number;
+}
 
 /**
  * Initialize pattern tracking for a new user
  */
-export async function initializePatternTracking(userId) {
+export async function initializePatternTracking(userId: UserId): Promise<UserPatternsWithInsights> {
   const patternsRef = doc(db, 'users', userId, 'patterns', 'behavioral');
   
-  const initialPatterns = {
+  const initialPatterns: BehavioralPatterns = {
     initialized: true,
-    createdAt: serverTimestamp(),
+    createdAt: serverTimestamp() as Timestamp,
     schemaVersion: 1,
     
     // Category usage tracking
@@ -71,13 +190,20 @@ export async function initializePatternTracking(userId) {
   };
   
   await setDoc(patternsRef, initialPatterns);
-  return initialPatterns;
+  
+  // Calculate insights for new patterns
+  const insights = analyzePatterns(initialPatterns);
+  
+  return {
+    ...initialPatterns,
+    insights
+  } as UserPatternsWithInsights;
 }
 
 /**
  * Track when a task is completed
  */
-export async function trackTaskCompletion(userId, task) {
+export async function trackTaskCompletion(userId: UserId, task: Task): Promise<void> {
   try {
     const patternsRef = doc(db, 'users', userId, 'patterns', 'behavioral');
     const patternsDoc = await getDoc(patternsRef);
@@ -92,7 +218,7 @@ export async function trackTaskCompletion(userId, task) {
     const category = task.category || 'uncategorized';
     
     // Update multiple patterns in one transaction
-    const updates = {
+    const updates: Record<string, any> = {
       [`categoryLastUsed.${category}`]: serverTimestamp(),
       [`completionsByHour.${hour}`]: increment(1),
       [`completionsByDay.${dayOfWeek}`]: increment(1),
@@ -101,10 +227,11 @@ export async function trackTaskCompletion(userId, task) {
       totalTasksCompleted: increment(1)
     };
     
-    // Track task duration preference
-    if (task.duration) {
-      const duration = task.duration < 15 ? 'short' : 
-                      task.duration < 30 ? 'medium' : 'long';
+    // Track task duration preference  
+    if ((task as any).duration) {
+      const taskDuration = (task as any).duration;
+      const duration = taskDuration < 15 ? 'short' : 
+                      taskDuration < 30 ? 'medium' : 'long';
       updates[`durationPreference.${duration}`] = increment(1);
     }
     
@@ -127,7 +254,7 @@ export async function trackTaskCompletion(userId, task) {
 /**
  * Track when a suggestion is accepted or dismissed
  */
-export async function trackSuggestionResponse(userId, suggestion, accepted) {
+export async function trackSuggestionResponse(userId: UserId, suggestion: Suggestion, accepted: boolean): Promise<void> {
   try {
     const patternsRef = doc(db, 'users', userId, 'patterns', 'behavioral');
     
@@ -149,7 +276,7 @@ export async function trackSuggestionResponse(userId, suggestion, accepted) {
 /**
  * Track when emergency mode is activated
  */
-export async function trackEmergencyMode(userId) {
+export async function trackEmergencyMode(userId: UserId): Promise<void> {
   try {
     const patternsRef = doc(db, 'users', userId, 'patterns', 'behavioral');
     const today = new Date().toISOString().split('T')[0];
@@ -167,7 +294,7 @@ export async function trackEmergencyMode(userId) {
 /**
  * Get user's behavior patterns for AI context
  */
-export async function getUserPatterns(userId) {
+export async function getUserPatterns(userId: UserId): Promise<UserPatternsWithInsights | null> {
   try {
     const patternsRef = doc(db, 'users', userId, 'patterns', 'behavioral');
     const patternsDoc = await getDoc(patternsRef);
@@ -176,7 +303,7 @@ export async function getUserPatterns(userId) {
       return await initializePatternTracking(userId);
     }
     
-    const patterns = patternsDoc.data();
+    const patterns = patternsDoc.data() as BehavioralPatterns;
     
     // Calculate insights
     const insights = analyzePatterns(patterns);
@@ -184,7 +311,7 @@ export async function getUserPatterns(userId) {
     return {
       ...patterns,
       insights
-    };
+    } as UserPatternsWithInsights;
     
   } catch (error) {
     console.error('Error getting user patterns:', error);
@@ -195,8 +322,8 @@ export async function getUserPatterns(userId) {
 /**
  * Analyze patterns to generate insights
  */
-function analyzePatterns(patterns) {
-  const insights = {
+function analyzePatterns(patterns: BehavioralPatterns): PatternInsights {
+  const insights: PatternInsights = {
     mostProductiveHour: null,
     mostProductiveDay: null,
     neglectedCategories: [],
@@ -225,11 +352,11 @@ function analyzePatterns(patterns) {
   
   // Find neglected categories (not used in 7+ days)
   const now = new Date();
-  const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   
   if (patterns.categoryLastUsed) {
     Object.entries(patterns.categoryLastUsed).forEach(([category, lastUsed]) => {
-      if (!lastUsed || new Date(lastUsed.seconds * 1000) < sevenDaysAgo) {
+      if (!lastUsed || new Date((lastUsed as any).seconds * 1000) < sevenDaysAgo) {
         insights.neglectedCategories.push(category);
       }
     });
@@ -237,7 +364,7 @@ function analyzePatterns(patterns) {
   
   // Check if overwhelmed (emergency mode in last 3 days)
   if (patterns.overwhelmDays && patterns.overwhelmDays.length > 0) {
-    const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
     const recentOverwhelm = patterns.overwhelmDays.some(day => 
       new Date(day) > threeDaysAgo
     );
@@ -258,14 +385,14 @@ function analyzePatterns(patterns) {
 /**
  * Get count of tasks completed today
  */
-async function getTodayCompletions(userId) {
+async function getTodayCompletions(userId: UserId): Promise<number> {
   try {
     const patternsRef = doc(db, 'users', userId, 'patterns', 'daily');
     const today = new Date().toISOString().split('T')[0];
     const dailyDoc = await getDoc(doc(patternsRef, today));
     
     if (dailyDoc.exists()) {
-      return dailyDoc.data().completions || 0;
+      return dailyDoc.data()?.completions || 0;
     }
     return 0;
     
@@ -278,7 +405,7 @@ async function getTodayCompletions(userId) {
 /**
  * Update user's preferred check-in time based on interaction
  */
-export async function updatePreferredCheckInTime(userId) {
+export async function updatePreferredCheckInTime(userId: UserId): Promise<void> {
   try {
     const hour = new Date().getHours();
     const patternsRef = doc(db, 'users', userId, 'patterns', 'behavioral');
@@ -297,7 +424,7 @@ export async function updatePreferredCheckInTime(userId) {
 /**
  * Get smart context for AI suggestions
  */
-export async function getAIContext(userId) {
+export async function getAIContext(userId: UserId): Promise<AIContext> {
   const patterns = await getUserPatterns(userId);
   
   if (!patterns) {
@@ -307,7 +434,7 @@ export async function getAIContext(userId) {
     };
   }
   
-  const context = {
+  const context: AIContext = {
     isNewUser: false,
     hasPatterns: true,
     

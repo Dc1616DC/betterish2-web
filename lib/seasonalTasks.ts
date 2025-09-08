@@ -1,14 +1,60 @@
 // Betterish Seasonal Task System
 // Time-sensitive tasks that prevent real problems
 
-export function getCurrentSeasonalTasks() {
+// Task priority types
+export enum TaskPriority {
+  DISASTER_PREVENTION = 'disaster-prevention',
+  TIME_SENSITIVE = 'time-sensitive',
+  DEADLINE = 'deadline',
+  PLANNING = 'planning',
+  SANITY_MAINTENANCE = 'sanity-maintenance',
+  EMERGENCY = 'emergency'
+}
+
+// Task categories
+export enum TaskCategory {
+  RELATIONSHIP = 'relationship',
+  PERSONAL = 'personal',
+  MAINTENANCE = 'maintenance',
+  ADMIN = 'admin',
+  HEALTH = 'health',
+  KIDS = 'kids',
+  PLANNING = 'planning',
+  SAFETY = 'safety',
+  SURVIVAL = 'survival'
+}
+
+// Seasonal task interface
+export interface SeasonalTask {
+  id: string;
+  title: string;
+  detail: string;
+  category: TaskCategory | string; // Allow string for backward compatibility
+  priority: TaskPriority | string;
+  timeEstimate?: string;
+  prevents?: string;
+  deadline?: string;
+}
+
+// Essential tasks structure
+export interface EssentialTasks {
+  daily: SeasonalTask[];
+  weekly: SeasonalTask[];
+  monthly: SeasonalTask[];
+  quarterly: SeasonalTask[];
+}
+
+// Monthly tasks mapping
+export type MonthlyTasks = Record<number, SeasonalTask[]>;
+
+export function getCurrentSeasonalTasks(): SeasonalTask[] {
   const now = new Date();
   const currentMonth = now.getMonth(); // 0-11 (Jan-Dec)
   
   return SEASONAL_TASKS_BY_MONTH[currentMonth] || [];
 }
 
-export function getEssentialTasks() {
+export function getEssentialTasks(): EssentialTasks {
   return {
     daily: DAILY_ESSENTIALS,
     weekly: WEEKLY_ESSENTIALS,
@@ -18,7 +64,7 @@ export function getEssentialTasks() {
 }
 
 // The 80/20 principle: These prevent 80% of problems
-const DAILY_ESSENTIALS = [
+const DAILY_ESSENTIALS: SeasonalTask[] = [
   {
     id: 'daily_001',
     title: 'Ask about her day first',
@@ -48,7 +94,7 @@ const DAILY_ESSENTIALS = [
   }
 ];
 
-const WEEKLY_ESSENTIALS = [
+const WEEKLY_ESSENTIALS: SeasonalTask[] = [
   {
     id: 'weekly_001',
     title: 'Give her 1 hour alone',
@@ -78,7 +124,7 @@ const WEEKLY_ESSENTIALS = [
   }
 ];
 
-const MONTHLY_ESSENTIALS = [
+const MONTHLY_ESSENTIALS: SeasonalTask[] = [
   {
     id: 'monthly_001',
     title: 'Look under all sinks',
@@ -108,7 +154,7 @@ const MONTHLY_ESSENTIALS = [
   }
 ];
 
-const QUARTERLY_ESSENTIALS = [
+const QUARTERLY_ESSENTIALS: SeasonalTask[] = [
   {
     id: 'quarterly_001',
     title: 'Change HVAC filter',
@@ -139,7 +185,7 @@ const QUARTERLY_ESSENTIALS = [
 ];
 
 // Month-specific tasks (0=January, 11=December)
-const SEASONAL_TASKS_BY_MONTH = {
+const SEASONAL_TASKS_BY_MONTH: MonthlyTasks = {
   0: [ // January
     {
       id: 'jan_001',
@@ -502,7 +548,7 @@ const SEASONAL_TASKS_BY_MONTH = {
 };
 
 // Emergency mode tasks for overwhelmed days
-export const EMERGENCY_MODE_TASKS = [
+export const EMERGENCY_MODE_TASKS: SeasonalTask[] = [
   {
     id: 'emergency_001',
     title: 'Kids fed and safe',
