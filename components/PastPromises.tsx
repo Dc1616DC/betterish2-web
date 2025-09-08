@@ -1,19 +1,38 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { TaskId } from '@/types/models';
+import { BaseProps } from '@/types/components';
 
-export default function PastPromises({ 
+interface PastPromise {
+  id: TaskId;
+  title: string;
+  detail?: string;
+  ageLabel: string;
+}
+
+interface PastPromisesProps extends BaseProps {
+  pastPromises: PastPromise[];
+  onRestoreTask: (taskId: TaskId) => Promise<void>;
+  onSnoozeTask: (taskId: TaskId) => Promise<void>;
+  onDismissTask: (taskId: TaskId) => Promise<void>;
+}
+
+type TaskAction = 'restore' | 'snooze' | 'dismiss';
+
+const PastPromises: React.FC<PastPromisesProps> = ({ 
   pastPromises, 
   onRestoreTask, 
   onSnoozeTask, 
-  onDismissTask 
-}) {
+  onDismissTask,
+  className
+}) => {
   const [isPending, startTransition] = useTransition();
-  const [processingTasks, setProcessingTasks] = useState(new Set());
+  const [processingTasks, setProcessingTasks] = useState<Set<TaskId>>(new Set());
 
   if (!pastPromises || pastPromises.length === 0) return null;
 
-  const handleTaskAction = async (taskId, action) => {
+  const handleTaskAction = async (taskId: TaskId, action: TaskAction): Promise<void> => {
     if (processingTasks.has(taskId)) return;
     
     setProcessingTasks(prev => new Set(prev).add(taskId));
@@ -33,7 +52,7 @@ export default function PastPromises({
         }
       });
     } catch (error) {
-      // Error handling for past promise action
+      console.error(`Error performing ${action} action on task ${taskId}:`, error);
     } finally {
       setProcessingTasks(prev => {
         const newSet = new Set(prev);
@@ -44,7 +63,7 @@ export default function PastPromises({
   };
 
   return (
-    <div className="mt-8 border-t pt-6">
+    <div className={`mt-8 border-t pt-6 ${className || ''}`}>
       <h3 className="text-lg font-semibold mb-3 text-gray-800">Yesterday&apos;s Promises</h3>
       <p className="text-sm text-gray-500 mb-4">
         Unfinished from yesterday
@@ -101,4 +120,6 @@ export default function PastPromises({
       </ul>
     </div>
   );
-}
+};
+
+export default PastPromises;

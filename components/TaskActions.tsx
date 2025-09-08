@@ -2,20 +2,34 @@
 
 import { ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import EnergyLevelSelector from '@/components/EnergyLevelSelector';
+import { BaseProps } from '@/types/components';
 
-export default function TaskActions({
+type EnergyLevel = 'low' | 'medium' | 'high';
+
+interface TaskActionsProps extends BaseProps {
+  showMoreOptions: boolean;
+  onToggleRecurringForm: () => void;
+  showRecurringForm: boolean;
+  emergencyModeActive: boolean;
+  onShowEmergencyMode: () => void;
+  currentEnergyLevel: EnergyLevel;
+  onEnergyLevelChange: (level: EnergyLevel) => void;
+}
+
+const TaskActions: React.FC<TaskActionsProps> = ({
   showMoreOptions,
   onToggleRecurringForm,
   showRecurringForm,
   emergencyModeActive,
   onShowEmergencyMode,
   currentEnergyLevel,
-  onEnergyLevelChange
-}) {
+  onEnergyLevelChange,
+  className
+}) => {
   if (!showMoreOptions) return null;
 
   return (
-    <div className="space-y-2 mb-4 p-3 bg-gray-50 rounded-lg">
+    <div className={`space-y-2 mb-4 p-3 bg-gray-50 rounded-lg ${className || ''}`}>
       <button
         onClick={onToggleRecurringForm}
         className="w-full flex items-center gap-2 text-gray-700 py-2 px-3 rounded hover:bg-gray-200 transition-colors text-sm"
@@ -41,4 +55,6 @@ export default function TaskActions({
       />
     </div>
   );
-}
+};
+
+export default TaskActions;

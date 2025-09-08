@@ -1,10 +1,25 @@
+'use client';
+
 import { useState } from 'react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { User } from '@/types/models';
+import { BaseProps } from '@/types/components';
 
-export default function NotificationPermission({ messaging, user, db }) {
-  const [isVisible, setIsVisible] = useState(true);
-  const [isRequesting, setIsRequesting] = useState(false);
+interface NotificationPermissionProps extends BaseProps {
+  messaging: any; // Firebase messaging instance
+  user: User | null;
+  db: any; // Firebase database instance
+}
+
+const NotificationPermission: React.FC<NotificationPermissionProps> = ({ 
+  messaging, 
+  user, 
+  db,
+  className 
+}) => {
+  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [isRequesting, setIsRequesting] = useState<boolean>(false);
   const { permission, requestPermission, isSupported } = useNotifications(messaging, user, db);
 
   // Don't show if notifications aren't supported or already granted/denied
@@ -12,7 +27,7 @@ export default function NotificationPermission({ messaging, user, db }) {
     return null;
   }
 
-  const handleRequestPermission = async () => {
+  const handleRequestPermission = async (): Promise<void> => {
     setIsRequesting(true);
     try {
       const token = await requestPermission();
@@ -27,13 +42,13 @@ export default function NotificationPermission({ messaging, user, db }) {
     }
   };
 
-  const handleDismiss = () => {
+  const handleDismiss = (): void => {
     setIsVisible(false);
     // Optionally save this preference to not show again
   };
 
   return (
-    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+    <div className={`mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg ${className || ''}`}>
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-3">
           <BellIcon className="w-6 h-6 text-blue-600 mt-1" />
@@ -70,4 +85,6 @@ export default function NotificationPermission({ messaging, user, db }) {
       </div>
     </div>
   );
-}
+};
+
+export default NotificationPermission;

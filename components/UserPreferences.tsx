@@ -1,26 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { UserId } from '@/types/models';
+import { BaseProps } from '@/types/components';
 
-export default function UserPreferences({ userId, onComplete }) {
-  const [preferences, setPreferences] = useState({
+interface UserPreferencesData {
+  partnerName: string;
+  childAge: string;
+  homeType: 'house' | 'apartment';
+  hasSetup: boolean;
+}
+
+interface UserPreferencesProps extends BaseProps {
+  userId: UserId;
+  onComplete: (preferences: UserPreferencesData) => void;
+}
+
+const UserPreferences: React.FC<UserPreferencesProps> = ({ 
+  userId, 
+  onComplete,
+  className 
+}) => {
+  const [preferences, setPreferences] = useState<UserPreferencesData>({
     partnerName: '',
     childAge: '',
     homeType: 'house',
     hasSetup: false
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     // Load existing preferences
-    const loadPreferences = async () => {
-      const userRef = doc(db, 'users', userId);
-      const docSnap = await getDoc(userRef);
-      
-      if (docSnap.exists() && docSnap.data().preferences) {
-        setPreferences(docSnap.data().preferences);
+    const loadPreferences = async (): Promise<void> => {
+      try {
+        const userRef = doc(db, 'users', userId);
+        const docSnap = await getDoc(userRef);
+        
+        if (docSnap.exists() && docSnap.data()?.preferences) {
+          setPreferences(docSnap.data().preferences as UserPreferencesData);
+        }
+      } catch (error) {
+        console.error('Error loading preferences:', error);
       }
     };
     
@@ -29,23 +51,49 @@ export default function UserPreferences({ userId, onComplete }) {
     }
   }, [userId]);
 
-  const handleSave = async () => {
-    setLoading(true);
-    
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      preferences: {
+  const handleSave = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      const userRef = doc(db, 'users', userId);
+      const updatedPreferences = {
         ...preferences,
         hasSetup: true
-      }
+      };
+      
+      await updateDoc(userRef, {
+        preferences: updatedPreferences
+      });
+      
+      setLoading(false);
+      onComplete(updatedPreferences);
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      setLoading(false);
+    }
+  };
+
+  const handlePartnerNameChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    setPreferences({ ...preferences, partnerName: e.target.value });
+  };
+
+  const handleChildAgeChange = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setPreferences({ ...preferences, childAge: e.target.value });
+  };
+
+  const handleHomeTypeChange = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setPreferences({ 
+      ...preferences, 
+      homeType: e.target.value as 'house' | 'apartment' 
     });
-    
-    setLoading(false);
+  };
+
+  const handleSkip = (): void => {
     onComplete(preferences);
   };
 
   return (
-    <div className="max-w-md mx-auto p-4">
+    <div className={`max-w-md mx-auto p-4 ${className || ''}`}>
       <h2 className="text-2xl font-bold mb-6">Quick Setup</h2>
       <p className="text-gray-600 mb-6">Help us personalize your tasks</p>
       
@@ -59,7 +107,7 @@ export default function UserPreferences({ userId, onComplete }) {
             placeholder="e.g., Sarah"
             className="w-full p-3 border rounded-lg"
             value={preferences.partnerName}
-            onChange={(e) => setPreferences({...preferences, partnerName: e.target.value})}
+            onChange={handlePartnerNameChange}
           />
         </div>
         
@@ -70,7 +118,7 @@ export default function UserPreferences({ userId, onComplete }) {
           <select
             className="w-full p-3 border rounded-lg"
             value={preferences.childAge}
-            onChange={(e) => setPreferences({...preferences, childAge: e.target.value})}
+            onChange={handleChildAgeChange}
           >
             <option value="">Select age</option>
             <option value="0-6m">0-6 months</option>
@@ -88,7 +136,7 @@ export default function UserPreferences({ userId, onComplete }) {
           <select
             className="w-full p-3 border rounded-lg"
             value={preferences.homeType}
-            onChange={(e) => setPreferences({...preferences, homeType: e.target.value})}
+            onChange={handleHomeTypeChange}
           >
             <option value="apartment">Apartment</option>
             <option value="house">House</option>
@@ -104,7 +152,7 @@ export default function UserPreferences({ userId, onComplete }) {
         </button>
         
         <button
-          onClick={() => onComplete(preferences)}
+          onClick={handleSkip}
           className="w-full text-gray-500 text-sm"
         >
           Skip for now
@@ -112,4 +160,6 @@ export default function UserPreferences({ userId, onComplete }) {
       </div>
     </div>
   );
-}
+};
+
+export default UserPreferences;

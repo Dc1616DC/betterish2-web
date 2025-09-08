@@ -11,20 +11,38 @@ import {
 } from '@heroicons/react/24/outline';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { UserId } from '@/types/models';
+import { BaseProps } from '@/types/components';
 
-export default function DashboardStats({ userId, streakCount }) {
-  const [stats, setStats] = useState({
+interface DashboardStatsProps extends BaseProps {
+  userId: UserId;
+  streakCount?: number;
+}
+
+interface DashboardStats {
+  tasksCompletedToday: number;
+  completionRate: number;
+  weeklyTasks: number[]; // Sun-Sat
+  trend: 'up' | 'down' | 'stable';
+}
+
+const DashboardStatsComponent: React.FC<DashboardStatsProps> = ({ 
+  userId, 
+  streakCount,
+  className 
+}) => {
+  const [stats, setStats] = useState<DashboardStats>({
     tasksCompletedToday: 0,
     completionRate: 0,
     weeklyTasks: [0, 0, 0, 0, 0, 0, 0], // Sun-Sat
     trend: 'stable'
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!userId) return;
 
-    const fetchStats = async () => {
+    const fetchStats = async (): Promise<void> => {
       try {
         setLoading(true);
         
@@ -74,7 +92,7 @@ export default function DashboardStats({ userId, streakCount }) {
           : 0;
         
         // Calculate weekly distribution
-        const weeklyDistribution = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
+        const weeklyDistribution: number[] = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
         
         weeklyTasksSnapshot.forEach(doc => {
           const data = doc.data();
@@ -90,7 +108,7 @@ export default function DashboardStats({ userId, streakCount }) {
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayCompleted = weeklyDistribution[yesterday.getDay()];
         
-        let trend = 'stable';
+        let trend: 'up' | 'down' | 'stable' = 'stable';
         if (tasksCompletedToday > yesterdayCompleted) trend = 'up';
         else if (tasksCompletedToday < yesterdayCompleted) trend = 'down';
         
@@ -112,26 +130,26 @@ export default function DashboardStats({ userId, streakCount }) {
   }, [userId]);
   
   // Helper function to determine the highest day in the week
-  const getHighestDay = () => {
+  const getHighestDay = (): number => {
     const max = Math.max(...stats.weeklyTasks);
     return stats.weeklyTasks.indexOf(max);
   };
   
   // Convert day index to name
-  const getDayName = (index) => {
+  const getDayName = (index: number): string => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return days[index];
   };
   
   // Get color for trend
-  const getTrendColor = () => {
+  const getTrendColor = (): string => {
     if (stats.trend === 'up') return 'text-green-500';
     if (stats.trend === 'down') return 'text-red-500';
     return 'text-gray-500';
   };
   
   // Get icon for trend
-  const getTrendIcon = () => {
+  const getTrendIcon = (): React.ReactElement | null => {
     if (stats.trend === 'up') return <ArrowUpIcon className="w-4 h-4 text-green-500" />;
     if (stats.trend === 'down') return <ArrowDownIcon className="w-4 h-4 text-red-500" />;
     return null;
@@ -139,7 +157,7 @@ export default function DashboardStats({ userId, streakCount }) {
   
   if (loading) {
     return (
-      <div className="animate-pulse bg-gray-100 rounded-xl p-6 mb-6">
+      <div className={`animate-pulse bg-gray-100 rounded-xl p-6 mb-6 ${className || ''}`}>
         <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
@@ -151,7 +169,7 @@ export default function DashboardStats({ userId, streakCount }) {
   }
   
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100">
+    <div className={`bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 ${className || ''}`}>
       <h2 className="text-lg font-semibold mb-4 text-gray-700">Dashboard Stats</h2>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -242,4 +260,6 @@ export default function DashboardStats({ userId, streakCount }) {
       </div>
     </div>
   );
-}
+};
+
+export default DashboardStatsComponent;

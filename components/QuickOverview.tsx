@@ -10,21 +10,45 @@ import {
 } from '@heroicons/react/24/outline';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { UserId } from '@/types/models';
+import { BaseProps } from '@/types/components';
 
-export default function QuickOverview({ userId }) {
-  const [overview, setOverview] = useState({
+interface UpcomingDeadline {
+  id: string;
+  title: string;
+  createdAt: any; // Firestore Timestamp
+  completedAt?: any;
+}
+
+interface OverviewData {
+  remainingTasks: number;
+  completedTasks: number;
+  upcomingDeadlines: UpcomingDeadline[];
+  completionPercentage: number;
+  motivationalMessage: string;
+}
+
+interface QuickOverviewProps extends BaseProps {
+  userId: UserId;
+}
+
+const QuickOverview: React.FC<QuickOverviewProps> = ({ 
+  userId,
+  className 
+}) => {
+  const [overview, setOverview] = useState<OverviewData>({
     remainingTasks: 0,
     completedTasks: 0,
     upcomingDeadlines: [],
     completionPercentage: 0,
     motivationalMessage: ''
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!userId) return;
 
-    const fetchOverviewData = async () => {
+    const fetchOverviewData = async (): Promise<void> => {
       try {
         setLoading(true);
         
@@ -60,17 +84,23 @@ export default function QuickOverview({ userId }) {
         ]);
         
         // Process today's tasks
-        const todayTasks = todayTasksSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        const completedTasks = todayTasks.filter(task => task.completedAt).length;
+        const todayTasks = todayTasksSnapshot.docs.map(doc => ({ 
+          ...doc.data(), 
+          id: doc.id 
+        })) as any[];
+        const completedTasks = todayTasks.filter((task: any) => task.completedAt).length;
         const remainingTasks = todayTasks.length - completedTasks;
         const completionPercentage = todayTasks.length > 0 
           ? Math.round((completedTasks / todayTasks.length) * 100) 
           : 0;
         
         // Process upcoming deadlines
-        const deadlines = upcomingDeadlinesSnapshot.docs
-          .map(doc => ({ ...doc.data(), id: doc.id }))
-          .filter(task => !task.completedAt)
+        const deadlines: UpcomingDeadline[] = upcomingDeadlinesSnapshot.docs
+          .map(doc => ({ 
+            ...doc.data(), 
+            id: doc.id 
+          } as any))
+          .filter((task: any) => !task.completedAt)
           .sort((a, b) => a.createdAt.toDate() - b.createdAt.toDate())
           .slice(0, 3); // Get top 3 upcoming deadlines
         
@@ -96,7 +126,7 @@ export default function QuickOverview({ userId }) {
   }, [userId]);
   
   // Helper function to generate motivational messages
-  const getMotivationalMessage = (percentage, remaining) => {
+  const getMotivationalMessage = (percentage: number, remaining: number): string => {
     const hour = new Date().getHours();
     
     // Morning messages
@@ -123,7 +153,7 @@ export default function QuickOverview({ userId }) {
   };
   
   // Format date to show day and month
-  const formatDate = (timestamp) => {
+  const formatDate = (timestamp: any): string => {
     if (!timestamp) return '';
     
     const date = timestamp.toDate();
@@ -135,7 +165,7 @@ export default function QuickOverview({ userId }) {
   
   if (loading) {
     return (
-      <div className="animate-pulse bg-gray-100 rounded-xl p-4 mb-6">
+      <div className={`animate-pulse bg-gray-100 rounded-xl p-4 mb-6 ${className || ''}`}>
         <div className="h-4 bg-gray-200 rounded w-1/3 mb-3"></div>
         <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
         <div className="space-y-2">
@@ -148,7 +178,7 @@ export default function QuickOverview({ userId }) {
   }
   
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 hover:shadow-md transition-all duration-300">
+    <div className={`bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 hover:shadow-md transition-all duration-300 ${className || ''}`}>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold text-gray-700">Today&apos;s Overview</h2>
         <ClockIcon className="w-5 h-5 text-blue-500" />
@@ -225,4 +255,6 @@ export default function QuickOverview({ userId }) {
       </div>
     </div>
   );
-}
+};
+
+export default QuickOverview;
