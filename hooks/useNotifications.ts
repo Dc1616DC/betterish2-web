@@ -1,17 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getToken, onMessage } from 'firebase/messaging';
-import { doc, updateDoc } from 'firebase/firestore';
+import { getToken, onMessage, Messaging } from 'firebase/messaging';
+import { doc, updateDoc, Firestore } from 'firebase/firestore';
+import { User } from 'firebase/auth';
 
 // VAPID Key - Generated from Firebase Console Cloud Messaging
 const VAPID_KEY = 'BLfM-zFvgzgx0LGYrlISWU34W1mMoOem872u--p6ObMJ3Y9-sn97lXUQ21LB1HMX4l9C0lWN1ppfV1BMW-Pi0fU';
 
-export function useNotifications(messaging, user, db) {
-  const [permission, setPermission] = useState('default');
-  const [token, setToken] = useState(null);
-  const [error, setError] = useState(null);
+interface UseNotificationsReturn {
+  permission: NotificationPermission;
+  token: string | null;
+  error: string | null;
+  requestPermission: () => Promise<string | null>;
+  isSupported: boolean;
+}
+
+export function useNotifications(
+  messaging: Messaging | null, 
+  user: User | null, 
+  db: Firestore | null
+): UseNotificationsReturn {
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [token, setToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Request notification permission
-  const requestPermission = useCallback(async () => {
+  const requestPermission = useCallback(async (): Promise<string | null> => {
     if (!messaging || !user) return null;
 
     try {
@@ -50,8 +63,9 @@ export function useNotifications(messaging, user, db) {
         throw new Error('Notification permission denied');
       }
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       console.error('Error getting notification permission:', err);
-      setError(err.message);
+      setError(errorMessage);
       return null;
     }
   }, [messaging, user, db]);
@@ -66,7 +80,7 @@ export function useNotifications(messaging, user, db) {
       // Show notification when app is in foreground
       if (permission === 'granted') {
         const notificationTitle = payload.notification?.title || 'Betterish Reminder';
-        const notificationOptions = {
+        const notificationOptions: NotificationOptions = {
           body: payload.notification?.body || 'You have incomplete tasks',
           icon: '/favicon.ico',
           tag: 'betterish-reminder',

@@ -6,21 +6,65 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { TaskCategory, TaskPriority } from '@/lib/services/TaskService';
+import { TaskCategory, TaskPriority, Task } from '@/types/models';
+import { CreateTaskRequest } from '@/types/api';
 import { useTasks } from './useTasks';
 
-export function useTaskForm(initialTask = null, onSuccess = null) {
+interface FormData {
+  title: string;
+  description: string;
+  category: TaskCategory;
+  priority: TaskPriority;
+}
+
+interface FormErrors {
+  title?: string;
+  description?: string;
+  category?: string;
+  priority?: string;
+  submit?: string;
+}
+
+interface UseTaskFormReturn {
+  // Form state
+  formData: FormData;
+  errors: FormErrors;
+  isSubmitting: boolean;
+  isDirty: boolean;
+  isEditing: boolean;
+  isValid: boolean;
+  hasChanges: boolean;
+
+  // Form handlers
+  updateField: (fieldName: keyof FormData, value: string) => void;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleSelectChange: (fieldName: keyof FormData, value: string) => void;
+  handleSubmit: (e?: React.FormEvent) => Promise<Task | false>;
+
+  // Validation
+  validateForm: () => boolean;
+  validateField: (fieldName: keyof FormData, value: string) => void;
+
+  // Utilities
+  resetForm: () => void;
+  clearErrors: () => void;
+}
+
+export function useTaskForm(
+  initialTask: Task | null = null, 
+  onSuccess?: ((task: Task) => void) | null
+): UseTaskFormReturn {
   const { createTask, updateTask } = useTasks();
   
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: initialTask?.title || '',
     description: initialTask?.description || '',
     category: initialTask?.category || TaskCategory.PERSONAL,
     priority: initialTask?.priority || TaskPriority.MEDIUM
   });
   
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   
@@ -44,8 +88,8 @@ export function useTaskForm(initialTask = null, onSuccess = null) {
   // VALIDATION
   // =============================================
 
-  const validateForm = useCallback(() => {
-    const newErrors = {};
+  const validateForm = useCallback((): boolean => {
+    const newErrors: FormErrors = {};
 
     // Title validation
     if (!formData.title.trim()) {
@@ -74,7 +118,7 @@ export function useTaskForm(initialTask = null, onSuccess = null) {
   }, [formData]);
 
   // Real-time field validation
-  const validateField = useCallback((fieldName, value) => {
+  const validateField = useCallback((fieldName: keyof FormData, value: string) => {
     const fieldErrors = { ...errors };
 
     switch (fieldName) {
@@ -104,7 +148,7 @@ export function useTaskForm(initialTask = null, onSuccess = null) {
   // FORM HANDLERS
   // =============================================
 
-  const updateField = useCallback((fieldName, value) => {
+  const updateField = useCallback((fieldName: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
     setIsDirty(true);
     
@@ -118,17 +162,17 @@ export function useTaskForm(initialTask = null, onSuccess = null) {
     }
   }, [errors]);
 
-  const handleInputChange = useCallback((e) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    updateField(name, value);
+    updateField(name as keyof FormData, value);
     
     // Validate field on blur
     if (e.type === 'blur') {
-      validateField(name, value);
+      validateField(name as keyof FormData, value);
     }
   }, [updateField, validateField]);
 
-  const handleSelectChange = useCallback((fieldName, value) => {
+  const handleSelectChange = useCallback((fieldName: keyof FormData, value: string) => {
     updateField(fieldName, value);
   }, [updateField]);
 
@@ -136,7 +180,7 @@ export function useTaskForm(initialTask = null, onSuccess = null) {
   // FORM SUBMISSION
   // =============================================
 
-  const handleSubmit = useCallback(async (e) => {
+  const handleSubmit = useCallback(async (e?: React.FormEvent): Promise<Task | false> => {
     if (e) {
       e.preventDefault();
     }
@@ -148,15 +192,15 @@ export function useTaskForm(initialTask = null, onSuccess = null) {
     setIsSubmitting(true);
 
     try {
-      const taskData = {
+      const taskData: CreateTaskRequest = {
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: formData.category,
         priority: formData.priority
       };
 
-      let result;
-      if (isEditing) {
+      let result: Task;
+      if (isEditing && initialTask) {
         result = await updateTask(initialTask.id, taskData);
       } else {
         result = await createTask(taskData);
@@ -180,8 +224,9 @@ export function useTaskForm(initialTask = null, onSuccess = null) {
 
       return result;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Form submission error:', error);
-      setErrors({ submit: error.message });
+      setErrors({ submit: errorMessage });
       return false;
     } finally {
       setIsSubmitting(false);
