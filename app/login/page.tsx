@@ -1,18 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, Auth, User, AuthError } from 'firebase/auth';
 import { initializeFirebaseClient } from '@/lib/firebase-client';  // Use client-only Firebase factory
 import { useRouter } from 'next/navigation';
+import React from 'react';
 
 export default function LoginPage() {
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [auth, setAuth] = useState(null);
+  const [isRegistering, setIsRegistering] = useState<boolean>(false);
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [auth, setAuth] = useState<Auth | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function LoginPage() {
         authStabilized = true;
       }, 1000); // Wait 1 second for auth state to stabilize
 
-      const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+      const unsubscribe = onAuthStateChanged(firebaseAuth, (user: User | null) => {
         console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
         
         // Only redirect if auth state has stabilized
@@ -93,13 +94,13 @@ export default function LoginPage() {
     );
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
     // Rate limiting protection: add delay to prevent rapid requests
-    const attemptAuth = async (retryCount = 0) => {
+    const attemptAuth = async (retryCount: number = 0): Promise<void> => {
       try {
         if (isRegistering) {
           await createUserWithEmailAndPassword(auth, email, password);
@@ -108,10 +109,11 @@ export default function LoginPage() {
         }
         // onAuthStateChanged will handle the redirect
       } catch (err) {
-        console.error('Auth error:', err);
+        const authError = err as AuthError;
+        console.error('Auth error:', authError);
         
         // Handle rate limiting with exponential backoff
-        if (err.code === 'auth/too-many-requests' && retryCount < 2) {
+        if (authError.code === 'auth/too-many-requests' && retryCount < 2) {
           const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s exponential backoff
           setError(`Too many requests. Retrying in ${delay/1000} seconds...`);
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -119,26 +121,27 @@ export default function LoginPage() {
         }
         
         // Auto-create test users for TestSprite testing  
-        if (!isRegistering && err.code === 'auth/invalid-credential' && email === 'test@example.com') {
+        if (!isRegistering && authError.code === 'auth/invalid-credential' && email === 'test@example.com') {
           console.log('Auto-creating test user for TestSprite...');
           try {
             await createUserWithEmailAndPassword(auth, email, password);
             console.log('Test user created, signing in...');
             // The user is automatically signed in after creation
           } catch (createError) {
-            console.error('Failed to create test user:', createError);
-            setError(createError.message);
+            const createAuthError = createError as AuthError;
+            console.error('Failed to create test user:', createAuthError);
+            setError(createAuthError.message);
           }
         } else {
           // Provide user-friendly error messages
-          if (err.code === 'auth/too-many-requests') {
+          if (authError.code === 'auth/too-many-requests') {
             setError('Too many login attempts. Please wait a few minutes and try again.');
-          } else if (err.code === 'auth/email-already-in-use') {
+          } else if (authError.code === 'auth/email-already-in-use') {
             setError('This email is already registered. Please try logging in instead.');
-          } else if (err.code === 'auth/invalid-credential') {
+          } else if (authError.code === 'auth/invalid-credential') {
             setError('Invalid email or password. Please check your credentials and try again.');
           } else {
-            setError(err.message);
+            setError(authError.message);
           }
         }
       }

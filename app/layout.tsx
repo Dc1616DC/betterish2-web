@@ -4,6 +4,8 @@ import BottomNav from "@/components/BottomNav";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ErrorNotification from "@/components/ErrorNotification";
 import GlobalErrorHandler from "@/components/GlobalErrorHandler";
+import { Metadata, Viewport } from "next";
+import React from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +17,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Betterish - Dad Sidekick",
   description: "The modern father's sidekick for managing home, family, and personal life",
   keywords: "productivity, dad app, family management, home maintenance, AI assistant",
@@ -35,7 +37,7 @@ export const metadata = {
   },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -43,7 +45,11 @@ export const viewport = {
   themeColor: '#2563eb',
 };
 
-export default function RootLayout({ children }) {
+interface RootLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
       <head>

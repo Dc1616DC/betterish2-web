@@ -10,7 +10,7 @@ interface NavItem {
   emoji: string;
 }
 
-export default function BottomNav(): JSX.Element {
+export default function BottomNav() {
   const pathname = usePathname();
 
   const navItems: NavItem[] = [
