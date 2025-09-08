@@ -203,9 +203,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             {user?.uid && (
               <div className="flex-shrink-0">
                 <VoiceTaskRecorder
-                  onTasksAdded={onVoiceTasksAdded}
+                  onTasksAdded={(count: number) => onVoiceTasksAdded?.([])}
                   onTranscriptionComplete={() => {}}
-                  onTaskCreate={() => {}}
+                  onTaskCreate={(task: any) => Promise.resolve()}
                   compact={true}
                 />
               </div>

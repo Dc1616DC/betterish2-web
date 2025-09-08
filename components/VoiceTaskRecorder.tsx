@@ -1,32 +1,73 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, RefObject } from 'react';
 import { MicrophoneIcon, StopIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/solid';
 import { trackFeatureUsage, FEATURES } from '@/lib/featureDiscovery';
+import { TaskCategory, TaskPriority, TaskSource, Task } from '@/types/models';
 
-export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplete, onTaskCreate, compact = false, mode = 'tasks' }) {
+interface ExtractedTask {
+  title: string;
+  detail: string;
+  source: 'voice';
+  category?: TaskCategory;
+  priority?: TaskPriority;
+}
+
+interface NewTaskData {
+  title: string;
+  description?: string;
+  category: TaskCategory;
+  priority: TaskPriority;
+  source?: TaskSource;
+}
+
+interface NudgeSettings {
+  enabled: boolean;
+  frequency: number; // hours
+  quietHours: { start: number; end: number }; // 24-hour format
+}
+
+interface BaseProps {
+  className?: string;
+}
+
+interface VoiceTaskRecorderProps extends BaseProps {
+  onTasksAdded?: (count: number) => void;
+  onTranscriptionComplete?: (transcript: string) => void;
+  onTaskCreate?: (task: NewTaskData) => Promise<void>;
+  compact?: boolean;
+  mode?: 'tasks' | 'transcription';
+}
+
+export default function VoiceTaskRecorder({ 
+  onTasksAdded, 
+  onTranscriptionComplete, 
+  onTaskCreate, 
+  compact = false, 
+  mode = 'tasks' 
+}: VoiceTaskRecorderProps) {
   // Recording states
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPreparing, setIsPreparing] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const [transcript, setTranscript] = useState('');
-  const [extractedTasks, setExtractedTasks] = useState([]);
-  const [error, setError] = useState(null);
-  const [permissionDenied, setPermissionDenied] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [audioLevel, setAudioLevel] = useState(0);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [isPreparing, setIsPreparing] = useState<boolean>(false);
+  const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [transcript, setTranscript] = useState<string>('');
+  const [extractedTasks, setExtractedTasks] = useState<ExtractedTask[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
+  const [recordingTime, setRecordingTime] = useState<number>(0);
+  const [audioLevel, setAudioLevel] = useState<number>(0);
 
   // Refs
-  const mediaRecorderRef = useRef(null);
-  const streamRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const timerRef = useRef(null);
-  const startTimeRef = useRef(null); // tracks actual recording start
-  const analyserRef = useRef(null);
-  const dataArrayRef = useRef(null);
-  const animationFrameRef = useRef(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number | null>(null); // tracks actual recording start
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Reset all states function
   const resetState = () => {
@@ -81,7 +122,7 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
   }, []);
 
   // Start recording function
-  const startRecording = async () => {
+  const startRecording = async (): Promise<void> => {
     try {
       // Track voice input usage
       trackFeatureUsage(FEATURES.VOICE_INPUT, { mode, action: 'start_recording' });
@@ -112,7 +153,7 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       dataArrayRef.current = dataArray;
       
       // Start audio level visualization
-      const updateAudioLevel = () => {
+      const updateAudioLevel = (): void => {
         if (!analyserRef.current || !dataArrayRef.current) return;
         
         analyserRef.current.getByteFrequencyData(dataArrayRef.current);
@@ -132,7 +173,7 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorder.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
@@ -195,25 +236,27 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       console.error('[VoiceRecorder] Error starting recording:', err);
       setIsPreparing(false);
       
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      const error = err as Error;
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         setPermissionDenied(true);
         setError('Microphone permission denied. Please allow access to use voice recording.');
       } else {
-        setError(`Could not start recording: ${err.message}`);
+        setError(`Could not start recording: ${error.message}`);
       }
     }
   };
 
   // Stop recording function
-  const stopRecording = () => {
+  const stopRecording = (): void => {
     console.log('[VoiceRecorder] Stopping recording...');
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       try {
         mediaRecorderRef.current.stop();
       } catch (err) {
         console.error('[VoiceRecorder] Error stopping MediaRecorder:', err);
+        const error = err as Error;
         resetState();
-        setError(`Error stopping recording: ${err.message}`);
+        setError(`Error stopping recording: ${error.message}`);
       }
     } else {
       console.warn('[VoiceRecorder] Attempted to stop recording but MediaRecorder was not active');
@@ -222,7 +265,7 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
   };
 
   // Cancel recording function
-  const cancelRecording = () => {
+  const cancelRecording = (): void => {
     console.log('[VoiceRecorder] Cancelling recording...');
     
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -238,7 +281,7 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
   };
 
   // Transcribe audio using OpenAI Whisper API
-  const transcribeAudio = async (blob) => {
+  const transcribeAudio = async (blob: Blob): Promise<void> => {
     try {
       setIsTranscribing(true);
       console.log('[VoiceRecorder] Starting transcription, audio size:', Math.round(blob.size / 1024), 'KB');
@@ -277,13 +320,14 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       
     } catch (err) {
       console.error('[VoiceRecorder] Transcription error:', err);
+      const error = err as Error;
       setIsTranscribing(false);
-      setError(`Transcription failed: ${err.message}`);
+      setError(`Transcription failed: ${error.message}`);
     }
   };
 
   // Extract tasks from transcript
-  const extractTasks = async (text) => {
+  const extractTasks = async (text: string): Promise<void> => {
     // If in transcription mode, skip task extraction
     if (mode === 'transcription') {
       setIsProcessing(false);
@@ -311,7 +355,7 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
         /(?:and\sthen|then|next|also|additionally|moreover|furthermore|besides|plus|after\sthat)/i
       ];
       
-      let tasks = [];
+      let tasks: ExtractedTask[] = [];
       
       // First try to extract using specific task patterns
       for (const pattern of taskPatterns) {
@@ -335,7 +379,7 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
         
         // Split by separators
         for (const pattern of separatorPatterns) {
-          const newSegments = [];
+          const newSegments: string[] = [];
           segments.forEach(segment => {
             const parts = segment.split(pattern);
             newSegments.push(...parts);
@@ -377,19 +421,19 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       
     } catch (err) {
       console.error('[VoiceRecorder] Task extraction error:', err);
+      const error = err as Error;
       setIsProcessing(false);
-      setError(`Failed to extract tasks: ${err.message}`);
+      setError(`Failed to extract tasks: ${error.message}`);
     }
   };
 
   // Helper function to capitalize first letter
-  const capitalizeFirstLetter = (string) => {
+  const capitalizeFirstLetter = (string: string): string => {
     return string.charAt(0).toUpperCase() + string.slice(1);
   };
 
-
   // Save extracted tasks or pass transcription
-  const saveTasks = async () => {
+  const saveTasks = async (): Promise<void> => {
     try {
       setIsProcessing(true);
       
@@ -420,8 +464,8 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
           await onTaskCreate({
             title: task.title,
             description: task.detail || '',
-            category: 'personal',
-            priority: 'medium'
+            category: TaskCategory.PERSONAL,
+            priority: TaskPriority.MEDIUM
           });
           savedCount++;
         } catch (err) {
@@ -442,13 +486,14 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       
     } catch (err) {
       console.error('[VoiceRecorder] Error saving tasks:', err);
+      const error = err as Error;
       setIsProcessing(false);
-      setError(`Failed to save tasks: ${err.message}`);
+      setError(`Failed to save tasks: ${error.message}`);
     }
   };
 
   // Auto-save tasks directly to main list (no UI preview)
-  const autoSaveTasks = async (tasks) => {
+  const autoSaveTasks = async (tasks: ExtractedTask[]): Promise<void> => {
     try {
       console.log('[VoiceRecorder] Auto-saving tasks to main list...');
       
@@ -462,9 +507,9 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
           await onTaskCreate({
             title: task.title,
             description: task.detail || '',
-            category: task.category || 'personal',
-            priority: task.priority || 'medium',
-            source: 'voice'
+            category: task.category || TaskCategory.PERSONAL,
+            priority: task.priority || TaskPriority.MEDIUM,
+            source: TaskSource.VOICE
           });
           savedCount++;
         } catch (taskError) {
@@ -491,13 +536,14 @@ export default function VoiceTaskRecorder({ onTasksAdded, onTranscriptionComplet
       
     } catch (err) {
       console.error('[VoiceRecorder] Auto-save error:', err);
-      setError(`Failed to save tasks: ${err.message}`);
+      const error = err as Error;
+      setError(`Failed to save tasks: ${error.message}`);
       setIsProcessing(false);
     }
   };
 
   // Format time as MM:SS
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;

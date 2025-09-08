@@ -1,9 +1,16 @@
 'use client';
 
+import React from 'react';
+
+interface DashboardLoadingProps {
+  message?: string;
+  showSkeleton?: boolean;
+}
+
 export default function DashboardLoading({ 
   message = "Loading your tasks...", 
   showSkeleton = true 
-}) {
+}: DashboardLoadingProps) {
   // Return functional UI instead of loading skeleton for TestSprite
   return (
     <div className="max-w-md mx-auto p-6 space-y-6">
