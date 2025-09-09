@@ -388,11 +388,22 @@ function analyzePatterns(patterns: BehavioralPatterns): PatternInsights {
 async function getTodayCompletions(userId: UserId): Promise<number> {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const dailyDocRef = doc(db, 'users', userId, 'patterns', 'daily', today);
-    const dailyDoc = await getDoc(dailyDocRef);
+    // Store daily completions in the behavioral patterns doc instead
+    const patternsRef = doc(db, 'users', userId, 'patterns', 'behavioral');
+    const patternsDoc = await getDoc(patternsRef);
     
-    if (dailyDoc.exists()) {
-      return dailyDoc.data()?.completions || 0;
+    if (patternsDoc.exists()) {
+      const data = patternsDoc.data();
+      // Get today's completion count from the completions by hour
+      const todayHours = new Date().getHours();
+      let totalToday = 0;
+      
+      // Sum up all completions for today (rough estimate based on hours)
+      for (let h = 0; h <= todayHours; h++) {
+        totalToday += data?.completionsByHour?.[h.toString()] || 0;
+      }
+      
+      return totalToday;
     }
     return 0;
     

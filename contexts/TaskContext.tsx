@@ -227,7 +227,7 @@ export function TaskProvider({ children, user }: TaskProviderProps) {
         const service = createTaskService(db as Firestore);
         setTaskService(service);
       } catch (error) {
-        handleFirebaseError(error, {
+        handleFirebaseError(error as Error, {
           operation: 'initializeTaskService',
           component: 'TaskContext'
         });

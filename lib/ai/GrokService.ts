@@ -40,15 +40,33 @@ export class GrokService {
   private apiKey: string | undefined;
   private baseUrl: string = 'https://api.x.ai/v1';
   private model: string = 'grok-beta'; // or 'grok-2' when available
+  private useMockMode: boolean = false;
 
   constructor() {
     this.apiKey = process.env.GROK_API_KEY;
+    
+    // Validate API key and enable mock mode if needed
+    if (!this.apiKey) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️ Grok API key missing - using mock mode for development');
+        this.useMockMode = true;
+      } else if (process.env.NODE_ENV === 'production') {
+        console.error('❌ Grok API key missing in production!');
+      }
+    } else {
+      console.log('✅ Grok API key configured');
+    }
   }
 
   /**
    * Generate daily task suggestions using Grok
    */
   async generateDailyMix(user: User, existingTasks: Task[]): Promise<AiResponse<AiSuggestion>> {
+    // Use mock mode in development if API key is missing
+    if (this.useMockMode) {
+      return this.getMockResponse(user, existingTasks);
+    }
+    
     if (!this.apiKey) {
       return this.getFallbackResponse(user);
     }
@@ -125,12 +143,13 @@ Generate 3-5 task suggestions that:
 2. Are specific and actionable
 3. Can be completed in under 30 minutes
 4. Help this dad be more present with his family
+5. Add light humor where appropriate (e.g., "Chores = foreplay?" for household tasks)
 
 Format each suggestion as:
 Title: [specific action]
 Category: [relationship/household/baby/personal/health]
 Priority: [high/medium/low]
-Why: [brief reason this helps]
+Why: [brief reason this helps - supportive tone, no shaming]
     `;
   }
 
@@ -303,6 +322,51 @@ Why: [brief reason this helps]
         confidence: 0.6
       },
       metadata: { fallback: true }
+    };
+  }
+
+  /**
+   * Get mock response for development/testing
+   */
+  private getMockResponse(user: User, existingTasks: Task[]): AiResponse<AiSuggestion> {
+    console.log('🧪 Using mock Grok response for development');
+    
+    const mockTasks: Task[] = [
+      this.createTask(user.uid,
+        'Plan a quick date night with your partner',
+        'Small gesture to show appreciation and reconnect',
+        TaskCategory.RELATIONSHIP,
+        TaskPriority.HIGH
+      ),
+      this.createTask(user.uid,
+        'Organize the kitchen counter (15 min)',
+        'Quick declutter for a clearer mind',
+        TaskCategory.HOUSEHOLD,
+        TaskPriority.MEDIUM
+      ),
+      this.createTask(user.uid,
+        'Prep tomorrow\'s baby supplies',
+        'Bottles, clothes, and diapers ready for smooth morning',
+        TaskCategory.BABY,
+        TaskPriority.HIGH
+      ),
+      this.createTask(user.uid,
+        'Take a 20-minute walk',
+        'Clear your head and recharge',
+        TaskCategory.HEALTH,
+        TaskPriority.LOW
+      )
+    ];
+    
+    return {
+      data: {
+        tasks: mockTasks.slice(0, 3), // Return 3 tasks
+        rationale: '[MOCK] Daily suggestions to help you stay present and connected',
+        priority: 'medium',
+        category: TaskCategory.PERSONAL,
+        confidence: 0.95
+      },
+      metadata: { mock: true, source: 'development' }
     };
   }
 

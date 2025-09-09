@@ -5,7 +5,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false, // Start with false, gradually increase
+    "strict": true, // Full strict mode enabled for production stability
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,

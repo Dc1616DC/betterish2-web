@@ -163,7 +163,7 @@ class TaskService {
       } as Task;
     } catch (error) {
       console.error('❌ Error creating task:', error);
-      throw new Error(`Failed to create task: ${error.message}`);
+      throw new Error(`Failed to create task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -245,7 +245,7 @@ class TaskService {
       return tasks;
     } catch (error) {
       console.error('❌ Error loading tasks:', error);
-      throw new Error(`Failed to load tasks: ${error.message}`);
+      throw new Error(`Failed to load tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -344,7 +344,7 @@ class TaskService {
       throw new Error('Task not found after update');
     } catch (error) {
       console.error('❌ Error updating task:', error);
-      throw new Error(`Failed to update task: ${error.message}`);
+      throw new Error(`Failed to update task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -399,7 +399,7 @@ class TaskService {
       console.log('✅ Task archived:', taskId);
     } catch (error) {
       console.error('❌ Error deleting task:', error);
-      throw new Error(`Failed to delete task: ${error.message}`);
+      throw new Error(`Failed to delete task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -415,7 +415,7 @@ class TaskService {
       console.log('✅ Task permanently deleted:', taskId);
     } catch (error) {
       console.error('❌ Error permanently deleting task:', error);
-      throw new Error(`Failed to permanently delete task: ${error.message}`);
+      throw new Error(`Failed to permanently delete task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -447,7 +447,7 @@ class TaskService {
       console.log(`✅ Completed ${taskIds.length} tasks`);
     } catch (error) {
       console.error('❌ Error completing tasks:', error);
-      throw new Error(`Failed to complete tasks: ${error.message}`);
+      throw new Error(`Failed to complete tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -474,7 +474,7 @@ class TaskService {
       console.log(`✅ Archived ${taskIds.length} tasks`);
     } catch (error) {
       console.error('❌ Error archiving tasks:', error);
-      throw new Error(`Failed to archive tasks: ${error.message}`);
+      throw new Error(`Failed to archive tasks: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -580,7 +580,7 @@ class TaskService {
       return null;
     } catch (error) {
       console.error('❌ Error getting task:', error);
-      throw new Error(`Failed to get task: ${error.message}`);
+      throw new Error(`Failed to get task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
