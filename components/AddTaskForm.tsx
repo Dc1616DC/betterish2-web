@@ -52,6 +52,10 @@ const AddTaskForm: React.FC<AddTaskFormProps> = ({
         createdAt: Timestamp.now(),
       };
 
+      if (!db) {
+        throw new Error('Firebase not initialized');
+      }
+      
       const docRef = await addDoc(collection(db, 'tasks'), newTaskData);
       
       // Create the full task object for the callback

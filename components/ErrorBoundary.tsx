@@ -164,12 +164,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               </button>
               
               {this.props.showHomeLink !== false && (
-                <a
-                  href="/"
+                <button
+                  onClick={() => window.location.href = '/'}
                   className="block w-full bg-gray-50 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors text-center"
+                  type="button"
                 >
                   Go Home
-                </a>
+                </button>
               )}
             </div>
           </div>

@@ -96,7 +96,7 @@ export async function findAndHandleDuplicates(
     for (const [key, tasks] of taskGroups) {
       if (tasks.length > 1) {
         // Sort by creation time - keep the MOST RECENT
-        tasks.sort((a, b) => b.createdAt - a.createdAt);
+        tasks.sort((a: any, b: any) => b.createdAt - a.createdAt);
         
         duplicateGroups.push({
           key,

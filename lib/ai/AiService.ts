@@ -9,6 +9,7 @@ import {
   TaskCategory, 
   TaskPriority, 
   TaskSource,
+  TaskStatus,
   CreateTaskData 
 } from '@/types/models';
 import { 
@@ -215,7 +216,7 @@ export class AiService {
           ...s,
           id: this.generateId(),
           userId: user.uid,
-          status: TaskSource.AI_MENTOR,
+          status: TaskStatus.ACTIVE,
           completed: false,
           isProject: false,
           createdAt: new Date(),
@@ -329,7 +330,7 @@ export class AiService {
       description: base.description,
       category,
       priority: TaskPriority.MEDIUM,
-      status: TaskSource.AI_MENTOR,
+      status: TaskStatus.ACTIVE,
       source: TaskSource.AI_MENTOR,
       completed: false,
       isProject: false,

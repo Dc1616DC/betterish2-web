@@ -86,12 +86,12 @@ class TaskService {
     }
 
     // Category validation
-    if (!Object.values(TaskCategory).includes(taskData.category)) {
+    if (taskData.category && !Object.values(TaskCategory).includes(taskData.category)) {
       errors.push('Invalid task category');
     }
 
     // Priority validation
-    if (!Object.values(TaskPriority).includes(taskData.priority)) {
+    if (taskData.priority && !Object.values(TaskPriority).includes(taskData.priority)) {
       errors.push('Invalid task priority');
     }
 
@@ -104,7 +104,7 @@ class TaskService {
   // Clean and normalize task data
   private normalizeTaskData(rawData: Partial<CreateTaskData>): CreateTaskData {
     return {
-      title: rawData.title?.trim(),
+      title: rawData.title?.trim() || '',
       description: rawData.description?.trim() || '',
       category: rawData.category || TaskCategory.PERSONAL,
       priority: rawData.priority || TaskPriority.MEDIUM,
@@ -220,7 +220,7 @@ class TaskService {
       }
 
       const snapshot = await getDocs(q);
-      const tasks = [];
+      const tasks: Task[] = [];
 
       snapshot.docs.forEach(docSnap => {
         const data: DocumentData = docSnap.data();
@@ -238,7 +238,7 @@ class TaskService {
           updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt),
           completedAt: data.completedAt?.toDate?.() || null,
           snoozedUntil: data.snoozedUntil?.toDate?.() || null
-        });
+        } as Task);
       });
 
       console.log(`✅ Loaded ${tasks.length} tasks for user ${userId}`);

@@ -8,7 +8,8 @@ import {
   User, 
   TaskCategory, 
   TaskPriority, 
-  TaskSource 
+  TaskSource,
+  TaskStatus
 } from '@/types/models';
 import { 
   AiResponse, 
@@ -157,7 +158,7 @@ Why: [brief reason this helps]
         description: why,
         category: this.mapToTaskCategory(categoryStr),
         priority: this.mapToTaskPriority(priorityStr),
-        status: TaskSource.AI_MENTOR,
+        status: TaskStatus.ACTIVE,
         source: TaskSource.AI_MENTOR,
         completed: false,
         isProject: false,
@@ -322,7 +323,7 @@ Why: [brief reason this helps]
       description,
       category,
       priority,
-      status: TaskSource.TEMPLATE,
+      status: TaskStatus.ACTIVE,
       source: TaskSource.TEMPLATE,
       completed: false,
       isProject: false,

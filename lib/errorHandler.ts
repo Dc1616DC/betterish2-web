@@ -108,7 +108,7 @@ class ErrorHandler {
     // Queue for remote logging if offline
     if (!this.isOnline) {
       this.errorQueue.push(errorData);
-      return;
+      return errorData;
     }
 
     // Log to remote service (Firebase, Sentry, etc.)
