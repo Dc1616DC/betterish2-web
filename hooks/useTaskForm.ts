@@ -6,8 +6,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { TaskCategory, TaskPriority, Task } from '@/types/models';
-import { CreateTaskRequest } from '@/types/api';
+import { TaskCategory, TaskPriority, Task, CreateTaskData, UpdateTaskData } from '@/types/models';
 import { useTasks } from './useTasks';
 
 interface FormData {
@@ -192,18 +191,23 @@ export function useTaskForm(
     setIsSubmitting(true);
 
     try {
-      const taskData: CreateTaskRequest = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        category: formData.category,
-        priority: formData.priority
-      };
-
       let result: Task;
       if (isEditing && initialTask) {
-        result = await updateTask(initialTask.id, taskData);
+        const updateData: UpdateTaskData = {
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          category: formData.category,
+          priority: formData.priority
+        };
+        result = await updateTask(initialTask.id, updateData);
       } else {
-        result = await createTask(taskData);
+        const createData: CreateTaskData = {
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          category: formData.category,
+          priority: formData.priority
+        };
+        result = await createTask(createData);
       }
 
       // Reset form on successful create (but not edit)

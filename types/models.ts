@@ -427,3 +427,45 @@ export const isValidTaskPriority = (priority: string): priority is TaskPriority 
 export const isValidTaskSource = (source: string): source is TaskSource => {
   return Object.values(TaskSource).includes(source as TaskSource);
 };
+
+// =============================================
+// CRUD OPERATION TYPES
+// =============================================
+
+// Task creation data (partial Task with required fields)
+export interface CreateTaskData {
+  title: string;
+  description?: string;
+  category: TaskCategory;
+  priority?: TaskPriority;
+  tags?: string[];
+  source?: TaskSource;
+  estimatedMinutes?: number;
+  notes?: string;
+  // Additional optional fields for creation
+  isProject?: boolean;
+  subtasks?: Subtask[];
+}
+
+// Task update data (all fields optional except those that can't be changed)
+export interface UpdateTaskData {
+  title?: string;
+  description?: string;
+  category?: TaskCategory;
+  priority?: TaskPriority;
+  tags?: string[];
+  status?: TaskStatus;
+  completed?: boolean;
+  dismissed?: boolean;
+  deleted?: boolean;
+  completedAt?: Date | null;
+  snoozedUntil?: Date | null;
+  progress?: number;
+  notes?: string;
+  estimatedMinutes?: number;
+  actualMinutes?: number;
+  subtasks?: Subtask[];
+  // Metadata fields that can be updated
+  updatedAt?: Date;
+  lastActivityAt?: Date;
+}

@@ -387,9 +387,9 @@ function analyzePatterns(patterns: BehavioralPatterns): PatternInsights {
  */
 async function getTodayCompletions(userId: UserId): Promise<number> {
   try {
-    const patternsRef = doc(db, 'users', userId, 'patterns', 'daily');
     const today = new Date().toISOString().split('T')[0];
-    const dailyDoc = await getDoc(doc(patternsRef, today));
+    const dailyDocRef = doc(db, 'users', userId, 'patterns', 'daily', today);
+    const dailyDoc = await getDoc(dailyDocRef);
     
     if (dailyDoc.exists()) {
       return dailyDoc.data()?.completions || 0;

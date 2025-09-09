@@ -24,7 +24,9 @@ import {
   DocumentSnapshot,
   Timestamp
 } from 'firebase/firestore';
-import { Task, TaskId, UserId, TaskCategory, TaskPriority, TaskStatus, TaskSource, Subtask } from '../../types/models';
+import { Task, TaskId, UserId, TaskCategory, TaskPriority, TaskStatus, TaskSource, Subtask, User } from '../../types/models';
+import { getAiService } from '@/lib/ai/AiService';
+import { AiSuggestion } from '@/types/ai';
 
 // Task Status Constants (using enum from types)
 export { TaskStatus, TaskCategory, TaskPriority, TaskSource } from '../../types/models';
@@ -606,6 +608,122 @@ class TaskService {
       const descMatch = task.description?.toLowerCase().includes(query) || false;
       return titleMatch || descMatch;
     });
+  }
+
+  // =============================================
+  // AI-POWERED FEATURES
+  // =============================================
+
+  /**
+   * Generate personalized daily task mix using AI
+   * Balances across categories based on user patterns
+   */
+  async generateDailyMix(user: User): Promise<AiSuggestion> {
+    try {
+      const aiService = getAiService();
+      const existingTasks = await this.getTasks(user.uid);
+      
+      // Get AI-generated suggestions
+      const response = await aiService.generateDailyMix(user, existingTasks);
+      
+      if (response.error) {
+        console.warn('AI generation warning:', response.error);
+      }
+      
+      // Store the suggested tasks if user accepts them
+      // This method just returns suggestions without creating them
+      return response.data!;
+    } catch (error) {
+      console.error('Failed to generate daily mix:', error);
+      
+      // Return fallback suggestions
+      return {
+        tasks: await this.getFallbackDailyTasks(user.uid),
+        rationale: 'Here are some tasks to keep you productive today',
+        priority: 'medium' as const,
+        category: TaskCategory.PERSONAL,
+        confidence: 0.5
+      };
+    }
+  }
+
+  /**
+   * Create tasks from AI suggestions
+   * Used when user accepts the daily mix
+   */
+  async createTasksFromSuggestions(
+    userId: UserId, 
+    suggestions: Task[]
+  ): Promise<Task[]> {
+    const createdTasks: Task[] = [];
+    
+    for (const suggestion of suggestions) {
+      try {
+        const taskData: CreateTaskData = {
+          title: suggestion.title,
+          description: suggestion.description,
+          category: suggestion.category,
+          priority: suggestion.priority,
+          source: TaskSource.AI_MENTOR,
+          tags: ['ai-generated', 'daily-mix']
+        };
+        
+        const created = await this.createTask(userId, taskData);
+        createdTasks.push(created);
+      } catch (error) {
+        console.error('Failed to create suggested task:', error);
+      }
+    }
+    
+    return createdTasks;
+  }
+
+  /**
+   * Get fallback daily tasks when AI is unavailable
+   */
+  private async getFallbackDailyTasks(userId: UserId): Promise<Task[]> {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    const fallbackTasks: Partial<Task>[] = [
+      {
+        title: 'Review today\'s priorities',
+        category: TaskCategory.PERSONAL,
+        priority: TaskPriority.HIGH,
+        source: TaskSource.TEMPLATE
+      },
+      {
+        title: isWeekend ? 'Family time activity' : 'Connect with partner',
+        category: TaskCategory.RELATIONSHIP,
+        priority: TaskPriority.MEDIUM,
+        source: TaskSource.TEMPLATE
+      },
+      {
+        title: 'Quick home tidy (15 min)',
+        category: TaskCategory.HOUSEHOLD,
+        priority: TaskPriority.LOW,
+        source: TaskSource.TEMPLATE
+      }
+    ];
+    
+    // Convert to full Task objects
+    return fallbackTasks.map(task => ({
+      id: `fallback_${Date.now()}_${Math.random()}`,
+      userId,
+      title: task.title!,
+      description: task.description,
+      category: task.category!,
+      priority: task.priority!,
+      status: TaskStatus.ACTIVE,
+      source: task.source!,
+      completed: false,
+      isProject: false,
+      createdAt: now,
+      updatedAt: now,
+      completedAt: null,
+      snoozedUntil: null
+    } as Task));
   }
 }
 

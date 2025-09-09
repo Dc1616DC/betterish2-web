@@ -22,7 +22,7 @@ export default function BottomNav() {
   return (
     <nav className="bottom-nav-fixed flex justify-around items-center py-3">
       {navItems.map((item) => {
-        const isActive = pathname.startsWith(item.href);
+        const isActive = pathname?.startsWith(item.href) || false;
         return (
           <Link
             key={item.href}

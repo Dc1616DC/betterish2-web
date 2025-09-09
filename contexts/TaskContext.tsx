@@ -1,23 +1,115 @@
 /**
- * TaskContext - Centralized Task State Management
+ * TaskContext - Centralized Task State Management (TypeScript)
  * Replaces scattered useState calls with unified state
  * Provides optimistic updates and error handling
  */
 
 'use client';
 
-import { createContext, useContext, useReducer, useCallback, useEffect, useState } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, useState, ReactNode } from 'react';
 import { createTaskService, TaskStatus } from '@/lib/services/TaskService';
 import { initializeFirebaseClient } from '@/lib/firebase-client';
 import { handleFirebaseError, logError, ErrorTypes } from '@/lib/errorHandler';
+import { Task, TaskId, UserId, User, CreateTaskData, UpdateTaskData } from '@/types/models';
+import { Firestore } from 'firebase/firestore';
+
+// =============================================
+// TYPE DEFINITIONS
+// =============================================
+
+interface TaskState {
+  allTasks: Task[];
+  loading: boolean;
+  error: string | null;
+  _optimisticHistory?: Array<{
+    id: TaskId;
+    original: Task;
+  }>;
+}
+
+interface TaskContextValue {
+  // State
+  allTasks: Task[];
+  activeTasks: Task[];
+  completedTasks: Task[];
+  projects: Task[];
+  pastPromises: Task[];
+  loading: boolean;
+  error: string | null;
+  
+  // Basic CRUD
+  createTask: (taskData: CreateTaskData) => Promise<Task>;
+  updateTask: (taskId: TaskId, updates: UpdateTaskData) => Promise<Task>;
+  deleteTask: (taskId: TaskId) => Promise<void>;
+  
+  // Task actions
+  completeTask: (taskId: TaskId) => Promise<Task>;
+  uncompleteTask: (taskId: TaskId) => Promise<Task>;
+  snoozeTask: (taskId: TaskId, until: Date) => Promise<Task>;
+  
+  // Bulk actions
+  completeTasks: (taskIds: TaskId[]) => Promise<void>;
+  archiveTasks: (taskIds: TaskId[]) => Promise<void>;
+  
+  // Project operations
+  convertToProject: (taskId: TaskId, subtasks: any[]) => Promise<Task>;
+  addSubtask: (projectId: TaskId, subtaskData: any) => Promise<Task>;
+  updateSubtask: (projectId: TaskId, subtaskId: number, updates: any) => Promise<Task>;
+  
+  // Utility
+  loadTasks: () => Promise<void>;
+  refreshTasks: () => Promise<void>;
+  searchTasks: (query: string) => Promise<Task[]>;
+  clearError: () => void;
+}
+
+interface TaskProviderProps {
+  children: ReactNode;
+  user: User | null;
+}
+
+// Action types
+const TaskActionTypes = {
+  // Loading states
+  SET_LOADING: 'SET_LOADING' as const,
+  SET_ERROR: 'SET_ERROR' as const,
+  CLEAR_ERROR: 'CLEAR_ERROR' as const,
+  
+  // Data operations
+  SET_TASKS: 'SET_TASKS' as const, 
+  ADD_TASK: 'ADD_TASK' as const,
+  UPDATE_TASK: 'UPDATE_TASK' as const,
+  REMOVE_TASK: 'REMOVE_TASK' as const,
+  
+  // Bulk operations
+  UPDATE_MULTIPLE_TASKS: 'UPDATE_MULTIPLE_TASKS' as const,
+  REMOVE_MULTIPLE_TASKS: 'REMOVE_MULTIPLE_TASKS' as const,
+  
+  // Optimistic updates
+  OPTIMISTIC_UPDATE: 'OPTIMISTIC_UPDATE' as const,
+  REVERT_OPTIMISTIC: 'REVERT_OPTIMISTIC' as const
+};
+
+type TaskAction = 
+  | { type: typeof TaskActionTypes.SET_LOADING; payload: boolean }
+  | { type: typeof TaskActionTypes.SET_ERROR; payload: string }
+  | { type: typeof TaskActionTypes.CLEAR_ERROR }
+  | { type: typeof TaskActionTypes.SET_TASKS; payload: Task[] }
+  | { type: typeof TaskActionTypes.ADD_TASK; payload: Task }
+  | { type: typeof TaskActionTypes.UPDATE_TASK; payload: Task }
+  | { type: typeof TaskActionTypes.REMOVE_TASK; payload: TaskId }
+  | { type: typeof TaskActionTypes.UPDATE_MULTIPLE_TASKS; payload: Task[] }
+  | { type: typeof TaskActionTypes.REMOVE_MULTIPLE_TASKS; payload: TaskId[] }
+  | { type: typeof TaskActionTypes.OPTIMISTIC_UPDATE; payload: { id: TaskId; updates: Partial<Task> } }
+  | { type: typeof TaskActionTypes.REVERT_OPTIMISTIC; payload: TaskId };
 
 // =============================================
 // CONTEXT SETUP
 // =============================================
 
-const TaskContext = createContext(null);
+const TaskContext = createContext<TaskContextValue | null>(null);
 
-export function useTaskContext() {
+export function useTaskContext(): TaskContextValue {
   const context = useContext(TaskContext);
   if (!context) {
     throw new Error('useTaskContext must be used within TaskProvider');
@@ -29,28 +121,7 @@ export function useTaskContext() {
 // STATE REDUCER
 // =============================================
 
-const TaskActionTypes = {
-  // Loading states
-  SET_LOADING: 'SET_LOADING',
-  SET_ERROR: 'SET_ERROR',
-  CLEAR_ERROR: 'CLEAR_ERROR',
-  
-  // Data operations
-  SET_TASKS: 'SET_TASKS', 
-  ADD_TASK: 'ADD_TASK',
-  UPDATE_TASK: 'UPDATE_TASK',
-  REMOVE_TASK: 'REMOVE_TASK',
-  
-  // Bulk operations
-  UPDATE_MULTIPLE_TASKS: 'UPDATE_MULTIPLE_TASKS',
-  REMOVE_MULTIPLE_TASKS: 'REMOVE_MULTIPLE_TASKS',
-  
-  // Optimistic updates
-  OPTIMISTIC_UPDATE: 'OPTIMISTIC_UPDATE',
-  REVERT_OPTIMISTIC: 'REVERT_OPTIMISTIC'
-};
-
-function taskReducer(state, action) {
+function taskReducer(state: TaskState, action: TaskAction): TaskState {
   switch (action.type) {
     case TaskActionTypes.SET_LOADING:
       return { ...state, loading: action.payload };
@@ -86,7 +157,7 @@ function taskReducer(state, action) {
     case TaskActionTypes.UPDATE_MULTIPLE_TASKS: {
       const taskUpdates = new Map(action.payload.map(task => [task.id, task]));
       const updatedTasks = state.allTasks.map(task =>
-        taskUpdates.has(task.id) ? { ...task, ...taskUpdates.get(task.id) } : task
+        taskUpdates.has(task.id) ? { ...task, ...taskUpdates.get(task.id)! } : task
       );
       return { ...state, allTasks: updatedTasks };
     }
@@ -102,12 +173,12 @@ function taskReducer(state, action) {
         ...state,
         allTasks: state.allTasks.map(task =>
           task.id === action.payload.id 
-            ? { ...task, ...action.payload.updates, _optimistic: true }
+            ? { ...task, ...action.payload.updates, _optimistic: true } as Task
             : task
         ),
         _optimisticHistory: [
           ...(state._optimisticHistory || []),
-          { id: action.payload.id, original: state.allTasks.find(t => t.id === action.payload.id) }
+          { id: action.payload.id, original: state.allTasks.find(t => t.id === action.payload.id)! }
         ]
       };
     }
@@ -132,7 +203,7 @@ function taskReducer(state, action) {
 }
 
 // Initial state
-const initialState = {
+const initialState: TaskState = {
   allTasks: [],
   loading: true,
   error: null,
@@ -143,17 +214,17 @@ const initialState = {
 // TASK PROVIDER COMPONENT
 // =============================================
 
-export function TaskProvider({ children, user }) {
+export function TaskProvider({ children, user }: TaskProviderProps) {
   const [state, dispatch] = useReducer(taskReducer, initialState);
   
   // Initialize Firebase and TaskService
-  const [taskService, setTaskService] = useState(null);
+  const [taskService, setTaskService] = useState<any>(null);
   
   useEffect(() => {
     if (user) {
       try {
         const { db } = initializeFirebaseClient();
-        const service = createTaskService(db);
+        const service = createTaskService(db as Firestore);
         setTaskService(service);
       } catch (error) {
         handleFirebaseError(error, {
@@ -203,7 +274,7 @@ export function TaskProvider({ children, user }) {
   // =============================================
 
   // Load all tasks
-  const loadTasks = useCallback(async () => {
+  const loadTasks = useCallback(async (): Promise<void> => {
     if (!taskService || !user) return;
 
     dispatch({ type: TaskActionTypes.SET_LOADING, payload: true });
@@ -211,7 +282,7 @@ export function TaskProvider({ children, user }) {
     try {
       const tasks = await taskService.getTasks(user.uid);
       dispatch({ type: TaskActionTypes.SET_TASKS, payload: tasks });
-    } catch (error) {
+    } catch (error: any) {
       handleFirebaseError(error, {
         operation: 'loadTasks',
         component: 'TaskContext',
@@ -222,21 +293,21 @@ export function TaskProvider({ children, user }) {
   }, [taskService, user]);
 
   // Create task
-  const createTask = useCallback(async (taskData) => {
+  const createTask = useCallback(async (taskData: CreateTaskData): Promise<Task> => {
     if (!taskService || !user) throw new Error('Service not ready');
 
     try {
       const newTask = await taskService.createTask(user.uid, taskData);
       dispatch({ type: TaskActionTypes.ADD_TASK, payload: newTask });
       return newTask;
-    } catch (error) {
+    } catch (error: any) {
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
       throw error;
     }
   }, [taskService, user]);
 
   // Update task with optimistic updates
-  const updateTask = useCallback(async (taskId, updates) => {
+  const updateTask = useCallback(async (taskId: TaskId, updates: UpdateTaskData): Promise<Task> => {
     if (!taskService) throw new Error('Service not ready');
 
     // Optimistic update
@@ -249,7 +320,7 @@ export function TaskProvider({ children, user }) {
       const updatedTask = await taskService.updateTask(taskId, updates);
       dispatch({ type: TaskActionTypes.UPDATE_TASK, payload: updatedTask });
       return updatedTask;
-    } catch (error) {
+    } catch (error: any) {
       // Revert optimistic update on error
       dispatch({ type: TaskActionTypes.REVERT_OPTIMISTIC, payload: taskId });
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
@@ -258,11 +329,11 @@ export function TaskProvider({ children, user }) {
   }, [taskService]);
 
   // Complete task
-  const completeTask = useCallback(async (taskId) => {
+  const completeTask = useCallback(async (taskId: TaskId): Promise<Task> => {
     const task = state.allTasks.find(t => t.id === taskId);
     
     // If this is a project with subtasks, preserve the subtask states
-    const updateData = {
+    const updateData: UpdateTaskData = {
       status: TaskStatus.COMPLETED,
       completed: true,
       completedAt: new Date()
@@ -278,14 +349,14 @@ export function TaskProvider({ children, user }) {
     // Trigger dynamic refresh system for task completion
     try {
       const { dynamicRefresh } = await import('@/lib/dynamicTaskRefresh');
-      await dynamicRefresh.handleTaskCompletion(user?.uid, task, {
-        onTaskCompletionRefresh: (data) => {
+      await dynamicRefresh.handleTaskCompletion(user?.uid || '', task, {
+        onTaskCompletionRefresh: (data: any) => {
           // Notify registered callbacks (like Browse section)
-          if (window.taskCompletionCallbacks) {
-            window.taskCompletionCallbacks.forEach(callback => callback(data));
+          if ((window as any).taskCompletionCallbacks) {
+            (window as any).taskCompletionCallbacks.forEach((callback: Function) => callback(data));
           }
         },
-        onPatternLearningRefresh: (data) => {
+        onPatternLearningRefresh: (data: any) => {
           // Show achievement notifications
           console.log('Achievement unlocked:', data.message);
           // Could show toast notification here
@@ -299,7 +370,7 @@ export function TaskProvider({ children, user }) {
   }, [updateTask, state.allTasks, user]);
 
   // Uncomplete task
-  const uncompleteTask = useCallback(async (taskId) => {
+  const uncompleteTask = useCallback(async (taskId: TaskId): Promise<Task> => {
     return updateTask(taskId, {
       status: TaskStatus.ACTIVE,
       completed: false,
@@ -308,7 +379,7 @@ export function TaskProvider({ children, user }) {
   }, [updateTask]);
 
   // Delete task (archive)
-  const deleteTask = useCallback(async (taskId) => {
+  const deleteTask = useCallback(async (taskId: TaskId): Promise<void> => {
     if (!taskService) throw new Error('Service not ready');
 
     // Optimistic removal
@@ -316,7 +387,7 @@ export function TaskProvider({ children, user }) {
 
     try {
       await taskService.deleteTask(taskId);
-    } catch (error) {
+    } catch (error: any) {
       // Revert by reloading tasks
       await loadTasks();
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
@@ -325,7 +396,7 @@ export function TaskProvider({ children, user }) {
   }, [taskService, loadTasks]);
 
   // Snooze task
-  const snoozeTask = useCallback(async (taskId, until) => {
+  const snoozeTask = useCallback(async (taskId: TaskId, until: Date): Promise<Task> => {
     return updateTask(taskId, {
       status: TaskStatus.SNOOZED,
       snoozedUntil: until
@@ -333,7 +404,7 @@ export function TaskProvider({ children, user }) {
   }, [updateTask]);
 
   // Bulk complete tasks
-  const completeTasks = useCallback(async (taskIds) => {
+  const completeTasks = useCallback(async (taskIds: TaskId[]): Promise<void> => {
     if (!taskService) throw new Error('Service not ready');
 
     // Optimistic updates
@@ -342,12 +413,12 @@ export function TaskProvider({ children, user }) {
       status: TaskStatus.COMPLETED,
       completed: true,
       completedAt: new Date()
-    }));
+    } as Task));
     dispatch({ type: TaskActionTypes.UPDATE_MULTIPLE_TASKS, payload: updates });
 
     try {
       await taskService.completeTasks(taskIds);
-    } catch (error) {
+    } catch (error: any) {
       // Revert by reloading
       await loadTasks();
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
@@ -356,7 +427,7 @@ export function TaskProvider({ children, user }) {
   }, [taskService, loadTasks]);
 
   // Bulk archive tasks  
-  const archiveTasks = useCallback(async (taskIds) => {
+  const archiveTasks = useCallback(async (taskIds: TaskId[]): Promise<void> => {
     if (!taskService) throw new Error('Service not ready');
 
     // Optimistic removal
@@ -364,7 +435,7 @@ export function TaskProvider({ children, user }) {
 
     try {
       await taskService.archiveTasks(taskIds);
-    } catch (error) {
+    } catch (error: any) {
       // Revert by reloading
       await loadTasks();
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
@@ -373,61 +444,61 @@ export function TaskProvider({ children, user }) {
   }, [taskService, loadTasks]);
 
   // Project operations
-  const convertToProject = useCallback(async (taskId, subtasks) => {
+  const convertToProject = useCallback(async (taskId: TaskId, subtasks: any[]): Promise<Task> => {
     if (!taskService) throw new Error('Service not ready');
 
     try {
       const project = await taskService.convertToProject(taskId, subtasks);
       dispatch({ type: TaskActionTypes.UPDATE_TASK, payload: project });
       return project;
-    } catch (error) {
+    } catch (error: any) {
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
       throw error;
     }
   }, [taskService]);
 
-  const addSubtask = useCallback(async (projectId, subtaskData) => {
+  const addSubtask = useCallback(async (projectId: TaskId, subtaskData: any): Promise<Task> => {
     if (!taskService) throw new Error('Service not ready');
 
     try {
       const updatedProject = await taskService.addSubtask(projectId, subtaskData);
       dispatch({ type: TaskActionTypes.UPDATE_TASK, payload: updatedProject });
       return updatedProject;
-    } catch (error) {
+    } catch (error: any) {
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
       throw error;
     }
   }, [taskService]);
 
-  const updateSubtask = useCallback(async (projectId, subtaskId, updates) => {
+  const updateSubtask = useCallback(async (projectId: TaskId, subtaskId: number, updates: any): Promise<Task> => {
     if (!taskService) throw new Error('Service not ready');
 
     try {
       const updatedProject = await taskService.updateSubtask(projectId, subtaskId, updates);
       dispatch({ type: TaskActionTypes.UPDATE_TASK, payload: updatedProject });
       return updatedProject;
-    } catch (error) {
+    } catch (error: any) {
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
       throw error;
     }
   }, [taskService]);
 
   // Utility functions
-  const clearError = useCallback(() => {
+  const clearError = useCallback((): void => {
     dispatch({ type: TaskActionTypes.CLEAR_ERROR });
   }, []);
 
-  const refreshTasks = useCallback(async () => {
+  const refreshTasks = useCallback(async (): Promise<void> => {
     await loadTasks();
   }, [loadTasks]);
 
   // Search tasks
-  const searchTasks = useCallback(async (query) => {
+  const searchTasks = useCallback(async (query: string): Promise<Task[]> => {
     if (!taskService || !user) return [];
 
     try {
       return await taskService.searchTasks(user.uid, query);
-    } catch (error) {
+    } catch (error: any) {
       dispatch({ type: TaskActionTypes.SET_ERROR, payload: error.message });
       return [];
     }
@@ -444,7 +515,7 @@ export function TaskProvider({ children, user }) {
   // CONTEXT VALUE
   // =============================================
 
-  const contextValue = {
+  const contextValue: TaskContextValue = {
     // State
     allTasks: state.allTasks,
     activeTasks,
