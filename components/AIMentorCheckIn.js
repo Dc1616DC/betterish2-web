@@ -149,7 +149,52 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
       case 'add_suggestion':
         if (checkInResponse?.suggestions?.length > 0) {
           onAddTasks(checkInResponse.suggestions);
+          // Mark suggestions as accepted for pattern tracking
+          localStorage.setItem('lastSuggestionsAccepted', new Date().toISOString());
         }
+        setIsExpanded(false);
+        setCheckInResponse(null);
+        break;
+      
+      case 'remind_later':
+        // Store suggestions for later reminder (in 1 week)
+        const remindDate = new Date();
+        remindDate.setDate(remindDate.getDate() + 7);
+        
+        if (checkInResponse?.suggestions?.length > 0) {
+          const deferredSuggestions = {
+            tasks: checkInResponse.suggestions,
+            remindAfter: remindDate.toISOString(),
+            originalDate: new Date().toISOString()
+          };
+          localStorage.setItem('deferredSuggestions', JSON.stringify(deferredSuggestions));
+          console.log('Suggestions deferred until:', remindDate.toLocaleDateString());
+        }
+        
+        // Still mark as checked in today (so it doesn't pop up again today)
+        localStorage.setItem('lastCheckIn', new Date().toDateString());
+        setIsExpanded(false);
+        setCheckInResponse(null);
+        break;
+      
+      case 'dismiss':
+        // Mark these specific suggestions as dismissed (never show again)
+        if (checkInResponse?.suggestions?.length > 0) {
+          const dismissedSuggestions = JSON.parse(localStorage.getItem('dismissedSuggestions') || '[]');
+          checkInResponse.suggestions.forEach(suggestion => {
+            // Store dismissed task titles to avoid showing them again
+            if (!dismissedSuggestions.includes(suggestion.title)) {
+              dismissedSuggestions.push(suggestion.title);
+            }
+          });
+          localStorage.setItem('dismissedSuggestions', JSON.stringify(dismissedSuggestions));
+          console.log('Dismissed suggestions:', dismissedSuggestions);
+        }
+        
+        // Mark as checked in today
+        localStorage.setItem('lastCheckIn', new Date().toDateString());
+        setIsExpanded(false);
+        setCheckInResponse(null);
         break;
       
       case 'manual_add':
@@ -166,6 +211,7 @@ export default function AIMentorCheckIn({ onAddTasks, onEmergencyMode, currentTa
       case 'skip_checkin':
         setIsExpanded(false);
         setCheckInResponse(null);
+        localStorage.setItem('lastCheckIn', new Date().toDateString());
         break;
       
       case 'skip_suggestions':

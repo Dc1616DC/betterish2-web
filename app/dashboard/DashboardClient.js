@@ -13,7 +13,7 @@ import TaskList from '@/components/TaskList';
 import TaskForm from '@/components/TaskForm';
 import DashboardLoading from '@/components/DashboardLoading';
 import SidekickChat from '@/components/SidekickChat';
-import SmartReminder from '@/components/AIDadMentorReminder';
+import AIMentorCheckIn from '@/components/AIMentorCheckIn';
 import AppWalkthrough from '@/components/AppWalkthrough';
 import TaskBreakdown from '@/components/TaskBreakdown';
 import VoiceTaskRecorder from '@/components/VoiceTaskRecorder';
@@ -330,15 +330,23 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Smart Reminder */}
+      {/* AI Mentor Check-In */}
       <div className="max-w-md mx-auto px-6 py-4">
-        <SmartReminder
-          onAddTask={handleAddSmartTask}
-          currentTasks={activeTasks || []}
-          userProfile={{
-            // Add user profile data here if available
-            babyAge: null // Could be calculated from user data
+        <AIMentorCheckIn
+          onAddTasks={async (newTasks) => {
+            try {
+              for (const task of newTasks) {
+                await handleAddSmartTask(task);
+              }
+            } catch (error) {
+              console.error('Error adding AI suggestions:', error);
+            }
           }}
+          onEmergencyMode={() => {
+            // Handle emergency mode if needed
+            console.log('Emergency mode activated');
+          }}
+          currentTasks={activeTasks || []}
         />
       </div>
 
