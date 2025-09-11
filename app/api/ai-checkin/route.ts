@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 
     switch (action) {
       case 'check_in':
-        const checkInResponse = await dadMentor.morningCheckIn(userId, userTasks);
+        const checkInResponse = await dadMentor.dailyCheckIn(userId, userTasks);
         return NextResponse.json(checkInResponse);
 
       case 'break_down':
