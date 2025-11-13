@@ -1,43 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase-client';
+import { useEffect } from 'react';
+import { db } from '@/lib/instantdb';
 import { useRouter } from 'next/navigation';
-import React from 'react';
 
 export default function Home() {
-  const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
+  const { user, isLoading } = db.useAuth();
 
   useEffect(() => {
-    if (!auth) {
-      router.push('/login');
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+    if (!isLoading) {
       if (user) {
         router.push('/dashboard');
       } else {
         router.push('/login');
       }
-      setLoading(false);
-    });
+    }
+  }, [user, isLoading, router]);
 
-    return () => unsubscribe();
-  }, [router]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-500 mt-2">Loading...</p>
-        </div>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
       </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 }
