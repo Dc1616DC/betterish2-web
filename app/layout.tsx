@@ -1,21 +1,8 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import BottomNav from "@/components/BottomNav";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import ErrorNotification from "@/components/ErrorNotification";
-import GlobalErrorHandler from "@/components/GlobalErrorHandler";
+import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 import { Metadata, Viewport } from "next";
 import React from "react";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Betterish - Dad Sidekick",
@@ -104,15 +91,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
           `
         }} />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ErrorBoundary fallbackMessage="Something went wrong with the app. Please refresh the page.">
-          <GlobalErrorHandler />
-          {children}
-          <BottomNav />
-          <ErrorNotification />
-        </ErrorBoundary>
+      <body className="antialiased">
+        <ToastProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

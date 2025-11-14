@@ -1,197 +1,126 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, Auth, User, AuthError } from 'firebase/auth';
-import { initializeFirebaseClient } from '@/lib/firebase-client';  // Use client-only Firebase factory
+import { useState } from 'react';
+import { db } from '@/lib/instantdb';
 import { useRouter } from 'next/navigation';
-import React from 'react';
 
 export default function LoginPage() {
-  const [isRegistering, setIsRegistering] = useState<boolean>(false);
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [mounted, setMounted] = useState<boolean>(false);
-  const [auth, setAuth] = useState<Auth | null>(null);
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    setMounted(true);
-    
-    // Initialize Firebase auth on client side
-    const { auth: firebaseAuth } = initializeFirebaseClient();
-    setAuth(firebaseAuth);
-    
-    console.log('Login: Component mounted, checking auth...');
-    console.log('Auth object:', firebaseAuth);
-    
-    // Check if user is already logged in with debouncing to prevent redirect loops
-    if (firebaseAuth) {
-      let authStabilized = false;
-      const stabilizationTimer = setTimeout(() => {
-        authStabilized = true;
-      }, 1000); // Wait 1 second for auth state to stabilize
-
-      const unsubscribe = onAuthStateChanged(firebaseAuth, (user: User | null) => {
-        console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
-        
-        // Only redirect if auth state has stabilized
-        if (user && authStabilized) {
-          clearTimeout(stabilizationTimer);
-          router.push('/dashboard');
-        }
-      });
-      
-      return () => {
-        clearTimeout(stabilizationTimer);
-        unsubscribe();
-      };
-    } else {
-      console.log('Auth object is null');
-    }
-  }, [router]);
-
-  // Show loading until component is mounted
-  if (!mounted) {
-    return (
-      <main className="max-w-md mx-auto p-4 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-500 mt-2">Loading...</p>
-        </div>
-      </main>
-    );
-  }
-
-  // If Firebase auth is still not available after mounting, show error
-  if (!auth) {
-    console.error('Firebase auth not available');
-    return (
-      <main className="max-w-md mx-auto p-4 min-h-screen flex items-center justify-center">
-        <div className="text-center text-red-500">
-          <p className="mb-2">⚠️ Firebase authentication is not available.</p>
-          <p className="text-sm mt-2 mb-4">This could be due to missing environment variables.</p>
-          <div className="text-left text-xs bg-gray-100 p-3 rounded mb-4">
-            <p>Check that these env vars are set:</p>
-            <ul className="mt-2 space-y-1">
-              <li>• NEXT_PUBLIC_FIREBASE_API_KEY</li>
-              <li>• NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</li>
-              <li>• NEXT_PUBLIC_FIREBASE_PROJECT_ID</li>
-              <li>• NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET</li>
-              <li>• NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID</li>
-              <li>• NEXT_PUBLIC_FIREBASE_APP_ID</li>
-            </ul>
-          </div>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
-    
-    // Rate limiting protection: add delay to prevent rapid requests
-    const attemptAuth = async (retryCount: number = 0): Promise<void> => {
-      try {
-        if (isRegistering) {
-          await createUserWithEmailAndPassword(auth, email, password);
-        } else {
-          await signInWithEmailAndPassword(auth, email, password);
-        }
-        // onAuthStateChanged will handle the redirect
-      } catch (err) {
-        const authError = err as AuthError;
-        console.error('Auth error:', authError);
-        
-        // Handle rate limiting with exponential backoff
-        if (authError.code === 'auth/too-many-requests' && retryCount < 2) {
-          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s exponential backoff
-          setError(`Too many requests. Retrying in ${delay/1000} seconds...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return attemptAuth(retryCount + 1);
-        }
-        
-        // Auto-create test users for TestSprite testing  
-        if (!isRegistering && authError.code === 'auth/invalid-credential' && email === 'test@example.com') {
-          console.log('Auto-creating test user for TestSprite...');
-          try {
-            await createUserWithEmailAndPassword(auth, email, password);
-            console.log('Test user created, signing in...');
-            // The user is automatically signed in after creation
-          } catch (createError) {
-            const createAuthError = createError as AuthError;
-            console.error('Failed to create test user:', createAuthError);
-            setError(createAuthError.message);
-          }
-        } else {
-          // Provide user-friendly error messages
-          if (authError.code === 'auth/too-many-requests') {
-            setError('Too many login attempts. Please wait a few minutes and try again.');
-          } else if (authError.code === 'auth/email-already-in-use') {
-            setError('This email is already registered. Please try logging in instead.');
-          } else if (authError.code === 'auth/invalid-credential') {
-            setError('Invalid email or password. Please check your credentials and try again.');
-          } else {
-            setError(authError.message);
-          }
-        }
-      }
-    };
-    
+    setIsLoading(true);
+
     try {
-      await attemptAuth();
+      await db.auth.sendMagicCode({ email });
+      setSent(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send magic link');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-4 pb-safe-nav">
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Betterish</h1>
-        <p className="text-gray-600 mb-4">Stay on top of life without the nagging.<br/>Get time back for what you love.</p>
-        <h2 className="text-xl font-semibold">{isRegistering ? 'Create Account' : 'Log In'}</h2>
+  const { isLoading: isAuthLoading, user } = db.useAuth();
+
+  // If already logged in, redirect to dashboard
+  if (user && !isAuthLoading) {
+    router.push('/dashboard');
+    return null;
+  }
+
+  if (sent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
+            <p className="text-gray-600 mb-6">
+              We sent a magic link to <span className="font-semibold">{email}</span>
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Click the link in the email to sign in. The link will expire in 15 minutes.
+            </p>
+            <button
+              onClick={() => {
+                setSent(false);
+                setEmail('');
+              }}
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            >
+              Use a different email
+            </button>
+          </div>
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          autoFocus
-          className="w-full p-3 border border-gray-300 rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full p-3 border border-gray-300 rounded"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700"
-        >
-          {loading ? 'Loading...' : isRegistering ? 'Create Account' : 'Log In'}
-        </button>
-      </form>
-      <button
-        onClick={() => setIsRegistering(!isRegistering)}
-        className="mt-4 text-sm text-blue-600 hover:underline"
-      >
-        {isRegistering ? 'Already have an account? Log in' : "Don't have an account? Create one"}
-      </button>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 px-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Betterish Dad</h1>
+          <p className="text-gray-600">AI-powered task manager for new dads</p>
+        </div>
+
+        <form onSubmit={handleSendMagicLink} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+            />
+          </div>
+
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading || !email}
+            className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Sending...
+              </span>
+            ) : (
+              'Send Magic Link'
+            )}
+          </button>
+        </form>
+
+        <div className="mt-8 text-center">
+          <p className="text-xs text-gray-500">
+            By signing in, you agree to our Terms of Service and Privacy Policy
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
